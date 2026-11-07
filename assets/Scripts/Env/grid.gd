@@ -9,6 +9,7 @@ const TREE = preload("res://assets/Scenes/Resources/tree.tscn")
 const BIG_TREE = preload("res://assets/Scenes/Resources/big-tree.tscn")
 const ROCK = preload("res://assets/Scenes/Resources/rock.tscn")
 const BIG_ROCK = preload("res://assets/Scenes/Resources/big-rock.tscn")
+const BUSH = preload("res://assets/Scenes/george_bush.tscn")
 
 const CELL_OUTLINE : Array[Vector2] = [
 	Vector2(4, 2), Vector2(4, 1), Vector2(1, -2), Vector2(-5, -2), Vector2(-5, -1), Vector2(-2, 2),
@@ -102,7 +103,7 @@ func place_resource(x, y):
 	var cell = grid[x][y]
 	if cell == null or cell.resource != null:
 		return
-	if(randf() < 0.01):
+	if(randf() < 0.02):
 		var tree = TREE.instantiate()
 		tree.position = cell.position
 		cell.resource = tree
@@ -123,7 +124,7 @@ func place_resource(x, y):
 	var next_cell = grid[x+1][y]
 	if next_cell == null or next_cell.resource != null:
 		return
-	if(randf() < 0.03):
+	if(randf() < 0.01):
 		var big_tree = BIG_TREE.instantiate()
 		big_tree.position = cell.position
 		cell.resource = big_tree
@@ -132,7 +133,16 @@ func place_resource(x, y):
 		big_tree.cells.append(next_cell)
 		add_child(big_tree)
 		count -= 2
-	elif(randf() < 0.04):
+	elif(randf() < 0.015):
+		var bush = BUSH.instantiate()
+		bush.position = cell.position
+		cell.resource = bush
+		next_cell.resource = bush
+		bush.cells.append(cell)
+		bush.cells.append(next_cell)
+		add_child(bush)
+		count -= 2
+	elif(randf() < 0.01):
 		var big_rock = BIG_ROCK.instantiate()
 		big_rock.position = cell.position
 		cell.resource = big_rock
