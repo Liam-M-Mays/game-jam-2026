@@ -8,6 +8,8 @@ extends Sprite2D
 
 var target : Vector2
 
+var job : joob
+
 var to_mine : resource
 var is_mining : bool = false
 
@@ -28,11 +30,13 @@ func _physics_process(delta: float) -> void:
 			to_mine.mine()
 			is_mining = false
 			to_mine = null
+			job = null
 	
 func _process(delta : float):
-	if JobSystem.jobs.size() == 0:
+	if JobSystem.jobs.size() == 0 or job != null:
 		return
-	var job = JobSystem.jobs.pop_front()
-	target = job.position
-	is_mining = true
-	to_mine = job
+	job = JobSystem.jobs.pop_front()
+	job.execute(self)
+	#target = job.position
+	#is_mining = true
+	#to_mine = job

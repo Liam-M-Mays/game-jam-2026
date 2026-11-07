@@ -15,4 +15,3 @@ func _process(delta: float) -> void:
 			max(0, (fase_dist-distance)/fase_dist)
 			)
 		)
-	

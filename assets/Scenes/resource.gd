@@ -27,7 +27,9 @@ func _on_area_input_event(_viewport: Viewport, event: InputEvent, _shape_idx: in
 		_on_mouse_motion(event)
 
 func _on_left_click() -> void:
-	JobSystem.add_mine_job(self)
+	var jobb = MineJob
+	jobb.res = self
+	JobSystem.jobs.push_back(jobb)
 	pass
 
 func _on_left_release() -> void:

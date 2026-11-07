@@ -37,3 +37,17 @@ shape = SubResource("CircleShape2D_g0qf3")
 
 [node name="JobSystem" type="Node2D" parent="." unique_id=2146036250]
 script = ExtResource("6_rbwhl")
+
+[node name="Sprite2D2" type="Sprite2D" parent="." unique_id=998379544]
+z_index = 2
+position = Vector2(609, 404)
+scale = Vector2(0.5, 1)
+texture = ExtResource("2_w34p4")
+script = ExtResource("3_xomjc")
+
+[node name="Sprite2D3" type="Sprite2D" parent="." unique_id=1900895146]
+z_index = 2
+position = Vector2(609, 404)
+scale = Vector2(0.5, 1)
+texture = ExtResource("2_w34p4")
+script = ExtResource("3_xomjc")
