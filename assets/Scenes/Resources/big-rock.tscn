@@ -13,6 +13,7 @@ texture = ExtResource("1_vg1nq")
 offset = Vector2(3, -2)
 script = ExtResource("2_g77kf")
 area = NodePath("Area2D")
+wobble_interval = 0.7
 wobbles_to_break = 6
 stone_yield = 2
 

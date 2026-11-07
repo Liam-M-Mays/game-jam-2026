@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://bsc4cgo2yjjdw"]
+
+[ext_resource type="Texture2D" uid="uid://dndh48dkfcegh" path="res://assets/Art/Characters/meeple.png" id="1_j6jbn"]
+[ext_resource type="Script" uid="uid://c811ahcbsw83d" path="res://assets/Scripts/Meeple/meeple_movement.gd" id="2_mkppr"]
+
+[node name="Meeple" type="Sprite2D" unique_id=381946220]
+modulate = Color(0.7810842, 0.5307287, 0.510701, 1)
+z_index = 2
+scale = Vector2(10, 10)
+texture = ExtResource("1_j6jbn")
+script = ExtResource("2_mkppr")

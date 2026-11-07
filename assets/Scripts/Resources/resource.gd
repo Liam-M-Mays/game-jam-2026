@@ -13,6 +13,7 @@ const WOBBLE_DURATION := 0.25
 
 const FLASH_SHADER := preload("res://assets/Shaders/flash.gdshader")
 const FLASH_DURATION := 0.12
+const BREAK_HOLD := 0.06
 
 var _flash_tween : Tween
 
@@ -21,6 +22,7 @@ const SQUASH_DURATION := 0.2
 var _squash_tween : Tween
 var _base_scale : Vector2
 
+const BREAK = preload("res://assets/Scenes/Resources/break.tscn")
 
 var cells : Array = []
 
@@ -37,9 +39,10 @@ func _ready() -> void:
 	mat.shader = FLASH_SHADER
 	material = mat
 
-func _flash() -> void:
+func _flash(color := Color.WHITE) -> void:
 	if _flash_tween:
 		_flash_tween.kill()
+	material.set_shader_parameter("flash_color", color)
 	material.set_shader_parameter("flash", 1.0)
 	_flash_tween = create_tween()
 	_flash_tween.tween_property(material, "shader_parameter/flash", 0.0, FLASH_DURATION)
@@ -98,21 +101,35 @@ func _on_mouse_exited() -> void:
 		cell.set_trans(0)
 
 func mine() -> bool:
-	_flash()
 	_squash()
 	_wobbles += 1
+	if _wobbles >= wobbles_to_break:
+		_final_flash()
+		return true
+	_flash()
 	var tween = create_tween()
 	var step = WOBBLE_DURATION / 4
 	tween.tween_property(self, "rotation_degrees", wobble_angle, step)
 	tween.tween_property(self, "rotation_degrees", -wobble_angle, step * 2)
 	tween.tween_property(self, "rotation_degrees", 0.0, step)
-	if _wobbles < wobbles_to_break:
-		return false
-	tween.tween_callback(_break)
+	return false
 
-	return true
+func _final_flash() -> void:
+	if _flash_tween:
+		_flash_tween.kill()
+	material.set_shader_parameter("flash", 1.0)
+	_flash_tween = create_tween()
+	_flash_tween.tween_interval(BREAK_HOLD)
+	_flash_tween.tween_callback(_break)
 
 func _break() -> void:
+	var bre = BREAK.instantiate()
+	bre.position = position + offset * _base_scale
+	bre.scale = _base_scale
+	bre.z_index = z_index
+	get_parent().add_child(bre)
+	bre.animation_finished.connect(bre.queue_free)
+	bre.play("break")
 	Inventory.add(wood_yield, stone_yield)
 	for cell in cells:
 		cell.resource = null

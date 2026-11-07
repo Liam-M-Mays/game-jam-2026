@@ -2,6 +2,7 @@ extends Node2D
 
 const BUILDINGS := {
 	"1": preload("res://assets/Scenes/Buildings/hut.tscn"),
+	"2": preload("res://assets/Scenes/hut_build.tscn"),
 }
 
 const PREVIEW_VALID := Color(0.3, 1, 0.3, 0.6)
@@ -42,6 +43,7 @@ func _select(scene : PackedScene) -> void:
 	mouse_area.enabled = true
 	_clear_preview()
 	_preview = scene.instantiate()
+	_preview._get_preview()
 	grid.add_child(_preview)
 
 func _clear_preview() -> void:
@@ -59,4 +61,4 @@ func _place_current() -> void:
 		cell.resource = site
 		site.cells.append(cell)
 	grid.add_child(site)
-	JobSystem.add_build_job(site)
+	site.start_build()
