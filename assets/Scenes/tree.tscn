@@ -1,9 +1,22 @@
 [gd_scene format=3 uid="uid://cciqa8ee7m64y"]
 
 [ext_resource type="Texture2D" uid="uid://bi6uuppyldmbr" path="res://assets/Res/trees.tres" id="1_brfkd"]
+[ext_resource type="Script" uid="uid://bccn0pwg1r2cc" path="res://assets/Scenes/tree.gd" id="2_qgaf8"]
 
-[node name="Tree" type="Sprite2D" unique_id=1800998]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_nafr4"]
+size = Vector2(5.000001, 7.0000005)
+
+[node name="Tree" type="Sprite2D" unique_id=1800998 node_paths=PackedStringArray("area")]
 z_index = 1
 scale = Vector2(10, 10)
 texture = ExtResource("1_brfkd")
 offset = Vector2(0, -3)
+script = ExtResource("2_qgaf8")
+area = NodePath("Area2D")
+
+[node name="Area2D" type="Area2D" parent="." unique_id=1707068377]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=547732979]
+position = Vector2(4.768371e-08, -2.9999995)
+scale = Vector2(0.99999976, 0.99999976)
+shape = SubResource("RectangleShape2D_nafr4")

@@ -1,8 +1,11 @@
 extends Area2D
 
 @export var fase_dist := 250
+@export var enabled := true
 
 func _process(delta: float) -> void:
+	if !enabled:
+		return
 	position = get_global_mouse_position()
 	for area in get_overlapping_areas():
 		var owner = area.get_parent()

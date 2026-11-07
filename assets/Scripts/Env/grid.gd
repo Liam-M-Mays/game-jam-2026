@@ -41,12 +41,14 @@ func place_resource(x, y):
 		var tree = TREE.instantiate()
 		tree.position = cell.position
 		cell.resource = tree
+		tree.cells.append(cell)
 		add_child(tree)
 		return
 	if(randf() < 0.02):
 		var rock = ROCK.instantiate()
 		rock.position = cell.position
 		cell.resource = rock
+		rock.cells.append(cell)
 		add_child(rock)
 		return
 	if x == grid_size-1:
@@ -59,11 +61,15 @@ func place_resource(x, y):
 		big_tree.position = cell.position
 		cell.resource = big_tree
 		next_cell.resource = big_tree
+		big_tree.cells.append(cell)
+		big_tree.cells.append(next_cell)
 		add_child(big_tree)
 	elif(randf() < 0.04):
 		var big_rock = BIG_ROCK.instantiate()
 		big_rock.position = cell.position
 		cell.resource = big_rock
 		next_cell.resource = big_rock
+		big_rock.cells.append(cell)
+		big_rock.cells.append(next_cell)
 		add_child(big_rock)
 	

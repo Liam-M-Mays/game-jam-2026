@@ -1,9 +1,22 @@
 [gd_scene format=3 uid="uid://bs6xoi7v5b3bc"]
 
 [ext_resource type="Texture2D" uid="uid://cqlrqu5137jla" path="res://assets/Res/big-rock.tres" id="1_vg1nq"]
+[ext_resource type="Script" uid="uid://c3elx78jjhpbp" path="res://assets/Scenes/resource.gd" id="2_g77kf"]
 
-[node name="BigRock" type="Sprite2D" unique_id=1800998]
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_nafr4"]
+size = Vector2(9.400002, 6.000001)
+
+[node name="BigRock" type="Sprite2D" unique_id=1800998 node_paths=PackedStringArray("area")]
 z_index = 1
 scale = Vector2(10, 10)
 texture = ExtResource("1_vg1nq")
-offset = Vector2(2, -3)
+offset = Vector2(3, -2)
+script = ExtResource("2_g77kf")
+area = NodePath("Area2D")
+
+[node name="Area2D" type="Area2D" parent="." unique_id=389299539]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=1455732925]
+position = Vector2(1.9999995, -2.9999995)
+scale = Vector2(0.99999976, 0.99999976)
+shape = SubResource("RectangleShape2D_nafr4")
