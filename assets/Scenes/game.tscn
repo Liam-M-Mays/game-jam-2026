@@ -94,6 +94,7 @@ min_zoom = 1.6
 max_zoom = 20.0
 
 [node name="Back" type="Node2D" parent="Node2D2/Node2D/Torso" unique_id=1048576020]
+y_sort_enabled = true
 position = Vector2(-110, -217)
 scale = Vector2(0.1, 0.1)
 

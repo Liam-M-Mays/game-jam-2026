@@ -57,6 +57,8 @@ offset = Vector2(3, -1)
 script = ExtResource("2_bush")
 frames = SubResource("SpriteFrames_g0qf3")
 area = NodePath("Area2D")
+spawn_chance = 0.015
+footprint = 2
 
 [node name="Area2D" type="Area2D" parent="." unique_id=483537895]
 

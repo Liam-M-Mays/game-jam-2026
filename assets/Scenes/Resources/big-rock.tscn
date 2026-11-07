@@ -16,6 +16,8 @@ area = NodePath("Area2D")
 wobble_interval = 0.7
 wobbles_to_break = 6
 stone_yield = 2
+spawn_chance = 0.01
+footprint = 2
 
 [node name="Area2D" type="Area2D" parent="." unique_id=389299539]
 

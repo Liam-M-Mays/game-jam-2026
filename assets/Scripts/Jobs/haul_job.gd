@@ -20,7 +20,7 @@ func update(worker : Meeple, _delta : float) -> bool:
 		_drop.queue_free()
 		_drop = null
 		worker.set_carrying(kind)
-		worker.move_to(site.global_position)
+		worker.move_to(site.global_position, site.cells)
 		return false
 	if not worker.has_arrived():
 		return false

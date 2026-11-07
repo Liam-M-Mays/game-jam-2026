@@ -11,6 +11,20 @@ const WOBBLE_DURATION := 0.25
 @export var wood_yield := 0
 @export var stone_yield := 0
 
+@export_group("Spawning")
+## Base chance (0-1) of this resource spawning on any one free spot in the yard.
+@export_range(0.0, 1.0, 0.001) var spawn_chance := 0.0
+## How many cells wide this resource is (extends to the right of its anchor cell).
+@export_range(1, 4) var footprint := 1
+## Scales spawn_chance by how far the spot is from the yard's edge.
+## X axis: 0 = right on the edge, 1 = the deepest middle of the yard.
+## Y axis: multiplier on spawn_chance (raise the curve's Max Value to go above 1).
+## Leave empty to spawn evenly everywhere.
+@export var edge_distance_curve : Curve
+## Each neighbouring cell already holding this same resource adds this much to the
+## multiplier (0.5 = +50% per neighbour). Makes clumps like groves or rock piles.
+@export var cluster_bonus := 0.0
+
 const OUTLINE_SHADER := preload("res://assets/Shaders/outline.gdshader")
 const FLASH_DURATION := 0.12
 const BREAK_HOLD := 0.06

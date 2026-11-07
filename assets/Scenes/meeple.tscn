@@ -57,7 +57,7 @@ animations = [{
 
 [node name="Meeple" type="Sprite2D" unique_id=381946220]
 self_modulate = Color(0.88235295, 0, 0, 1)
-z_index = 2
+z_index = 1
 scale = Vector2(10, 10)
 texture = ExtResource("1_eo76i")
 script = ExtResource("2_mkppr")

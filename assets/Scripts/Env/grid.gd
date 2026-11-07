@@ -4,12 +4,26 @@ extends Node2D
 @export var ground_sprites : Array[Sprite2D] = []
 @export var ground_cover : Sprite2D
 
+## Resource scenes that can spawn. Each one's spawn odds live on the scene itself
+## (resource.gd > Spawning), not here.
+@export var spawnables : Array[PackedScene] = []
+## 0 = new random map each run; anything else reproduces the same layout.
+@export var generation_seed := 0
+
 const CELL = preload("res://assets/Scenes/Env/cell.tscn")
-const TREE = preload("res://assets/Scenes/Resources/tree.tscn")
-const BIG_TREE = preload("res://assets/Scenes/Resources/big-tree.tscn")
-const ROCK = preload("res://assets/Scenes/Resources/rock.tscn")
-const BIG_ROCK = preload("res://assets/Scenes/Resources/big-rock.tscn")
-const BUSH = preload("res://assets/Scenes/george_bush.tscn")
+
+## Neighbouring cell offsets on this skewed grid (row above sits 5 px right).
+const NEIGHBOURS : Array[Vector2i] = [
+	Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, -1), Vector2i(-1, 1),
+]
+
+## Spawn settings read once from each spawnable scene.
+class Spawnable:
+	var scene : PackedScene
+	var chance : float
+	var footprint : int
+	var curve : Curve
+	var cluster_bonus : float
 
 const CELL_OUTLINE : Array[Vector2] = [
 	Vector2(4, 2), Vector2(4, 1), Vector2(1, -2), Vector2(-5, -2), Vector2(-5, -1), Vector2(-2, 2),
@@ -18,6 +32,9 @@ const CELL_OUTLINE : Array[Vector2] = [
 var grid : Array[Array] = []
 var _cell_scale : Vector2
 var _cell_offset : Vector2
+## Per cell: 0 at the yard's edge, 1 at the deepest middle. Only set for real cells.
+var _edge_distance := {}
+var _rng := RandomNumberGenerator.new()
 
 var count := 0
 
@@ -68,9 +85,7 @@ func _ready() -> void:
 		for y in range(grid_size):
 			place_cell(x,y)
 	print(count)
-	for x in range(grid_size):
-		for y in range(grid_size):
-			place_resource(x,y)
+	generate_resources()
 	print(count)
 
 
@@ -99,56 +114,146 @@ func free_cells_at(world_pos : Vector2, width := 1) -> Array:
 		cells.append(cell)
 	return cells
 
-func place_resource(x, y):
-	var cell = grid[x][y]
-	if cell == null or cell.resource != null:
+# --- Resource generation -------------------------------------------------------
+# Every free cell is visited once, in random order. At each cell, every spawnable
+# gets a weight = spawn_chance x edge-distance curve x cluster bonus, and a single
+# roll picks at most one of them (or nothing). Random order means no left-to-right
+# bias, and clumps grow naturally around resources placed earlier.
+
+func generate_resources() -> void:
+	if generation_seed != 0:
+		_rng.seed = generation_seed
+	else:
+		_rng.randomize()
+	var spawnables := _load_spawnables()
+	if spawnables.is_empty():
 		return
-	if(randf() < 0.02):
-		var tree = TREE.instantiate()
-		tree.position = cell.position
-		cell.resource = tree
-		tree.cells.append(cell)
-		add_child(tree)
-		count -= 1
+	_compute_edge_distance()
+
+	var spots : Array[Vector2i] = []
+	for coords in _edge_distance:
+		spots.append(coords)
+	_shuffle(spots)
+
+	for coords in spots:
+		_try_spawn_at(coords, spawnables)
+
+func _load_spawnables() -> Array[Spawnable]:
+	var list : Array[Spawnable] = []
+	for scene in spawnables:
+		if scene == null:
+			continue
+		var template = scene.instantiate()
+		if template is resource and template.spawn_chance > 0.0:
+			var s := Spawnable.new()
+			s.scene = scene
+			s.chance = template.spawn_chance
+			s.footprint = template.footprint
+			s.curve = template.edge_distance_curve
+			s.cluster_bonus = template.cluster_bonus
+			list.append(s)
+		template.free()
+	return list
+
+## Multi-source BFS from every cell touching empty space, so distance is measured
+## to the nearest real edge of the yard (including any holes), then normalised 0-1.
+func _compute_edge_distance() -> void:
+	_edge_distance.clear()
+	var queue : Array[Vector2i] = []
+	for x in range(grid_size):
+		for y in range(grid_size):
+			if grid[x][y] == null:
+				continue
+			var coords := Vector2i(x, y)
+			for n in NEIGHBOURS:
+				if _cell_or_null(coords + n) == null:
+					_edge_distance[coords] = 0
+					queue.append(coords)
+					break
+	var head := 0
+	var max_dist := 0
+	while head < queue.size():
+		var coords := queue[head]
+		head += 1
+		var d : int = _edge_distance[coords]
+		for n in NEIGHBOURS:
+			var next := coords + n
+			if _cell_or_null(next) != null and not _edge_distance.has(next):
+				_edge_distance[next] = d + 1
+				max_dist = maxi(max_dist, d + 1)
+				queue.append(next)
+	for coords in _edge_distance:
+		_edge_distance[coords] = float(_edge_distance[coords]) / maxf(max_dist, 1.0)
+
+func _cell_or_null(coords : Vector2i):
+	if coords.x < 0 or coords.y < 0 or coords.x >= grid_size or coords.y >= grid_size:
+		return null
+	return grid[coords.x][coords.y]
+
+func _footprint_cells(coords : Vector2i, width : int) -> Array:
+	var cells : Array = []
+	for i in range(width):
+		var cell = _cell_or_null(coords + Vector2i(i, 0))
+		if cell == null or cell.resource != null:
+			return []
+		cells.append(cell)
+	return cells
+
+func _spawn_weight(s : Spawnable, coords : Vector2i) -> float:
+	var weight := s.chance
+	if s.curve != null:
+		weight *= maxf(s.curve.sample(_edge_distance[coords]), 0.0)
+	if s.cluster_bonus != 0.0:
+		weight *= maxf(1.0 + s.cluster_bonus * _matching_neighbours(s, coords), 0.0)
+	return weight
+
+## How many cells around this footprint already hold the same kind of resource.
+func _matching_neighbours(s : Spawnable, coords : Vector2i) -> int:
+	var found := 0
+	for i in range(s.footprint):
+		for n in NEIGHBOURS:
+			var cell = _cell_or_null(coords + Vector2i(i, 0) + n)
+			if cell != null and cell.resource != null and cell.resource.scene_file_path == s.scene.resource_path:
+				found += 1
+	return found
+
+func _try_spawn_at(coords : Vector2i, spawnables : Array[Spawnable]) -> void:
+	if _cell_or_null(coords) == null or grid[coords.x][coords.y].resource != null:
 		return
-	if(randf() < 0.02):
-		var rock = ROCK.instantiate()
-		rock.position = cell.position
-		cell.resource = rock
-		rock.cells.append(cell)
-		add_child(rock)
-		count -= 1
+	var options : Array = []
+	var total := 0.0
+	for s in spawnables:
+		var cells := _footprint_cells(coords, s.footprint)
+		if cells.is_empty():
+			continue
+		var weight := _spawn_weight(s, coords)
+		if weight <= 0.0:
+			continue
+		options.append([s, cells, weight])
+		total += weight
+	if options.is_empty():
 		return
-	if x == grid_size-1:
-		return
-	var next_cell = grid[x+1][y]
-	if next_cell == null or next_cell.resource != null:
-		return
-	if(randf() < 0.01):
-		var big_tree = BIG_TREE.instantiate()
-		big_tree.position = cell.position
-		cell.resource = big_tree
-		next_cell.resource = big_tree
-		big_tree.cells.append(cell)
-		big_tree.cells.append(next_cell)
-		add_child(big_tree)
-		count -= 2
-	elif(randf() < 0.015):
-		var bush = BUSH.instantiate()
-		bush.position = cell.position
-		cell.resource = bush
-		next_cell.resource = bush
-		bush.cells.append(cell)
-		bush.cells.append(next_cell)
-		add_child(bush)
-		count -= 2
-	elif(randf() < 0.01):
-		var big_rock = BIG_ROCK.instantiate()
-		big_rock.position = cell.position
-		cell.resource = big_rock
-		next_cell.resource = big_rock
-		big_rock.cells.append(cell)
-		big_rock.cells.append(next_cell)
-		add_child(big_rock)
-		count -= 2
-	
+	# One roll for all candidates: below `total` picks one in proportion to its
+	# weight, above it leaves the cell empty. If weights sum past 1, always spawn.
+	var roll := _rng.randf() * maxf(total, 1.0)
+	for option in options:
+		roll -= option[2]
+		if roll < 0.0:
+			_spawn(option[0], option[1])
+			return
+
+func _spawn(s : Spawnable, cells : Array) -> void:
+	var res = s.scene.instantiate()
+	res.position = cells[0].position
+	for cell in cells:
+		cell.resource = res
+		res.cells.append(cell)
+	add_child(res)
+	count -= cells.size()
+
+func _shuffle(arr : Array) -> void:
+	for i in range(arr.size() - 1, 0, -1):
+		var j := _rng.randi_range(0, i)
+		var tmp = arr[i]
+		arr[i] = arr[j]
+		arr[j] = tmp
