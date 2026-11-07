@@ -1,0 +1,7 @@
+[gd_scene format=3 uid="uid://mcu65uoclrgs"]
+
+[ext_resource type="Script" uid="uid://cjfutepuhws5j" path="res://assets/Scripts/Env/grid.gd" id="1_j5gty"]
+
+[node name="Grid" type="Node2D" unique_id=1279537889]
+y_sort_enabled = true
+script = ExtResource("1_j5gty")

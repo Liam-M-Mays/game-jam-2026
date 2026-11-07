@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://cmwljon6ih0lq" path="res://assets/Scripts/Cam/camera_controls.gd" id="1_w34p4"]
 [ext_resource type="PackedScene" uid="uid://bsc4cgo2yjjdw" path="res://assets/Scenes/meeple.tscn" id="2_xomjc"]
-[ext_resource type="Script" uid="uid://cjfutepuhws5j" path="res://assets/Scripts/Env/grid.gd" id="4_naort"]
+[ext_resource type="PackedScene" uid="uid://mcu65uoclrgs" path="res://assets/Scenes/grid.tscn" id="3_xomjc"]
 [ext_resource type="Script" uid="uid://d13jmgqp0eyq8" path="res://assets/Scripts/Cam/mouse.gd" id="5_ci4bg"]
 [ext_resource type="Script" uid="uid://dhxeaalsqdoin" path="res://assets/Scripts/Jobs/job_system.gd" id="6_rbwhl"]
 [ext_resource type="Script" uid="uid://clnxifq5klc7h" path="res://assets/Scripts/Buildings/build_system.gd" id="7_xomjc"]
@@ -19,10 +19,8 @@ script = ExtResource("1_w34p4")
 [node name="Meeple" parent="." unique_id=381946220 instance=ExtResource("2_xomjc")]
 position = Vector2(609, 404)
 
-[node name="Grid" type="Node2D" parent="." unique_id=1314470228]
-y_sort_enabled = true
+[node name="Grid" parent="." unique_id=1279537889 instance=ExtResource("3_xomjc")]
 position = Vector2(-1000, -600)
-script = ExtResource("4_naort")
 
 [node name="Mouse" type="Area2D" parent="." unique_id=1782876279]
 input_pickable = false
