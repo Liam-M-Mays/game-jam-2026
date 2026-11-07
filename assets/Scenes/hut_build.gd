@@ -34,5 +34,5 @@ func finish_build() -> void:
 	super()
 	var meeple = MEEPLE.instantiate()
 	get_parent().get_parent().add_child(meeple)
-	meeple.global_position = global_position + DOOR_OFFSET
+	meeple.global_position = get_parent().to_global(position + DOOR_OFFSET)
 	meeple.move_to(meeple.global_position)

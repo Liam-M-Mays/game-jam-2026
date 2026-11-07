@@ -10,6 +10,7 @@ const WOBBLE_DURATION := 0.25
 @export var squash_amount := 0.15
 @export var wood_yield := 0
 @export var stone_yield := 0
+@export var outline_color := Color.WHITE
 
 const FLASH_SHADER := preload("res://assets/Shaders/flash.gdshader")
 const FLASH_DURATION := 0.12
@@ -27,7 +28,10 @@ const BREAK = preload("res://assets/Scenes/Resources/break.tscn")
 var cells : Array = []
 
 var _wobbles := 0
-var _mine_queued := false
+var _mine_job : MineJob = null
+var _outline : Node2D = null
+
+const OUTLINE_DIRECTIONS : Array[Vector2] = [Vector2.LEFT, Vector2.RIGHT, Vector2.UP, Vector2.DOWN]
 
 func _ready() -> void:
 	_base_scale = scale
@@ -73,10 +77,36 @@ func _on_area_input_event(_viewport: Viewport, event: InputEvent, _shape_idx: in
 		_on_mouse_motion(event)
 
 func _on_left_click() -> void:
-	if _mine_queued:
+	if _wobbles >= wobbles_to_break:
 		return
-	_mine_queued = true
-	JobSystem.add_mine_job(self)
+	if _mine_job == null:
+		_mine_job = JobSystem.add_mine_job(self)
+		_set_outline(true)
+	else:
+		JobSystem.cancel_job(_mine_job)
+		_mine_job = null
+		_set_outline(false)
+
+func _set_outline(on : bool) -> void:
+	if _outline == null:
+		_outline = _make_outline()
+	_outline.visible = on
+
+func _make_outline() -> Node2D:
+	var holder := Node2D.new()
+	holder.show_behind_parent = true
+	var mat := ShaderMaterial.new()
+	mat.shader = FLASH_SHADER
+	mat.set_shader_parameter("flash", 1.0)
+	mat.set_shader_parameter("flash_color", outline_color)
+	for direction in OUTLINE_DIRECTIONS:
+		var copy := Sprite2D.new()
+		copy.texture = texture
+		copy.offset = offset + direction
+		copy.material = mat
+		holder.add_child(copy)
+	add_child(holder)
+	return holder
 
 func _on_left_release() -> void:
 	pass
@@ -91,12 +121,12 @@ func _on_mouse_motion(event: InputEventMouseMotion) -> void:
 	pass
 
 func _on_mouse_entered() -> void:
-	modulate = Color.RED
+	self_modulate = Color.RED
 	for cell in cells:
 		cell.set_trans(0.5)
 
 func _on_mouse_exited() -> void:
-	modulate = Color.WHITE
+	self_modulate = Color.WHITE
 	for cell in cells:
 		cell.set_trans(0)
 

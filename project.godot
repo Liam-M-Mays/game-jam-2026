@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="2026-uncc-gamejam"
-run/main_scene="uid://0522u2xktags"
+run/main_scene="uid://cgame7colossa"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://assets/Res/icon.svg"
 

@@ -1,6 +1,8 @@
 extends Node2D
 
 @export var grid_size := 50
+@export var ground_sprites : Array[Sprite2D] = []
+@export var ground_cover : Sprite2D
 
 const CELL = preload("res://assets/Scenes/Env/cell.tscn")
 const TREE = preload("res://assets/Scenes/Resources/tree.tscn")
@@ -8,22 +10,56 @@ const BIG_TREE = preload("res://assets/Scenes/Resources/big-tree.tscn")
 const ROCK = preload("res://assets/Scenes/Resources/rock.tscn")
 const BIG_ROCK = preload("res://assets/Scenes/Resources/big-rock.tscn")
 
-var grid : Array[Array] = []
+const CELL_OUTLINE : Array[Vector2] = [
+	Vector2(4, 2), Vector2(4, 1), Vector2(1, -2), Vector2(-5, -2), Vector2(-5, -1), Vector2(-2, 2),
+]
 
-func _init() -> void:
+var grid : Array[Array] = []
+var _cell_scale : Vector2
+var _cell_offset : Vector2
+
+func _cell_position(x : int, y : int) -> Vector2:
+	return Vector2(
+		(x * _cell_scale.x * 7) + (5 * y * _cell_scale.x),
+		y * _cell_scale.y * 5
+	)
+
+func _is_ground(world_pos : Vector2) -> bool:
+	if ground_cover != null and ground_cover.is_pixel_opaque(ground_cover.to_local(world_pos)):
+		return false
+	for sprite in ground_sprites:
+		if sprite.get_rect().has_point(sprite.to_local(world_pos)):
+			return true
+	return false
+
+func _cell_fits(pos : Vector2) -> bool:
+	if ground_sprites.is_empty():
+		return true
+	for point in CELL_OUTLINE:
+		if not _is_ground(to_global(pos + point * _cell_scale)):
+			return false
+	return true
+
+func place_cell(x : int, y : int):
+	var pos := _cell_position(x, y)
+	if not _cell_fits(pos):
+		return
+	var cell = CELL.instantiate()
+	cell.position = pos
+	grid[x][y] = cell
+	add_child(cell)
+
+func _ready() -> void:
+	var template = CELL.instantiate()
+	_cell_scale = template.scale
+	_cell_offset = template.offset
+	template.free()
+
 	for x in range(grid_size):
 		var column : Array = []
 		column.resize(grid_size)
 		grid.append(column)
 
-func place_cell(x : int, y : int):
-	var cell = CELL.instantiate()
-	cell.position.x = (x * cell.scale.x * 7) + (5 * y * cell.scale.x)
-	cell.position.y = y * cell.scale.y * 5
-	grid[x][y] = cell
-	add_child(cell)
-
-func _ready() -> void:
 	for x in range(grid_size):
 		for y in range(grid_size):
 			place_cell(x,y)
@@ -34,10 +70,9 @@ func _ready() -> void:
 
 
 func _coords_at(world_pos : Vector2) -> Vector2i:
-	var cell_scale : Vector2 = grid[0][0].scale
-	var pos : Vector2 = to_local(world_pos) - grid[0][0].offset * cell_scale
-	var y := roundi(pos.y / (cell_scale.y * 5))
-	var x := roundi((pos.x - 5 * y * cell_scale.x) / (cell_scale.x * 7))
+	var pos : Vector2 = to_local(world_pos) - _cell_offset * _cell_scale
+	var y := roundi(pos.y / (_cell_scale.y * 5))
+	var x := roundi((pos.x - 5 * y * _cell_scale.x) / (_cell_scale.x * 7))
 	return Vector2i(x, y)
 
 func cell_at(world_pos : Vector2):
@@ -53,14 +88,14 @@ func free_cells_at(world_pos : Vector2, width := 1) -> Array:
 	var cells : Array = []
 	for i in range(width):
 		var cell = grid[coords.x + i][coords.y]
-		if cell.resource != null:
+		if cell == null or cell.resource != null:
 			return []
 		cells.append(cell)
 	return cells
 
 func place_resource(x, y):
 	var cell = grid[x][y]
-	if cell.resource != null:
+	if cell == null or cell.resource != null:
 		return
 	if(randf() < 0.01):
 		var tree = TREE.instantiate()
@@ -79,7 +114,7 @@ func place_resource(x, y):
 	if x == grid_size-1:
 		return
 	var next_cell = grid[x+1][y]
-	if next_cell.resource != null:
+	if next_cell == null or next_cell.resource != null:
 		return
 	if(randf() < 0.03):
 		var big_tree = BIG_TREE.instantiate()

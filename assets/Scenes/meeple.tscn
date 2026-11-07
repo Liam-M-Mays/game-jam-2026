@@ -1,11 +1,40 @@
 [gd_scene format=3 uid="uid://bsc4cgo2yjjdw"]
 
+[ext_resource type="Texture2D" uid="uid://bmse7b3nrfyty" path="res://assets/Res/meep-shirt.tres" id="1_eo76i"]
 [ext_resource type="Texture2D" uid="uid://dndh48dkfcegh" path="res://assets/Art/Characters/meeple.png" id="1_j6jbn"]
 [ext_resource type="Script" uid="uid://c811ahcbsw83d" path="res://assets/Scripts/Meeple/meeple_movement.gd" id="2_mkppr"]
+[ext_resource type="Texture2D" uid="uid://dgdpk1f74a04t" path="res://ART/Meeple_holding_shizz.png" id="4_ncrj6"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_31jhb"]
+atlas = ExtResource("1_j6jbn")
+region = Rect2(0, 0, 3, 2)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_up5lj"]
+atlas = ExtResource("4_ncrj6")
+region = Rect2(1, 4, 3, 2)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_nafr4"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_31jhb")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_up5lj")
+}],
+"loop": 0,
+"name": &"default",
+"speed": 5.0
+}]
 
 [node name="Meeple" type="Sprite2D" unique_id=381946220]
-modulate = Color(0.7810842, 0.5307287, 0.510701, 1)
+self_modulate = Color(0.88235295, 0, 0, 1)
 z_index = 2
 scale = Vector2(10, 10)
-texture = ExtResource("1_j6jbn")
+texture = ExtResource("1_eo76i")
 script = ExtResource("2_mkppr")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=1950144136]
+self_modulate = Color(1, 1, 0.6745098, 1)
+position = Vector2(0, -1.9999999)
+sprite_frames = SubResource("SpriteFrames_nafr4")

@@ -1,0 +1,18 @@
+extends "res://assets/Scripts/Cam/camera_controls.gd"
+
+@export var wide_position := Vector2(47, -86)
+
+func _ready() -> void:
+	zoom = Vector2(min_zoom, min_zoom)
+	global_position = wide_position
+	_keep_inside_wide_view()
+
+func _process(delta: float) -> void:
+	super(delta)
+	_keep_inside_wide_view()
+
+func _keep_inside_wide_view() -> void:
+	var slack := get_viewport_rect().size * 0.5 * (1.0 / min_zoom - 1.0 / zoom.x)
+	var clamped := global_position.clamp(wide_position - slack, wide_position + slack)
+	top_level = is_equal_approx(zoom.x, min_zoom)
+	global_position = clamped

@@ -6,7 +6,7 @@ extends Area2D
 var _lit : Array[Cell] = []
 
 func _process(_delta: float) -> void:
-	position = get_global_mouse_position()
+	global_position = get_global_mouse_position()
 	for cell in _lit:
 		cell.set_trans(0)
 	_lit.clear()

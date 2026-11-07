@@ -2,6 +2,7 @@ extends Job
 class_name MineJob
 
 var res : resource
+var cancelled := false
 var _timer := 0.0
 
 func _init(target_res : resource) -> void:
@@ -11,6 +12,9 @@ func start(worker : Meeple) -> void:
 	worker.move_to(res.global_position)
 
 func update(worker : Meeple, delta : float) -> bool:
+	if cancelled:
+		worker.move_to(worker.global_position)
+		return true
 	if not worker.has_arrived():
 		return false
 	_timer += delta
