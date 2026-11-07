@@ -1,0 +1,9 @@
+[gd_scene format=3 uid="uid://bq8msd5k43k42"]
+
+[ext_resource type="Texture2D" uid="uid://y5jfdu2a276h" path="res://assets/Res/big-tree.tres" id="1_u20gi"]
+
+[node name="BigTree" type="Sprite2D" unique_id=1800998]
+z_index = 1
+scale = Vector2(10, 10)
+texture = ExtResource("1_u20gi")
+offset = Vector2(3, -5)

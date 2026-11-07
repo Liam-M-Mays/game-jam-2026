@@ -1,16 +1,17 @@
 [gd_scene format=3 uid="uid://nio2jfwnktds"]
 
-[ext_resource type="Texture2D" uid="uid://vlhj52cfknay" path="res://ART/Grid_outline.png" id="1_yh0nt"]
-[ext_resource type="Script" uid="uid://c1c1xomxee3d" path="res://assets/Scripts/cell.gd" id="2_gwrgs"]
+[ext_resource type="Texture2D" uid="uid://vlhj52cfknay" path="res://ART/Grid_outline.png" id="1_7104g"]
+[ext_resource type="Script" uid="uid://c1c1xomxee3d" path="res://assets/Scripts/cell.gd" id="2_qpajr"]
 
 [node name="Cell" type="Sprite2D" unique_id=1533628368]
 modulate = Color(0.2627451, 0.2627451, 0.2627451, 0)
 scale = Vector2(10, 10)
-texture = ExtResource("1_yh0nt")
-script = ExtResource("2_gwrgs")
+texture = ExtResource("1_7104g")
+script = ExtResource("2_qpajr")
 
 [node name="Area2D" type="Area2D" parent="." unique_id=2094971988]
 
 [node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Area2D" unique_id=1528631332]
-build_mode = 1
 polygon = PackedVector2Array(4.3999996, 1.9999999, 4.4999995, 1.0999999, 1.3999999, -1.9999999, -4.3999996, -1.9999999, -4.3999996, -1.0999999, -1.3, 1.9999999)
+
+[connection signal="input_event" from="Area2D" to="." method="_on_area_2d_input_event"]

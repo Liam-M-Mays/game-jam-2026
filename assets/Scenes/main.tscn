@@ -22,9 +22,11 @@ texture = ExtResource("2_w34p4")
 script = ExtResource("3_xomjc")
 
 [node name="Grid" type="Node2D" parent="." unique_id=1314470228]
+y_sort_enabled = true
 script = ExtResource("4_naort")
 
 [node name="Mouse" type="Area2D" parent="." unique_id=1782876279]
+input_pickable = false
 script = ExtResource("5_ci4bg")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Mouse" unique_id=1292404197]
