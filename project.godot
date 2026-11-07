@@ -13,7 +13,7 @@ config_version=5
 config/name="2026-uncc-gamejam"
 run/main_scene="uid://0522u2xktags"
 config/features=PackedStringArray("4.7", "GL Compatibility")
-config/icon="res://icon.svg"
+config/icon="res://assets/Res/icon.svg"
 
 [display]
 
@@ -28,6 +28,8 @@ window/stretch/aspect="expand"
 
 [rendering]
 
+textures/canvas_textures/default_texture_filter=0
 rendering_device/driver.windows="d3d12"
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
+environment/defaults/default_clear_color=Color(0.29481664, 0.6027866, 0.294562, 1)

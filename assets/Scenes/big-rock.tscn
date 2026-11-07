@@ -1,0 +1,9 @@
+[gd_scene format=3 uid="uid://bs6xoi7v5b3bc"]
+
+[ext_resource type="Texture2D" uid="uid://cqlrqu5137jla" path="res://assets/Res/big-rock.tres" id="1_vg1nq"]
+
+[node name="BigRock" type="Sprite2D" unique_id=1800998]
+z_index = 1
+scale = Vector2(10, 10)
+texture = ExtResource("1_vg1nq")
+offset = Vector2(2, -3)
