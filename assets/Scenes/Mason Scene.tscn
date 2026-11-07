@@ -1,13 +1,13 @@
 [gd_scene format=3 uid="uid://mkpcpjxl5gdq"]
 
 [ext_resource type="Script" uid="uid://bx2tyffx4x7lt" path="res://assets/Scripts/Giant/Giant_step.gd" id="1_js8kw"]
-[ext_resource type="Texture2D" uid="uid://ddh8slhh8qd5y" path="res://ART/Big_back_diddy_face.png" id="2_0fbrb"]
+[ext_resource type="Texture2D" uid="uid://ddh8slhh8qd5y" path="res://assets/Art/Characters/Big_back_diddy_face.png" id="2_0fbrb"]
 [ext_resource type="Script" uid="uid://cf3xigdf30bxf" path="res://assets/Scripts/Giant/Giant_head_step.gd" id="3_0fbrb"]
-[ext_resource type="Texture2D" uid="uid://da8ldifciodhe" path="res://ART/Big_back_diddy_torso.png" id="3_1g62p"]
-[ext_resource type="Texture2D" uid="uid://cqui0s7tsra0a" path="res://ART/Big_back_diddy_eyes.png" id="4_l6aql"]
-[ext_resource type="Texture2D" uid="uid://dqt5vqxk0sdc6" path="res://ART/Big_back_diddy_arm_foreground.png" id="4_w7cay"]
+[ext_resource type="Texture2D" uid="uid://da8ldifciodhe" path="res://assets/Art/Characters/Big_back_diddy_torso.png" id="3_1g62p"]
+[ext_resource type="Texture2D" uid="uid://cqui0s7tsra0a" path="res://assets/Art/Characters/Big_back_diddy_eyes.png" id="4_l6aql"]
+[ext_resource type="Texture2D" uid="uid://dqt5vqxk0sdc6" path="res://assets/Art/Characters/Big_back_diddy_arm_foreground.png" id="4_w7cay"]
 [ext_resource type="Script" uid="uid://b5fecyvq8x7ho" path="res://assets/Scripts/Giant/Blink.gd" id="5_8ptjo"]
-[ext_resource type="Texture2D" uid="uid://jmnrxvgesex7" path="res://ART/Big_back_diddy_arm_background.png" id="5_l6aql"]
+[ext_resource type="Texture2D" uid="uid://jmnrxvgesex7" path="res://assets/Art/Characters/Big_back_diddy_arm_background.png" id="5_l6aql"]
 [ext_resource type="Script" uid="uid://bt17lojvcngtr" path="res://assets/Scripts/Giant/Giant_arm_right_step.gd" id="6_w7cay"]
 [ext_resource type="Script" uid="uid://dh1q7oir02v0t" path="res://assets/Scripts/Giant/Giant_arm_left_step.gd" id="7_1g62p"]
 
