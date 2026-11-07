@@ -1,20 +1,26 @@
 [gd_scene format=3 uid="uid://c33bf3v6kerkq"]
 
-[ext_resource type="Script" uid="uid://cy6jj62vfqjhg" path="res://assets/Scripts/Giant/walk.gd" id="1_l505p"]
-[ext_resource type="Script" uid="uid://bx2tyffx4x7lt" path="res://assets/Scripts/Giant/Giant_step.gd" id="2_mvvod"]
-[ext_resource type="Texture2D" uid="uid://ddh8slhh8qd5y" path="res://assets/Art/Characters/Big_back_diddy_face.png" id="3_yr3fd"]
-[ext_resource type="Texture2D" uid="uid://cqui0s7tsra0a" path="res://assets/Art/Characters/Big_back_diddy_eyes.png" id="5_wwevk"]
-[ext_resource type="Script" uid="uid://b5fecyvq8x7ho" path="res://assets/Scripts/Giant/Blink.gd" id="6_xh8nc"]
-[ext_resource type="Texture2D" uid="uid://da8ldifciodhe" path="res://assets/Art/Characters/Big_back_diddy_torso.png" id="7_q6jox"]
-[ext_resource type="Texture2D" uid="uid://cf5wt1v7gvafk" path="res://ART/green.tres" id="8_3ivc0"]
-[ext_resource type="Texture2D" uid="uid://dqt5vqxk0sdc6" path="res://assets/Art/Characters/Big_back_diddy_arm_foreground.png" id="9_m14n0"]
-[ext_resource type="Texture2D" uid="uid://jmnrxvgesex7" path="res://assets/Art/Characters/Big_back_diddy_arm_background.png" id="11_fnsm0"]
-[ext_resource type="Script" uid="uid://dh1q7oir02v0t" path="res://assets/Scripts/Giant/Giant_arm_step.gd" id="12_wlmmt"]
-[ext_resource type="Texture2D" uid="uid://4fiwuumegt1s" path="res://ART/sky_sprites_trees2.tres" id="13_1g4v3"]
-[ext_resource type="Texture2D" uid="uid://x200khdp0ig0" path="res://ART/sky_sprites_trees1.tres" id="14_wno5s"]
-[ext_resource type="Texture2D" uid="uid://bmpxugd4jadpy" path="res://ART/sky_sprites_mountains2.tres" id="15_wjhe1"]
-[ext_resource type="Texture2D" uid="uid://b1rkpw2ub3gk0" path="res://ART/sky_sprites_mountains1.tres" id="16_drk5t"]
-[ext_resource type="Texture2D" uid="uid://mwo2krs3ioat" path="res://ART/sky_sprites_sky.tres" id="17_hk2ck"]
+[ext_resource type="Script" uid="uid://cy6jj62vfqjhg" path="res://assets/Scripts/Giant/walk.gd" id="1_8qyee"]
+[ext_resource type="PackedScene" uid="uid://djvh1y4i7yuyv" path="res://assets/hud.tscn" id="1_gr521"]
+[ext_resource type="Script" uid="uid://bx2tyffx4x7lt" path="res://assets/Scripts/Giant/Giant_step.gd" id="2_gr521"]
+[ext_resource type="Texture2D" uid="uid://ddh8slhh8qd5y" path="res://assets/Art/Characters/Big_back_diddy_face.png" id="3_mlnhj"]
+[ext_resource type="Texture2D" uid="uid://cqui0s7tsra0a" path="res://assets/Art/Characters/Big_back_diddy_eyes.png" id="5_kjjxb"]
+[ext_resource type="Script" uid="uid://b5fecyvq8x7ho" path="res://assets/Scripts/Giant/Blink.gd" id="6_vvipe"]
+[ext_resource type="Texture2D" uid="uid://da8ldifciodhe" path="res://assets/Art/Characters/Big_back_diddy_torso.png" id="7_7nwbc"]
+[ext_resource type="Texture2D" uid="uid://cf5wt1v7gvafk" path="res://ART/green.tres" id="8_hwq1a"]
+[ext_resource type="Script" uid="uid://dsqse147e1lpv" path="res://assets/Scripts/Cam/giant_camera.gd" id="9_lwgp0"]
+[ext_resource type="PackedScene" uid="uid://mcu65uoclrgs" path="res://assets/Scenes/grid.tscn" id="11_ag32q"]
+[ext_resource type="Script" uid="uid://d13jmgqp0eyq8" path="res://assets/Scripts/Cam/mouse.gd" id="12_bcifo"]
+[ext_resource type="Script" uid="uid://clnxifq5klc7h" path="res://assets/Scripts/Buildings/build_system.gd" id="13_4n7fk"]
+[ext_resource type="Texture2D" uid="uid://dqt5vqxk0sdc6" path="res://assets/Art/Characters/Big_back_diddy_arm_foreground.png" id="14_y40hb"]
+[ext_resource type="Texture2D" uid="uid://jmnrxvgesex7" path="res://assets/Art/Characters/Big_back_diddy_arm_background.png" id="16_uqmcd"]
+[ext_resource type="Script" uid="uid://dh1q7oir02v0t" path="res://assets/Scripts/Giant/Giant_arm_step.gd" id="17_ep8p1"]
+[ext_resource type="Texture2D" uid="uid://4fiwuumegt1s" path="res://ART/sky_sprites_trees2.tres" id="18_1r1o6"]
+[ext_resource type="Texture2D" uid="uid://x200khdp0ig0" path="res://ART/sky_sprites_trees1.tres" id="19_sa3ad"]
+[ext_resource type="Texture2D" uid="uid://bmpxugd4jadpy" path="res://ART/sky_sprites_mountains2.tres" id="20_tws2s"]
+[ext_resource type="Texture2D" uid="uid://b1rkpw2ub3gk0" path="res://ART/sky_sprites_mountains1.tres" id="21_1saw6"]
+[ext_resource type="Texture2D" uid="uid://mwo2krs3ioat" path="res://ART/sky_sprites_sky.tres" id="22_qs6sv"]
+[ext_resource type="Script" uid="uid://durnxou7gvbj0" path="res://assets/Scripts/UI/resource_ui.gd" id="23_28bkr"]
 
 [sub_resource type="Gradient" id="Gradient_8ptjo"]
 
@@ -24,20 +30,25 @@ width = 1
 height = 1
 fill_to = Vector2(0, 0)
 
-[node name="MasonScene" type="Node2D" unique_id=773093084]
+[sub_resource type="CircleShape2D" id="CircleShape2D_g0qf3"]
+radius = 200.0
+
+[node name="Brady_scene" type="Node2D" unique_id=773093084]
+
+[node name="HUD" parent="." unique_id=1588467611 instance=ExtResource("1_gr521")]
 
 [node name="Node2D2" type="Node2D" parent="." unique_id=890392512]
-script = ExtResource("1_l505p")
+script = ExtResource("1_8qyee")
 
 [node name="Node2D" type="Node2D" parent="Node2D2" unique_id=749299205]
 z_index = 15
-script = ExtResource("2_mvvod")
+script = ExtResource("2_gr521")
 start_delay = 0.2
 
 [node name="Head" type="Sprite2D" parent="Node2D2/Node2D" unique_id=1563107845]
 position = Vector2(-88, 30)
-texture = ExtResource("3_yr3fd")
-script = ExtResource("2_mvvod")
+texture = ExtResource("3_mlnhj")
+script = ExtResource("2_gr521")
 step_height = 3.0
 sway = 6.0
 start_delay = 0.25
@@ -47,55 +58,81 @@ z_index = -2
 position = Vector2(-3.9999962, 5.000002)
 scale = Vector2(174, 74)
 texture = SubResource("GradientTexture2D_cauxy")
-script = ExtResource("2_mvvod")
+script = ExtResource("2_gr521")
 start_delay = 0.2
 step_height = 0.1
 
 [node name="Left Eye" type="Sprite2D" parent="Node2D2/Node2D/Head/EyeBlack" unique_id=2085841384]
 position = Vector2(-0.37356323, -0.17567566)
 scale = Vector2(0.0057471264, 0.013513513)
-texture = ExtResource("5_wwevk")
-script = ExtResource("6_xh8nc")
+texture = ExtResource("5_kjjxb")
+script = ExtResource("6_vvipe")
 
 [node name="Right Eye" type="Sprite2D" parent="Node2D2/Node2D/Head/EyeBlack" unique_id=1794027720]
 position = Vector2(0.1954023, -0.040540546)
 scale = Vector2(0.0057471264, 0.013513513)
-texture = ExtResource("5_wwevk")
-script = ExtResource("6_xh8nc")
+texture = ExtResource("5_kjjxb")
+script = ExtResource("6_vvipe")
 
 [node name="Torso" type="Sprite2D" parent="Node2D2/Node2D" unique_id=713009821]
 z_index = -3
 position = Vector2(225, -58)
-texture = ExtResource("7_q6jox")
+texture = ExtResource("7_7nwbc")
 
 [node name="Yard" type="Sprite2D" parent="Node2D2/Node2D/Torso" unique_id=1897193016]
 z_index = -5
 position = Vector2(-1, -152)
 scale = Vector2(150, 70)
-texture = ExtResource("8_3ivc0")
+texture = ExtResource("8_hwq1a")
 
 [node name="Yard" type="Sprite2D" parent="Node2D2/Node2D/Torso/Yard" unique_id=941309571]
 z_index = -5
 position = Vector2(-0.1, -0.6571429)
 scale = Vector2(0.7, 1)
-texture = ExtResource("8_3ivc0")
+texture = ExtResource("8_hwq1a")
+
+[node name="Camera2D" type="Camera2D" parent="Node2D2/Node2D/Torso" unique_id=302911146]
+position = Vector2(-178, -28)
+zoom = Vector2(1.6, 1.6)
+script = ExtResource("9_lwgp0")
+min_zoom = 1.6
+max_zoom = 20.0
+
+[node name="Back" type="Node2D" parent="Node2D2/Node2D/Torso" unique_id=1048576020]
+position = Vector2(-110, -217)
+scale = Vector2(0.1, 0.1)
+
+[node name="Grid" parent="Node2D2/Node2D/Torso/Back" unique_id=1279537889 node_paths=PackedStringArray("ground_sprites", "ground_cover") instance=ExtResource("11_ag32q")]
+position = Vector2(-3980, -1150)
+grid_size = 110
+ground_sprites = [NodePath("../../Yard"), NodePath("../../Yard/Yard")]
+ground_cover = NodePath("../..")
+
+[node name="Mouse" type="Area2D" parent="Node2D2/Node2D/Torso/Back" unique_id=1782876279]
+input_pickable = false
+script = ExtResource("12_bcifo")
+enabled = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Node2D2/Node2D/Torso/Back/Mouse" unique_id=1292404197]
+shape = SubResource("CircleShape2D_g0qf3")
+
+[node name="BuildSystem" type="Node2D" parent="Node2D2/Node2D/Torso/Back" unique_id=783348263 node_paths=PackedStringArray("grid", "cursor")]
+script = ExtResource("13_4n7fk")
+grid = NodePath("../Grid")
+cursor = NodePath("../Mouse")
 
 [node name="Arm Foreground" type="Sprite2D" parent="Node2D2" unique_id=575907648]
 z_index = 12
 position = Vector2(312, 154)
-texture = ExtResource("9_m14n0")
-script = ExtResource("12_wlmmt")
+texture = ExtResource("14_y40hb")
+script = ExtResource("17_ep8p1")
 starts_shifted = true
 
 [node name="Arm Background" type="Sprite2D" parent="Node2D2" unique_id=883886422]
 z_index = 6
 position = Vector2(-78, 28)
-texture = ExtResource("11_fnsm0")
-script = ExtResource("12_wlmmt")
-
-[node name="Camera2D" type="Camera2D" parent="." unique_id=302911146]
-position = Vector2(47, -86)
-zoom = Vector2(1.6, 1.6)
+texture = ExtResource("16_uqmcd")
+script = ExtResource("17_ep8p1")
 
 [node name="Trees1" type="Parallax2D" parent="." unique_id=814784282]
 scroll_scale = Vector2(1.18, 1.18)
@@ -107,7 +144,7 @@ repeat_times = 4
 [node name="Sprite2D" type="Sprite2D" parent="Trees1" unique_id=1565589403]
 z_index = 5
 position = Vector2(0, 96)
-texture = ExtResource("13_1g4v3")
+texture = ExtResource("18_1r1o6")
 
 [node name="Trees2" type="Parallax2D" parent="." unique_id=2068827498]
 scroll_scale = Vector2(1.18, 1.18)
@@ -119,7 +156,7 @@ repeat_times = 4
 [node name="Sprite2D" type="Sprite2D" parent="Trees2" unique_id=553807855]
 z_index = 4
 position = Vector2(0, 75)
-texture = ExtResource("14_wno5s")
+texture = ExtResource("19_sa3ad")
 
 [node name="Mountains1" type="Parallax2D" parent="." unique_id=682149022]
 scroll_scale = Vector2(1.18, 1.18)
@@ -130,7 +167,7 @@ repeat_times = 4
 [node name="Sprite2D" type="Sprite2D" parent="Mountains1" unique_id=138066238]
 z_index = 3
 position = Vector2(0, -119)
-texture = ExtResource("15_wjhe1")
+texture = ExtResource("20_tws2s")
 
 [node name="Mountains2" type="Parallax2D" parent="." unique_id=93932752]
 scroll_scale = Vector2(1.18, 1.18)
@@ -141,7 +178,7 @@ repeat_times = 4
 [node name="Sprite2D" type="Sprite2D" parent="Mountains2" unique_id=2093709016]
 z_index = 2
 position = Vector2(0, -98)
-texture = ExtResource("16_drk5t")
+texture = ExtResource("21_1saw6")
 
 [node name="Sky" type="Parallax2D" parent="." unique_id=222625834]
 scroll_scale = Vector2(1.18, 1.18)
@@ -151,4 +188,37 @@ autoscroll = Vector2(1, 0)
 repeat_times = 4
 
 [node name="Sprite2D" type="Sprite2D" parent="Sky" unique_id=699937425]
-texture = ExtResource("17_hk2ck")
+texture = ExtResource("22_qs6sv")
+
+[node name="UI" type="CanvasLayer" parent="." unique_id=1048576011]
+script = ExtResource("23_28bkr")
+
+[node name="WoodLabel" type="Label" parent="UI" unique_id=1048576012]
+offset_left = 20.0
+offset_top = 20.0
+theme_override_font_sizes/font_size = 32
+text = "Wood: 0"
+
+[node name="StoneLabel" type="Label" parent="UI" unique_id=1048576013]
+offset_left = 20.0
+offset_top = 70.0
+theme_override_font_sizes/font_size = 32
+text = "Stone: 0"
+
+[node name="FoodLabel" type="Label" parent="UI" unique_id=1048576014]
+offset_left = 20.0
+offset_top = 120.0
+theme_override_font_sizes/font_size = 32
+text = "Food: 0"
+
+[node name="MeepleLabel" type="Label" parent="UI" unique_id=1048576015]
+offset_left = 20.0
+offset_top = 170.0
+theme_override_font_sizes/font_size = 32
+text = "Meeples: 0"
+
+[node name="JobLabel" type="Label" parent="UI" unique_id=1048576016]
+offset_left = 20.0
+offset_top = 220.0
+theme_override_font_sizes/font_size = 32
+text = "Jobs: 0 / 0"
