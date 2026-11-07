@@ -4,7 +4,7 @@
 [ext_resource type="Script" uid="uid://c1c1xomxee3d" path="res://cell.gd" id="2_gwrgs"]
 
 [node name="Cell" type="Sprite2D" unique_id=1533628368]
-modulate = Color(0.2611127, 0.2611126, 0.2611126, 1)
+modulate = Color(0.2627451, 0.2627451, 0.2627451, 0)
 scale = Vector2(10, 10)
 texture = ExtResource("1_yh0nt")
 script = ExtResource("2_gwrgs")
