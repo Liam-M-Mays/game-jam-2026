@@ -1,0 +1,31 @@
+[gd_scene format=3 uid="uid://0522u2xktags"]
+
+[ext_resource type="Script" uid="uid://cmwljon6ih0lq" path="res://assets/Scripts/Cam/camera_controls.gd" id="1_w34p4"]
+[ext_resource type="Texture2D" uid="uid://cka4x2817n2ys" path="res://assets/Res/icon.svg" id="2_w34p4"]
+[ext_resource type="Script" uid="uid://c811ahcbsw83d" path="res://assets/Scripts/Meeple/meeple_movement.gd" id="3_xomjc"]
+[ext_resource type="Script" uid="uid://cjfutepuhws5j" path="res://assets/Scripts/Env/grid.gd" id="4_naort"]
+[ext_resource type="Script" uid="uid://d13jmgqp0eyq8" path="res://assets/Scripts/Cam/mouse.gd" id="5_ci4bg"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_g0qf3"]
+radius = 250.0
+
+[node name="Main" type="Node2D" unique_id=2023279790]
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=633916495]
+script = ExtResource("1_w34p4")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=2014181174]
+z_index = 2
+position = Vector2(609, 404)
+scale = Vector2(0.5, 1)
+texture = ExtResource("2_w34p4")
+script = ExtResource("3_xomjc")
+
+[node name="Grid" type="Node2D" parent="." unique_id=1314470228]
+script = ExtResource("4_naort")
+
+[node name="Mouse" type="Area2D" parent="." unique_id=1782876279]
+script = ExtResource("5_ci4bg")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Mouse" unique_id=1292404197]
+shape = SubResource("CircleShape2D_g0qf3")

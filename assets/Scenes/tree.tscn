@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://cciqa8ee7m64y"]
 
-[ext_resource type="Texture2D" uid="uid://bi6uuppyldmbr" path="res://assets/trees.tres" id="1_brfkd"]
+[ext_resource type="Texture2D" uid="uid://bi6uuppyldmbr" path="res://assets/Res/trees.tres" id="1_brfkd"]
 
 [node name="Tree" type="Sprite2D" unique_id=1800998]
 z_index = 1

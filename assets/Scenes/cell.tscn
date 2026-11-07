@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://nio2jfwnktds"]
 
 [ext_resource type="Texture2D" uid="uid://vlhj52cfknay" path="res://ART/Grid_outline.png" id="1_yh0nt"]
-[ext_resource type="Script" uid="uid://c1c1xomxee3d" path="res://cell.gd" id="2_gwrgs"]
+[ext_resource type="Script" uid="uid://c1c1xomxee3d" path="res://assets/Scripts/cell.gd" id="2_gwrgs"]
 
 [node name="Cell" type="Sprite2D" unique_id=1533628368]
 modulate = Color(0.2627451, 0.2627451, 0.2627451, 0)
