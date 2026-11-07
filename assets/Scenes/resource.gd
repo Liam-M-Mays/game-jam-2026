@@ -1,9 +1,17 @@
 extends Sprite2D
 class_name resource
 
+const WOBBLE_DURATION := 0.25
+
 @export var area : Area2D
+@export var wobble_interval := 0.6
+@export var wobbles_to_break := 4
+@export var wobble_angle := 8.0
 
 var cells : Array = []
+
+var _wobbles := 0
+var _mine_queued := false
 
 func _ready() -> void:
 	area.input_event.connect(_on_area_input_event)
@@ -27,10 +35,10 @@ func _on_area_input_event(_viewport: Viewport, event: InputEvent, _shape_idx: in
 		_on_mouse_motion(event)
 
 func _on_left_click() -> void:
-	var jobb = MineJob
-	jobb.res = self
-	JobSystem.jobs.push_back(jobb)
-	pass
+	if _mine_queued:
+		return
+	_mine_queued = true
+	JobSystem.add_mine_job(self)
 
 func _on_left_release() -> void:
 	pass
@@ -54,6 +62,21 @@ func _on_mouse_exited() -> void:
 	for cell in cells:
 		cell.set_trans(0)
 		
-func mine():
-	print("mined me")
+# One mining hit. Returns true on the hit that breaks this resource.
+func mine() -> bool:
+	_wobbles += 1
+	var tween = create_tween()
+	var step = WOBBLE_DURATION / 4
+	tween.tween_property(self, "rotation_degrees", wobble_angle, step)
+	tween.tween_property(self, "rotation_degrees", -wobble_angle, step * 2)
+	tween.tween_property(self, "rotation_degrees", 0.0, step)
+	if _wobbles < wobbles_to_break:
+		return false
+	tween.tween_callback(_break)
+	return true
+
+func _break() -> void:
+	for cell in cells:
+		cell.resource = null
+		cell.set_trans(0)
 	queue_free()

@@ -18,8 +18,6 @@ config/icon="res://assets/Res/icon.svg"
 [autoload]
 
 JobSystem="*uid://dhxeaalsqdoin"
-Job="*uid://ba57krxljnrhm"
-MineJob="*uid://bvnps3o4ax5xn"
 
 [display]
 

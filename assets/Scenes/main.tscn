@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://0522u2xktags"]
 
 [ext_resource type="Script" uid="uid://cmwljon6ih0lq" path="res://assets/Scripts/Cam/camera_controls.gd" id="1_w34p4"]
-[ext_resource type="Texture2D" uid="uid://cka4x2817n2ys" path="res://assets/Res/icon.svg" id="2_w34p4"]
+[ext_resource type="Texture2D" uid="uid://dndh48dkfcegh" path="res://ART/meeple.png" id="2_rbwhl"]
 [ext_resource type="Script" uid="uid://c811ahcbsw83d" path="res://assets/Scripts/Meeple/meeple_movement.gd" id="3_xomjc"]
 [ext_resource type="Script" uid="uid://cjfutepuhws5j" path="res://assets/Scripts/Env/grid.gd" id="4_naort"]
 [ext_resource type="Script" uid="uid://d13jmgqp0eyq8" path="res://assets/Scripts/Cam/mouse.gd" id="5_ci4bg"]
@@ -15,11 +15,12 @@ radius = 200.0
 [node name="Camera2D" type="Camera2D" parent="." unique_id=633916495]
 script = ExtResource("1_w34p4")
 
-[node name="Sprite2D" type="Sprite2D" parent="." unique_id=2014181174]
+[node name="Meeple" type="Sprite2D" parent="." unique_id=2014181174]
+modulate = Color(0.7810842, 0.5307287, 0.510701, 1)
 z_index = 2
 position = Vector2(609, 404)
-scale = Vector2(0.5, 1)
-texture = ExtResource("2_w34p4")
+scale = Vector2(10, 10)
+texture = ExtResource("2_rbwhl")
 script = ExtResource("3_xomjc")
 
 [node name="Grid" type="Node2D" parent="." unique_id=1314470228]
@@ -37,17 +38,3 @@ shape = SubResource("CircleShape2D_g0qf3")
 
 [node name="JobSystem" type="Node2D" parent="." unique_id=2146036250]
 script = ExtResource("6_rbwhl")
-
-[node name="Sprite2D2" type="Sprite2D" parent="." unique_id=998379544]
-z_index = 2
-position = Vector2(609, 404)
-scale = Vector2(0.5, 1)
-texture = ExtResource("2_w34p4")
-script = ExtResource("3_xomjc")
-
-[node name="Sprite2D3" type="Sprite2D" parent="." unique_id=1900895146]
-z_index = 2
-position = Vector2(609, 404)
-scale = Vector2(0.5, 1)
-texture = ExtResource("2_w34p4")
-script = ExtResource("3_xomjc")
