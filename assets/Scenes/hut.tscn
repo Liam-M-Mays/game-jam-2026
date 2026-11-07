@@ -1,0 +1,23 @@
+[gd_scene format=3 uid="uid://bt5hv44t3eoan"]
+
+[ext_resource type="Texture2D" uid="uid://xker2pqyhae8" path="res://assets/Res/hut.tres" id="1_d170y"]
+[ext_resource type="Script" uid="uid://dmfxbb6f2f1x3" path="res://assets/Scenes/building.gd" id="2_4fb0l"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_nafr4"]
+size = Vector2(11.000001, 9.000001)
+
+[node name="Hut" type="Sprite2D" unique_id=1800998 node_paths=PackedStringArray("area")]
+z_index = 1
+scale = Vector2(10, 10)
+texture = ExtResource("1_d170y")
+offset = Vector2(4, -4)
+script = ExtResource("2_4fb0l")
+width = 2
+area = NodePath("Area2D")
+
+[node name="Area2D" type="Area2D" parent="." unique_id=1452940078]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=1837862430]
+position = Vector2(3.5000002, -3.5)
+scale = Vector2(0.99999976, 0.99999976)
+shape = SubResource("RectangleShape2D_nafr4")

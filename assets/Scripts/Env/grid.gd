@@ -33,6 +33,31 @@ func _ready() -> void:
 			place_resource(x,y)
 
 
+func _coords_at(world_pos : Vector2) -> Vector2i:
+	var cell_scale : Vector2 = grid[0][0].scale
+	var pos : Vector2 = to_local(world_pos) - grid[0][0].offset * cell_scale
+	var y := roundi(pos.y / (cell_scale.y * 5))
+	var x := roundi((pos.x - 5 * y * cell_scale.x) / (cell_scale.x * 7))
+	return Vector2i(x, y)
+
+func cell_at(world_pos : Vector2):
+	var coords := _coords_at(world_pos)
+	if coords.y < 0 or coords.y >= grid_size or coords.x < 0 or coords.x >= grid_size:
+		return null
+	return grid[coords.x][coords.y]
+
+func free_cells_at(world_pos : Vector2, width := 1) -> Array:
+	var coords := _coords_at(world_pos)
+	if coords.y < 0 or coords.y >= grid_size or coords.x < 0 or coords.x + width > grid_size:
+		return []
+	var cells : Array = []
+	for i in range(width):
+		var cell = grid[coords.x + i][coords.y]
+		if cell.resource != null:
+			return []
+		cells.append(cell)
+	return cells
+
 func place_resource(x, y):
 	var cell = grid[x][y]
 	if cell.resource != null:
@@ -41,12 +66,14 @@ func place_resource(x, y):
 		var tree = TREE.instantiate()
 		tree.position = cell.position
 		cell.resource = tree
+		tree.cells.append(cell)
 		add_child(tree)
 		return
 	if(randf() < 0.02):
 		var rock = ROCK.instantiate()
 		rock.position = cell.position
 		cell.resource = rock
+		rock.cells.append(cell)
 		add_child(rock)
 		return
 	if x == grid_size-1:
@@ -59,11 +86,15 @@ func place_resource(x, y):
 		big_tree.position = cell.position
 		cell.resource = big_tree
 		next_cell.resource = big_tree
+		big_tree.cells.append(cell)
+		big_tree.cells.append(next_cell)
 		add_child(big_tree)
 	elif(randf() < 0.04):
 		var big_rock = BIG_ROCK.instantiate()
 		big_rock.position = cell.position
 		cell.resource = big_rock
 		next_cell.resource = big_rock
+		big_rock.cells.append(cell)
+		big_rock.cells.append(next_cell)
 		add_child(big_rock)
 	
