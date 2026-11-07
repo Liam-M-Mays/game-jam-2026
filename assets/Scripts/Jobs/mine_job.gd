@@ -9,7 +9,7 @@ func _init(target_res : resource) -> void:
 	res = target_res
 
 func start(worker : Meeple) -> void:
-	worker.move_to(res.global_position)
+	worker.move_to(res.global_position, res.cells)
 
 func update(worker : Meeple, delta : float) -> bool:
 	if cancelled:

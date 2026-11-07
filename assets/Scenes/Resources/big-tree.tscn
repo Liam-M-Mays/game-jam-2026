@@ -6,6 +6,11 @@
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_nafr4"]
 size = Vector2(10.000002, 11.8)
 
+[sub_resource type="Curve" id="Curve_edge"]
+max_value = 4.0
+_data = [Vector2(0, 3), 0.0, -8.0, 0, 0, Vector2(0.3, 0.6), -2.0, -2.0, 0, 0, Vector2(1, 0.1), 0.0, 0.0, 0, 0]
+point_count = 3
+
 [node name="BigTree" type="Sprite2D" unique_id=1800998 node_paths=PackedStringArray("area")]
 z_index = 1
 scale = Vector2(10, 10)
@@ -14,6 +19,9 @@ offset = Vector2(3, -5)
 script = ExtResource("2_4sa4q")
 area = NodePath("Area2D")
 wood_yield = 2
+spawn_chance = 0.01
+footprint = 2
+edge_distance_curve = SubResource("Curve_edge")
 
 [node name="Area2D" type="Area2D" parent="." unique_id=229750980]
 

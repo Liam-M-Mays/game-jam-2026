@@ -1,0 +1,67 @@
+[gd_scene format=3 uid="uid://fdmon1owxpbq"]
+
+[ext_resource type="Texture2D" uid="uid://bo0liloh630hk" path="res://ART/George_Bush.png" id="1_xbtd3"]
+[ext_resource type="Script" uid="uid://mvikb3fyy6c8" path="res://assets/Scripts/Resources/bush.gd" id="2_bush"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wms0r"]
+atlas = ExtResource("1_xbtd3")
+region = Rect2(0, 0, 16, 10)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_s0trm"]
+atlas = ExtResource("1_xbtd3")
+region = Rect2(16, 0, 16, 10)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_e5lfy"]
+atlas = ExtResource("1_xbtd3")
+region = Rect2(32, 0, 16, 10)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_embiy"]
+atlas = ExtResource("1_xbtd3")
+region = Rect2(48, 0, 16, 10)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_8y6oj"]
+atlas = ExtResource("1_xbtd3")
+region = Rect2(64, 0, 16, 10)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_g0qf3"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wms0r")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_s0trm")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_e5lfy")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_embiy")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_8y6oj")
+}],
+"loop": 1,
+"name": &"default",
+"speed": 5.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_bush"]
+size = Vector2(16, 10)
+
+[node name="george_Bush" type="Sprite2D" unique_id=483537894 node_paths=PackedStringArray("area")]
+z_index = 1
+scale = Vector2(10, 10)
+texture = SubResource("AtlasTexture_wms0r")
+offset = Vector2(3, -1)
+script = ExtResource("2_bush")
+frames = SubResource("SpriteFrames_g0qf3")
+area = NodePath("Area2D")
+spawn_chance = 0.015
+footprint = 2
+
+[node name="Area2D" type="Area2D" parent="." unique_id=483537895]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=483537896]
+position = Vector2(3, -4)
+shape = SubResource("RectangleShape2D_bush")

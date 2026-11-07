@@ -94,6 +94,7 @@ min_zoom = 1.6
 max_zoom = 20.0
 
 [node name="Back" type="Node2D" parent="Node2D2/Node2D/Torso" unique_id=1048576020]
+y_sort_enabled = true
 position = Vector2(-110, -217)
 scale = Vector2(0.1, 0.1)
 
@@ -199,3 +200,9 @@ offset_left = 20.0
 offset_top = 70.0
 theme_override_font_sizes/font_size = 32
 text = "Stone: 0"
+
+[node name="FoodLabel" type="Label" parent="UI" unique_id=1048576014]
+offset_left = 20.0
+offset_top = 120.0
+theme_override_font_sizes/font_size = 32
+text = "Food: 0"
