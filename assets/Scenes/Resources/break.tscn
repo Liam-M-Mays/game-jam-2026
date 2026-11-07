@@ -1,0 +1,38 @@
+[gd_scene format=3 uid="uid://bhx0ofrp05p8e"]
+
+[ext_resource type="Texture2D" uid="uid://c4o45jvlqtnp3" path="res://ART/Spark_Spritesheet.png" id="1_nwgqi"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_lkeo1"]
+atlas = ExtResource("1_nwgqi")
+region = Rect2(0, 0, 13, 13)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ha7sl"]
+atlas = ExtResource("1_nwgqi")
+region = Rect2(13, 0, 13, 13)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_35irw"]
+atlas = ExtResource("1_nwgqi")
+region = Rect2(26, 0, 13, 13)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_nafr4"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_lkeo1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ha7sl")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_35irw")
+}],
+"loop": 0,
+"name": &"break",
+"speed": 16.0
+}]
+
+[node name="break" type="AnimatedSprite2D" unique_id=61793419]
+sprite_frames = SubResource("SpriteFrames_nafr4")
+animation = &"break"
+frame = 2
+frame_progress = 1.0
