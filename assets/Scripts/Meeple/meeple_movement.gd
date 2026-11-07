@@ -14,10 +14,13 @@ class_name Meeple
 const WANDER_ATTEMPTS := 8
 const HEAD_FRAMES_CARRY_ONE := { "wood": 2, "stone": 4 }
 const HEAD_OFFSET_CARRY_ONE := -0.5
+## Stand a hair below targets so y-sort draws us in front of what we're working on.
+const SORT_BIAS := Vector2(0, 3)
 
 var target : Vector2
 var job : Job
 
+var _stop_cells : Array = []
 var _wandering := false
 var _wander_home : Vector2
 var _wander_pause := 0.0
@@ -35,10 +38,15 @@ func get_random_hsv_color() -> Color:
 func _ready() -> void:
 	self_modulate = get_random_hsv_color()
 
-func move_to(pos : Vector2) -> void:
-	target = get_parent().to_local(pos)
+## Walk to pos. If stop_cells is given, stop as soon as we step onto any of them.
+func move_to(pos : Vector2, stop_cells : Array = []) -> void:
+	target = get_parent().to_local(pos) + SORT_BIAS
+	_stop_cells = stop_cells
 
 func has_arrived() -> bool:
+	if not _stop_cells.is_empty() and _grid.cell_at(get_parent().to_global(position)) in _stop_cells:
+		target = position
+		_stop_cells = []
 	return target.distance_to(position) <= 1
 
 func set_carrying(kind : String) -> void:

@@ -12,6 +12,21 @@ var stone : int:
 	get:
 		return _drops["stone"].size()
 
+## Food lives only in the inventory (no ground drops).
+var food := 0
+
+func add_food(amount : int) -> void:
+	food += amount
+	changed.emit()
+
+## Returns false (and spends nothing) if there isn't enough food.
+func spend_food(amount : int) -> bool:
+	if food < amount:
+		return false
+	food -= amount
+	changed.emit()
+	return true
+
 func register(drop : ResourceDrop) -> void:
 	_drops[drop.kind].append(drop)
 	changed.emit()

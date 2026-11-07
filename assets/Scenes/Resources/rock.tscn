@@ -15,6 +15,7 @@ script = ExtResource("2_ebimj")
 area = NodePath("Area2D")
 wobbles_to_break = 3
 stone_yield = 1
+spawn_chance = 0.02
 
 [node name="Area2D" type="Area2D" parent="." unique_id=1452940078]
 

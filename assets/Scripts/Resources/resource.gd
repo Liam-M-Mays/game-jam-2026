@@ -11,6 +11,20 @@ const WOBBLE_DURATION := 0.25
 @export var wood_yield := 0
 @export var stone_yield := 0
 
+@export_group("Spawning")
+## Base chance (0-1) of this resource spawning on any one free spot in the yard.
+@export_range(0.0, 1.0, 0.001) var spawn_chance := 0.0
+## How many cells wide this resource is (extends to the right of its anchor cell).
+@export_range(1, 4) var footprint := 1
+## Scales spawn_chance by how far the spot is from the yard's edge.
+## X axis: 0 = right on the edge, 1 = the deepest middle of the yard.
+## Y axis: multiplier on spawn_chance (raise the curve's Max Value to go above 1).
+## Leave empty to spawn evenly everywhere.
+@export var edge_distance_curve : Curve
+## Each neighbouring cell already holding this same resource adds this much to the
+## multiplier (0.5 = +50% per neighbour). Makes clumps like groves or rock piles.
+@export var cluster_bonus := 0.0
+
 const OUTLINE_SHADER := preload("res://assets/Shaders/outline.gdshader")
 const FLASH_DURATION := 0.12
 const BREAK_HOLD := 0.06
@@ -41,7 +55,11 @@ func _ready() -> void:
 	mat.shader = OUTLINE_SHADER
 	material = mat
 	# Outline/hover look is global: Project Settings > Globals > Shader Globals (select_*, hover_*).
-	mat.set_shader_parameter("region_rect", _uv_region())
+	_refresh_region()
+
+## Call after changing `texture` so the outline shader knows the new sprite bounds.
+func _refresh_region() -> void:
+	material.set_shader_parameter("region_rect", _uv_region())
 
 ## UV bounds of this sprite inside its texture (handles AtlasTexture sheets).
 func _uv_region() -> Vector4:
@@ -85,8 +103,12 @@ func _on_area_input_event(_viewport: Viewport, event: InputEvent, _shape_idx: in
 	elif event is InputEventMouseMotion:
 		_on_mouse_motion(event)
 
+## Whether this resource can be (or still be) worked. Override in subclasses.
+func _can_mine() -> bool:
+	return _wobbles < wobbles_to_break
+
 func _on_left_click() -> void:
-	if _wobbles >= wobbles_to_break:
+	if _mine_job == null and not _can_mine():
 		return
 	if _mine_job == null:
 		_mine_job = JobSystem.add_mine_job(self)
@@ -128,12 +150,15 @@ func mine() -> bool:
 		_final_flash()
 		return true
 	_flash()
+	_wobble()
+	return false
+
+func _wobble() -> void:
 	var tween = create_tween()
 	var step = WOBBLE_DURATION / 4
 	tween.tween_property(self, "rotation_degrees", wobble_angle, step)
 	tween.tween_property(self, "rotation_degrees", -wobble_angle, step * 2)
 	tween.tween_property(self, "rotation_degrees", 0.0, step)
-	return false
 
 func _final_flash() -> void:
 	if _flash_tween:

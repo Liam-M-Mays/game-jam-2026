@@ -10,6 +10,14 @@ const LAND_ATTEMPTS := 8
 
 var claimed := false
 
+var bounce := 0
+var bounce_speed := 1
+var _time := randf() * TAU
+
+func _physics_process(delta: float) -> void:
+	_time += delta
+	offset.y = sin(_time * bounce_speed) * bounce
+
 func _enter_tree() -> void:
 	Inventory.register(self)
 
