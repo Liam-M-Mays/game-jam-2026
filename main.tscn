@@ -1,3 +1,18 @@
 [gd_scene format=3 uid="uid://0522u2xktags"]
 
+[ext_resource type="Texture2D" uid="uid://cka4x2817n2ys" path="res://icon.svg" id="1_0xm2m"]
+[ext_resource type="Script" uid="uid://c811ahcbsw83d" path="res://assets/Scripts/Meeple/meeple_movement.gd" id="2_h2yge"]
+[ext_resource type="Texture2D" uid="uid://vlhj52cfknay" path="res://ART/Grid_outline.png" id="3_h2yge"]
+
 [node name="Main" type="Node2D" unique_id=2023279790]
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=2014181174]
+position = Vector2(609, 404)
+scale = Vector2(0.5, 1)
+texture = ExtResource("1_0xm2m")
+script = ExtResource("2_h2yge")
+
+[node name="Sprite2D2" type="Sprite2D" parent="." unique_id=92448809]
+position = Vector2(0, 8.5)
+scale = Vector2(10, 10)
+texture = ExtResource("3_h2yge")
