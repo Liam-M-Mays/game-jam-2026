@@ -18,6 +18,7 @@ config/icon="res://assets/Res/icon.svg"
 [autoload]
 
 JobSystem="*uid://dhxeaalsqdoin"
+Inventory="*res://assets/Scripts/Resources/inventory.gd"
 
 [display]
 

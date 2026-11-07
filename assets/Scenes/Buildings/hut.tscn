@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://bt5hv44t3eoan"]
 
 [ext_resource type="Texture2D" uid="uid://xker2pqyhae8" path="res://assets/Res/hut.tres" id="1_d170y"]
-[ext_resource type="Script" uid="uid://dmfxbb6f2f1x3" path="res://assets/Scenes/building.gd" id="2_4fb0l"]
+[ext_resource type="Script" uid="uid://dmfxbb6f2f1x3" path="res://assets/Scripts/Buildings/building.gd" id="2_4fb0l"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_nafr4"]
 size = Vector2(11.000001, 9.000001)

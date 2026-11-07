@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://jmnrxvgesex7"
-path="res://.godot/imported/Big_back_diddy_arm_background.png-4801f5b1b1ff9e5202987a7b51dd4d9a.ctex"
+uid="uid://dndh48dkfcegh"
+path="res://.godot/imported/meeple.png-cb6c9001696d3f897bd7dacf153c7236.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://ART/Big_back_diddy_arm_background.png"
-dest_files=["res://.godot/imported/Big_back_diddy_arm_background.png-4801f5b1b1ff9e5202987a7b51dd4d9a.ctex"]
+source_file="res://assets/Art/Characters/meeple.png"
+dest_files=["res://.godot/imported/meeple.png-cb6c9001696d3f897bd7dacf153c7236.ctex"]
 
 [params]
 

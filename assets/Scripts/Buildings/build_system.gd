@@ -1,7 +1,7 @@
 extends Node2D
 
 const BUILDINGS := {
-	"1": preload("res://assets/Scenes/hut.tscn"),
+	"1": preload("res://assets/Scenes/Buildings/hut.tscn"),
 }
 
 const PREVIEW_VALID := Color(0.3, 1, 0.3, 0.6)

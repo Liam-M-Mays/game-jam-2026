@@ -2,11 +2,11 @@ extends Node2D
 
 @export var grid_size := 50
 
-const CELL = preload("res://assets/Scenes/cell.tscn")
-const TREE = preload("res://assets/Scenes/tree.tscn")
-const BIG_TREE = preload("res://assets/Scenes/big-tree.tscn")
-const ROCK = preload("res://assets/Scenes/rock.tscn")
-const BIG_ROCK = preload("res://assets/Scenes/big-rock.tscn")
+const CELL = preload("res://assets/Scenes/Env/cell.tscn")
+const TREE = preload("res://assets/Scenes/Resources/tree.tscn")
+const BIG_TREE = preload("res://assets/Scenes/Resources/big-tree.tscn")
+const ROCK = preload("res://assets/Scenes/Resources/rock.tscn")
+const BIG_ROCK = preload("res://assets/Scenes/Resources/big-rock.tscn")
 
 var grid : Array[Array] = []
 

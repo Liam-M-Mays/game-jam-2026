@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://ddh8slhh8qd5y"
-path="res://.godot/imported/Big_back_diddy_face.png-fa399695f4db9952bf2c2c87a123c1ac.ctex"
+uid="uid://cqui0s7tsra0a"
+path="res://.godot/imported/Big_back_diddy_eyes.png-a9a76832ae65d8bf06d3896e9a1f9377.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://ART/Big_back_diddy_face.png"
-dest_files=["res://.godot/imported/Big_back_diddy_face.png-fa399695f4db9952bf2c2c87a123c1ac.ctex"]
+source_file="res://assets/Art/Characters/Big_back_diddy_eyes.png"
+dest_files=["res://.godot/imported/Big_back_diddy_eyes.png-a9a76832ae65d8bf06d3896e9a1f9377.ctex"]
 
 [params]
 

@@ -7,6 +7,8 @@ const WOBBLE_DURATION := 0.25
 @export var wobble_interval := 0.6
 @export var wobbles_to_break := 4
 @export var wobble_angle := 8.0
+@export var wood_yield := 0
+@export var stone_yield := 0
 
 var cells : Array = []
 
@@ -75,6 +77,7 @@ func mine() -> bool:
 	return true
 
 func _break() -> void:
+	Inventory.add(wood_yield, stone_yield)
 	for cell in cells:
 		cell.resource = null
 		cell.set_trans(0)

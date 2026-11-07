@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cqui0s7tsra0a"
-path="res://.godot/imported/Big_back_diddy_eyes.png-2e609c0dafd78504a8c14a92b2c83cbb.ctex"
+uid="uid://vlhj52cfknay"
+path="res://.godot/imported/Grid_outline.png-348a3a60171ce27dd295a8561acecbfc.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://ART/Big_back_diddy_eyes.png"
-dest_files=["res://.godot/imported/Big_back_diddy_eyes.png-2e609c0dafd78504a8c14a92b2c83cbb.ctex"]
+source_file="res://assets/Art/Environment/Grid_outline.png"
+dest_files=["res://.godot/imported/Grid_outline.png-348a3a60171ce27dd295a8561acecbfc.ctex"]
 
 [params]
 

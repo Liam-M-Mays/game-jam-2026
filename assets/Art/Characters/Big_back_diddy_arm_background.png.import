@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dqt5vqxk0sdc6"
-path="res://.godot/imported/Big_back_diddy_arm_foreground.png-ca999d19dde42575508deaf3e3194e9d.ctex"
+uid="uid://jmnrxvgesex7"
+path="res://.godot/imported/Big_back_diddy_arm_background.png-7d82c165d1c520f1c79f6c911f35e607.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://ART/Big_back_diddy_arm_foreground.png"
-dest_files=["res://.godot/imported/Big_back_diddy_arm_foreground.png-ca999d19dde42575508deaf3e3194e9d.ctex"]
+source_file="res://assets/Art/Characters/Big_back_diddy_arm_background.png"
+dest_files=["res://.godot/imported/Big_back_diddy_arm_background.png-7d82c165d1c520f1c79f6c911f35e607.ctex"]
 
 [params]
 

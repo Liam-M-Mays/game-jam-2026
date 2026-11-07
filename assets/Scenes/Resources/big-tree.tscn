@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://bq8msd5k43k42"]
 
 [ext_resource type="Texture2D" uid="uid://y5jfdu2a276h" path="res://assets/Res/big-tree.tres" id="1_u20gi"]
-[ext_resource type="Script" uid="uid://c3elx78jjhpbp" path="res://assets/Scenes/resource.gd" id="2_4sa4q"]
+[ext_resource type="Script" uid="uid://c3elx78jjhpbp" path="res://assets/Scripts/Resources/resource.gd" id="2_4sa4q"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_nafr4"]
 size = Vector2(10.000002, 11.8)
@@ -13,6 +13,7 @@ texture = ExtResource("1_u20gi")
 offset = Vector2(3, -5)
 script = ExtResource("2_4sa4q")
 area = NodePath("Area2D")
+wood_yield = 2
 
 [node name="Area2D" type="Area2D" parent="." unique_id=229750980]
 
