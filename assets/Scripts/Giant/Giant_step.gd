@@ -1,7 +1,7 @@
 extends Node2D
 ## Attach to any Node2D / Sprite2D. Bobs up and down like a giant's heavy steps.
  
-@export var step_height := 3.0   ## Pixels to rise
+@export var step_height := 7.0   ## Pixels to rise
 @export var lift_time := 1.4      ## Slow, strained rise
 @export var hang_time := 0.6      ## Hold at the top
 @export var slam_time := 0.5      ## Fast drop

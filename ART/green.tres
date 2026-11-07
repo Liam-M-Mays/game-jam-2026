@@ -1,0 +1,7 @@
+[gd_resource type="AtlasTexture" format=3 uid="uid://cf5wt1v7gvafk"]
+
+[ext_resource type="Texture2D" uid="uid://dqt5vqxk0sdc6" path="res://assets/Art/Characters/Big_back_diddy_arm_foreground.png" id="1_equf2"]
+
+[resource]
+atlas = ExtResource("1_equf2")
+region = Rect2(294.3238, 203.2585, 4.1349487, 3.6996918)
