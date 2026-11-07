@@ -1,0 +1,150 @@
+[gd_scene format=3 uid="uid://c33bf3v6kerkq"]
+
+[ext_resource type="Script" uid="uid://cy6jj62vfqjhg" path="res://assets/Scripts/Giant/walk.gd" id="1_l505p"]
+[ext_resource type="Script" uid="uid://bx2tyffx4x7lt" path="res://assets/Scripts/Giant/Giant_step.gd" id="2_mvvod"]
+[ext_resource type="Texture2D" uid="uid://ddh8slhh8qd5y" path="res://assets/Art/Characters/Big_back_diddy_face.png" id="3_yr3fd"]
+[ext_resource type="Script" uid="uid://cf3xigdf30bxf" path="res://assets/Scripts/Giant/Giant_head_step.gd" id="4_vvoe2"]
+[ext_resource type="Texture2D" uid="uid://cqui0s7tsra0a" path="res://assets/Art/Characters/Big_back_diddy_eyes.png" id="5_wwevk"]
+[ext_resource type="Script" uid="uid://b5fecyvq8x7ho" path="res://assets/Scripts/Giant/Blink.gd" id="6_xh8nc"]
+[ext_resource type="Texture2D" uid="uid://da8ldifciodhe" path="res://assets/Art/Characters/Big_back_diddy_torso.png" id="7_q6jox"]
+[ext_resource type="Texture2D" uid="uid://cf5wt1v7gvafk" path="res://ART/green.tres" id="8_3ivc0"]
+[ext_resource type="Texture2D" uid="uid://dqt5vqxk0sdc6" path="res://assets/Art/Characters/Big_back_diddy_arm_foreground.png" id="9_m14n0"]
+[ext_resource type="Script" uid="uid://bt17lojvcngtr" path="res://assets/Scripts/Giant/Giant_arm_right_step.gd" id="10_4bcbw"]
+[ext_resource type="Texture2D" uid="uid://jmnrxvgesex7" path="res://assets/Art/Characters/Big_back_diddy_arm_background.png" id="11_fnsm0"]
+[ext_resource type="Script" uid="uid://dh1q7oir02v0t" path="res://assets/Scripts/Giant/Giant_arm_left_step.gd" id="12_wlmmt"]
+[ext_resource type="Texture2D" uid="uid://4fiwuumegt1s" path="res://ART/sky_sprites_trees2.tres" id="13_1g4v3"]
+[ext_resource type="Texture2D" uid="uid://x200khdp0ig0" path="res://ART/sky_sprites_trees1.tres" id="14_wno5s"]
+[ext_resource type="Texture2D" uid="uid://bmpxugd4jadpy" path="res://ART/sky_sprites_mountains2.tres" id="15_wjhe1"]
+[ext_resource type="Texture2D" uid="uid://b1rkpw2ub3gk0" path="res://ART/sky_sprites_mountains1.tres" id="16_drk5t"]
+[ext_resource type="Texture2D" uid="uid://mwo2krs3ioat" path="res://ART/sky_sprites_sky.tres" id="17_hk2ck"]
+
+[sub_resource type="Gradient" id="Gradient_8ptjo"]
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_cauxy"]
+gradient = SubResource("Gradient_8ptjo")
+width = 1
+height = 1
+fill_to = Vector2(0, 0)
+
+[node name="MasonScene" type="Node2D" unique_id=773093084]
+
+[node name="Node2D2" type="Node2D" parent="." unique_id=890392512]
+script = ExtResource("1_l505p")
+
+[node name="Node2D" type="Node2D" parent="Node2D2" unique_id=749299205]
+z_index = 15
+script = ExtResource("2_mvvod")
+
+[node name="Head" type="Sprite2D" parent="Node2D2/Node2D" unique_id=1563107845]
+position = Vector2(-88, 30)
+texture = ExtResource("3_yr3fd")
+script = ExtResource("4_vvoe2")
+
+[node name="EyeBlack" type="Sprite2D" parent="Node2D2/Node2D/Head" unique_id=1522267908]
+z_index = -2
+position = Vector2(-3.9999962, 5.000002)
+scale = Vector2(174, 74)
+texture = SubResource("GradientTexture2D_cauxy")
+script = ExtResource("2_mvvod")
+step_height = 0.1
+
+[node name="Left Eye" type="Sprite2D" parent="Node2D2/Node2D/Head/EyeBlack" unique_id=2085841384]
+position = Vector2(-0.37356323, -0.17567566)
+scale = Vector2(0.0057471264, 0.013513513)
+texture = ExtResource("5_wwevk")
+script = ExtResource("6_xh8nc")
+
+[node name="Right Eye" type="Sprite2D" parent="Node2D2/Node2D/Head/EyeBlack" unique_id=1794027720]
+position = Vector2(0.1954023, -0.040540546)
+scale = Vector2(0.0057471264, 0.013513513)
+texture = ExtResource("5_wwevk")
+script = ExtResource("6_xh8nc")
+
+[node name="Torso" type="Sprite2D" parent="Node2D2/Node2D" unique_id=713009821]
+z_index = -3
+position = Vector2(225, -58)
+texture = ExtResource("7_q6jox")
+
+[node name="Yard" type="Sprite2D" parent="Node2D2/Node2D/Torso" unique_id=1897193016]
+z_index = -5
+position = Vector2(-1, -152)
+scale = Vector2(150, 70)
+texture = ExtResource("8_3ivc0")
+
+[node name="Yard" type="Sprite2D" parent="Node2D2/Node2D/Torso/Yard" unique_id=941309571]
+z_index = -5
+position = Vector2(-0.1, -0.6571429)
+scale = Vector2(0.7, 1)
+texture = ExtResource("8_3ivc0")
+
+[node name="Arm Foreground" type="Sprite2D" parent="Node2D2" unique_id=575907648]
+z_index = 12
+position = Vector2(312, 154)
+texture = ExtResource("9_m14n0")
+script = ExtResource("10_4bcbw")
+
+[node name="Arm Background" type="Sprite2D" parent="Node2D2" unique_id=883886422]
+z_index = 6
+position = Vector2(-78, 28)
+texture = ExtResource("11_fnsm0")
+script = ExtResource("12_wlmmt")
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=302911146]
+position = Vector2(47, -86)
+zoom = Vector2(1.6, 1.6)
+
+[node name="Trees1" type="Parallax2D" parent="." unique_id=814784282]
+scroll_scale = Vector2(1.18, 1.18)
+scroll_offset = Vector2(0, 61)
+repeat_size = Vector2(1580, 0)
+autoscroll = Vector2(10, 0)
+repeat_times = 4
+
+[node name="Sprite2D" type="Sprite2D" parent="Trees1" unique_id=1565589403]
+z_index = 5
+position = Vector2(0, 96)
+texture = ExtResource("13_1g4v3")
+
+[node name="Trees2" type="Parallax2D" parent="." unique_id=2068827498]
+scroll_scale = Vector2(1.18, 1.18)
+scroll_offset = Vector2(-1532, 16)
+repeat_size = Vector2(1580, 0)
+autoscroll = Vector2(8, 0)
+repeat_times = 4
+
+[node name="Sprite2D" type="Sprite2D" parent="Trees2" unique_id=553807855]
+z_index = 4
+position = Vector2(0, 75)
+texture = ExtResource("14_wno5s")
+
+[node name="Mountains1" type="Parallax2D" parent="." unique_id=682149022]
+scroll_scale = Vector2(1.18, 1.18)
+repeat_size = Vector2(1580, 0)
+autoscroll = Vector2(6, 0)
+repeat_times = 4
+
+[node name="Sprite2D" type="Sprite2D" parent="Mountains1" unique_id=138066238]
+z_index = 3
+position = Vector2(0, -119)
+texture = ExtResource("15_wjhe1")
+
+[node name="Mountains2" type="Parallax2D" parent="." unique_id=93932752]
+scroll_scale = Vector2(1.18, 1.18)
+repeat_size = Vector2(1580, 0)
+autoscroll = Vector2(4, 0)
+repeat_times = 4
+
+[node name="Sprite2D" type="Sprite2D" parent="Mountains2" unique_id=2093709016]
+z_index = 2
+position = Vector2(0, -98)
+texture = ExtResource("16_drk5t")
+
+[node name="Sky" type="Parallax2D" parent="." unique_id=222625834]
+scroll_scale = Vector2(1.18, 1.18)
+scroll_offset = Vector2(0, -372)
+repeat_size = Vector2(1580, 0)
+autoscroll = Vector2(1, 0)
+repeat_times = 4
+
+[node name="Sprite2D" type="Sprite2D" parent="Sky" unique_id=699937425]
+texture = ExtResource("17_hk2ck")
