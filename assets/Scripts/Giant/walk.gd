@@ -13,7 +13,7 @@ extends Node2D
 @export var slam_time := 0.5
 @export var settle_time := 0.8
 @export var pause_time := 1.0
-@export var start_delay := 0.2     ## Match the step script's start delay
+@export var start_delay := 0.4    ## Match the step script's start delay
  
 var base_x: float
 var _elapsed: float
