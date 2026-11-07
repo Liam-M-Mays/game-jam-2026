@@ -61,8 +61,7 @@ func _on_mouse_exited() -> void:
 	modulate = Color.WHITE
 	for cell in cells:
 		cell.set_trans(0)
-		
-# One mining hit. Returns true on the hit that breaks this resource.
+
 func mine() -> bool:
 	_wobbles += 1
 	var tween = create_tween()

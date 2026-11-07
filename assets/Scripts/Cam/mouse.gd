@@ -1,17 +1,19 @@
 extends Area2D
 
-@export var fase_dist := 250
 @export var enabled := true
+@export_range(0.0, 1.0) var highlight_alpha := 0.5
 
-func _process(delta: float) -> void:
+var _lit : Array[Cell] = []
+
+func _process(_delta: float) -> void:
+	position = get_global_mouse_position()
+	for cell in _lit:
+		cell.set_trans(0)
+	_lit.clear()
 	if !enabled:
 		return
-	position = get_global_mouse_position()
 	for area in get_overlapping_areas():
-		var owner = area.get_parent()
-		var distance = global_position.distance_to(owner.global_position)
-		owner.set_modulate(
-			Color(0.26,0.26,0.26,
-			max(0, (fase_dist-distance)/fase_dist)
-			)
-		)
+		var cell := area.get_parent() as Cell
+		if cell != null:
+			cell.set_trans(highlight_alpha)
+			_lit.append(cell)

@@ -6,6 +6,7 @@
 [ext_resource type="Script" uid="uid://cjfutepuhws5j" path="res://assets/Scripts/Env/grid.gd" id="4_naort"]
 [ext_resource type="Script" uid="uid://d13jmgqp0eyq8" path="res://assets/Scripts/Cam/mouse.gd" id="5_ci4bg"]
 [ext_resource type="Script" uid="uid://dhxeaalsqdoin" path="res://assets/Scenes/job_system.gd" id="6_rbwhl"]
+[ext_resource type="Script" uid="uid://clnxifq5klc7h" path="res://assets/Scenes/build_system.gd" id="7_xomjc"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_g0qf3"]
 radius = 200.0
@@ -30,7 +31,6 @@ script = ExtResource("4_naort")
 [node name="Mouse" type="Area2D" parent="." unique_id=1782876279]
 input_pickable = false
 script = ExtResource("5_ci4bg")
-fase_dist = 100
 enabled = false
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Mouse" unique_id=1292404197]
@@ -38,3 +38,6 @@ shape = SubResource("CircleShape2D_g0qf3")
 
 [node name="JobSystem" type="Node2D" parent="." unique_id=2146036250]
 script = ExtResource("6_rbwhl")
+
+[node name="BuildSystem" type="Node2D" parent="." unique_id=783348263]
+script = ExtResource("7_xomjc")
