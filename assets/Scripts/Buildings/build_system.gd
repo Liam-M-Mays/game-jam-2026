@@ -1,7 +1,6 @@
 extends Node2D
 
 const BUILDINGS := {
-	"1": preload("res://assets/Scenes/Buildings/hut.tscn"),
 	"2": preload("res://assets/Scenes/hut_build.tscn"),
 }
 
@@ -35,7 +34,7 @@ func _process(_delta: float) -> void:
 	_preview.visible = anchor != null
 	if anchor != null:
 		_preview.position = anchor.position
-	var valid : bool = not grid.free_cells_at(mouse, _preview.width).is_empty()
+	var valid : bool = _preview.can_afford() and not grid.free_cells_at(mouse, _preview.width).is_empty()
 	_preview.modulate = PREVIEW_VALID if valid else PREVIEW_BLOCKED
 
 func _select(scene : PackedScene) -> void:
@@ -52,6 +51,8 @@ func _clear_preview() -> void:
 		_preview = null
 
 func _place_current() -> void:
+	if not _preview.can_afford():
+		return
 	var cells : Array = grid.free_cells_at(get_global_mouse_position(), _preview.width)
 	if cells.is_empty():
 		return

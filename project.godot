@@ -51,3 +51,54 @@ rendering_device/driver.windows="d3d12"
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
 environment/defaults/default_clear_color=Color(0.29481664, 0.6027866, 0.294562, 1)
+
+[shader_globals]
+
+select_color={
+"type": "color",
+"value": Color(1, 1, 1, 1)
+}
+select_width={
+"type": "float",
+"value": 2.0
+}
+select_glow_size={
+"type": "float",
+"value": 0.0
+}
+select_glow_strength={
+"type": "float",
+"value": 0.6
+}
+select_pulse_speed={
+"type": "float",
+"value": 0.0
+}
+select_pulse_amount={
+"type": "float",
+"value": 0.5
+}
+hover_color={
+"type": "color",
+"value": Color(1, 1, 1, 1)
+}
+hover_width={
+"type": "float",
+"value": 0.0
+}
+hover_glow_size={
+"type": "float",
+"value": 8.0
+}
+hover_glow_strength={
+"type": "float",
+"value": 0.5
+}
+hover_pulse_speed={
+"type": "float",
+"value": 0.0
+}
+hover_pulse_amount={
+"type": "float",
+"value": 0.5
+}
