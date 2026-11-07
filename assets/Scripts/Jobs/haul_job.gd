@@ -1,11 +1,11 @@
 extends Job
 class_name HaulJob
 
-var site : building
+var site : Building
 var kind : String
 var _drop : ResourceDrop
 
-func _init(target_site : building, target_kind : String) -> void:
+func _init(target_site : Building, target_kind : String) -> void:
 	site = target_site
 	kind = target_kind
 
@@ -19,11 +19,11 @@ func update(worker : Meeple, _delta : float) -> bool:
 			return false
 		_drop.queue_free()
 		_drop = null
-		worker.set_carrying(kind)
+		worker.carry(kind)
 		worker.move_to(site.global_position, site.cells)
 		return false
 	if not worker.has_arrived():
 		return false
-	worker.clear_carrying()
+	worker.carry()
 	site.deliver()
 	return true

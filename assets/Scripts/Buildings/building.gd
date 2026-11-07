@@ -1,60 +1,47 @@
-extends resource
-class_name building
+extends GridObject
+class_name Building
 
-const CLOUD = preload("res://assets/Scenes/cloud.tscn")
+const BUILD_EFFECT := preload("res://assets/Scenes/cloud.tscn")
 
-const QUEUED_COLOR := Color(0.4, 0.6, 1, 0.6)
-
-@export var width := 1
-@export var wood_cost := 0
-@export var stone_cost := 0
+@export var costs : Dictionary[String, int] = {}
 
 var _delivered := 0
 
 func _ready() -> void:
 	super()
-	modulate = QUEUED_COLOR
 	area.input_pickable = false
 
-func total_cost() -> int:
-	return wood_cost + stone_cost
+func show_as_preview() -> void:
+	frame = hframes - 1
 
-func can_afford() -> bool:
-	return Inventory.available("wood") >= wood_cost and Inventory.available("stone") >= stone_cost
+func can_start() -> bool:
+	for kind in costs:
+		if Inventory.available(kind) < costs[kind]:
+			return false
+	return JobSystem.has_room(_total_cost())
 
 func start_build() -> void:
-	modulate = Color.WHITE
-	if total_cost() == 0:
-		frame = hframes - 1
-		finish_build()
+	if _total_cost() == 0:
+		complete()
 		return
-	_queue_hauls("wood", wood_cost)
-	_queue_hauls("stone", stone_cost)
-
-func _queue_hauls(kind : String, amount : int) -> void:
-	Inventory.reserve(kind, amount)
-	for i in range(amount):
-		JobSystem.add_haul_job(self, kind)
+	for kind in costs:
+		Inventory.reserve(kind, costs[kind])
+		for i in range(costs[kind]):
+			JobSystem.add(HaulJob.new(self, kind))
 
 func deliver() -> void:
 	_delivered += 1
-	frame = floori(float(hframes - 1) * _delivered / total_cost())
-	if _delivered == total_cost():
-		finish_build()
+	frame = floori(float(hframes - 1) * _delivered / _total_cost())
+	if _delivered == _total_cost():
+		complete()
 
-func finish_build() -> void:
-	modulate = Color.WHITE
+func complete() -> void:
+	frame = hframes - 1
 	area.input_pickable = true
-	var cloud = CLOUD.instantiate()
-	cloud.position = position + offset * _base_scale
-	cloud.scale = _base_scale
-	cloud.z_index = z_index+1
-	get_parent().add_child(cloud)
-	cloud.animation_finished.connect(cloud.queue_free)
-	cloud.play("default")
+	spawn_effect(BUILD_EFFECT, 1)
 
-func _on_left_click() -> void:
-	pass
-	
-func _get_preview():
-	pass
+func _total_cost() -> int:
+	var total := 0
+	for kind in costs:
+		total += costs[kind]
+	return total

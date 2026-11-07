@@ -1,36 +1,13 @@
-extends Node2D
- 
+extends GiantPart
+
+const SLAM_DEPTH := 8.0
+
 @export var step_height := 7.0
-@export var lift_time := 1.4
-@export var hang_time := 0.6
-@export var slam_time := 0.5
-@export var settle_time := 0.8
-@export var pause_time := 1.0
-@export var start_delay := 0.2
- 
-var base_y: float
- 
-func _ready() -> void:
-	base_y = position.y
-	if start_delay > 0.0:
-		await get_tree().create_timer(start_delay).timeout
-	step_loop()
- 
-func step_loop() -> void:
-	while is_inside_tree():
-		var t := create_tween()
-		t.tween_property(self, "position:y", base_y - step_height, lift_time) \
-			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN_OUT)
-		await t.finished
-		await get_tree().create_timer(hang_time).timeout
- 
-		t = create_tween()
-		t.tween_property(self, "position:y", base_y + 8.0, slam_time) \
-			.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
-		await t.finished
- 
-		t = create_tween()
-		t.tween_property(self, "position:y", base_y, settle_time) \
-			.set_trans(Tween.TRANS_QUINT).set_ease(Tween.EASE_OUT)
-		await t.finished
-		await get_tree().create_timer(pause_time).timeout
+@export var sway := 0.0
+
+func _step() -> void:
+	await _move(base_pos + Vector2(sway * 0.4, -step_height), lift_time, Tween.EASE_IN_OUT, Tween.TRANS_QUAD, Tween.TRANS_SINE)
+	await _wait(hang_time)
+	await _move(base_pos + Vector2(sway, SLAM_DEPTH), slam_time, Tween.EASE_IN, Tween.TRANS_CUBIC)
+	await _move(base_pos, settle_time, Tween.EASE_OUT, Tween.TRANS_QUINT, Tween.TRANS_QUART)
+	await _wait(pause_time)

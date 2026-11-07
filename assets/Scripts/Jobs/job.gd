@@ -1,6 +1,8 @@
 extends RefCounted
 class_name Job
 
+var cancelled := false
+
 func start(_worker : Meeple) -> void:
 	pass
 

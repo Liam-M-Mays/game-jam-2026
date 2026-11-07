@@ -1,4 +1,4 @@
-extends "res://assets/Scripts/Cam/camera_controls.gd"
+extends CameraControls
 
 @export var wide_position := Vector2(47, -86)
 

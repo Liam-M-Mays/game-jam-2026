@@ -3,15 +3,12 @@
 [ext_resource type="Script" uid="uid://bx2tyffx4x7lt" path="res://assets/Scripts/Giant/Giant_step.gd" id="1_js8kw"]
 [ext_resource type="Script" uid="uid://cy6jj62vfqjhg" path="res://assets/Scripts/Giant/walk.gd" id="1_ki0cw"]
 [ext_resource type="Texture2D" uid="uid://ddh8slhh8qd5y" path="res://assets/Art/Characters/Big_back_diddy_face.png" id="2_aah2l"]
-[ext_resource type="PackedScene" uid="uid://bsc4cgo2yjjdw" path="res://assets/Scenes/meeple.tscn" id="2_xomjc"]
-[ext_resource type="Script" uid="uid://cf3xigdf30bxf" path="res://assets/Scripts/Giant/Giant_head_step.gd" id="3_0fbrb"]
 [ext_resource type="PackedScene" uid="uid://mcu65uoclrgs" path="res://assets/Scenes/grid.tscn" id="3_xomjc"]
 [ext_resource type="Texture2D" uid="uid://cqui0s7tsra0a" path="res://assets/Art/Characters/Big_back_diddy_eyes.png" id="4_aah2l"]
 [ext_resource type="Script" uid="uid://b5fecyvq8x7ho" path="res://assets/Scripts/Giant/Blink.gd" id="5_8ptjo"]
 [ext_resource type="Script" uid="uid://d13jmgqp0eyq8" path="res://assets/Scripts/Cam/mouse.gd" id="5_ci4bg"]
 [ext_resource type="Texture2D" uid="uid://da8ldifciodhe" path="res://assets/Art/Characters/Big_back_diddy_torso.png" id="6_vbtyo"]
-[ext_resource type="Script" uid="uid://bt17lojvcngtr" path="res://assets/Scripts/Giant/Giant_arm_right_step.gd" id="6_w7cay"]
-[ext_resource type="Script" uid="uid://dh1q7oir02v0t" path="res://assets/Scripts/Giant/Giant_arm_left_step.gd" id="7_1g62p"]
+[ext_resource type="Script" uid="uid://dh1q7oir02v0t" path="res://assets/Scripts/Giant/Giant_arm_step.gd" id="7_1g62p"]
 [ext_resource type="Texture2D" uid="uid://dqt5vqxk0sdc6" path="res://assets/Art/Characters/Big_back_diddy_arm_foreground.png" id="7_ux80a"]
 [ext_resource type="Script" uid="uid://clnxifq5klc7h" path="res://assets/Scripts/Buildings/build_system.gd" id="7_xomjc"]
 [ext_resource type="Script" uid="uid://durnxou7gvbj0" path="res://assets/Scripts/UI/resource_ui.gd" id="8_resui"]
@@ -43,11 +40,15 @@ script = ExtResource("1_ki0cw")
 [node name="Node2D" type="Node2D" parent="Node2D2" unique_id=749299205]
 z_index = 15
 script = ExtResource("1_js8kw")
+start_delay = 0.2
 
 [node name="Head" type="Sprite2D" parent="Node2D2/Node2D" unique_id=1563107845]
 position = Vector2(-88, 30)
 texture = ExtResource("2_aah2l")
-script = ExtResource("3_0fbrb")
+script = ExtResource("1_js8kw")
+step_height = 3.0
+sway = 6.0
+start_delay = 0.25
 
 [node name="EyeBlack" type="Sprite2D" parent="Node2D2/Node2D/Head" unique_id=1522267908]
 z_index = -2
@@ -55,6 +56,7 @@ position = Vector2(-3.9999962, 5.000002)
 scale = Vector2(174, 74)
 texture = SubResource("GradientTexture2D_cauxy")
 script = ExtResource("1_js8kw")
+start_delay = 0.2
 step_height = 0.1
 
 [node name="Left Eye" type="Sprite2D" parent="Node2D2/Node2D/Head/EyeBlack" unique_id=2085841384]
@@ -98,9 +100,6 @@ y_sort_enabled = true
 position = Vector2(-110, -217)
 scale = Vector2(0.1, 0.1)
 
-[node name="Meeple" parent="Node2D2/Node2D/Torso/Back" unique_id=381946220 instance=ExtResource("2_xomjc")]
-position = Vector2(609, 404)
-
 [node name="Grid" parent="Node2D2/Node2D/Torso/Back" unique_id=1279537889 node_paths=PackedStringArray("ground_sprites", "ground_cover") instance=ExtResource("3_xomjc")]
 position = Vector2(-3980, -1150)
 grid_size = 110
@@ -115,14 +114,17 @@ enabled = false
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Node2D2/Node2D/Torso/Back/Mouse" unique_id=1292404197]
 shape = SubResource("CircleShape2D_g0qf3")
 
-[node name="BuildSystem" type="Node2D" parent="Node2D2/Node2D/Torso/Back" unique_id=783348263]
+[node name="BuildSystem" type="Node2D" parent="Node2D2/Node2D/Torso/Back" unique_id=783348263 node_paths=PackedStringArray("grid", "cursor")]
 script = ExtResource("7_xomjc")
+grid = NodePath("../Grid")
+cursor = NodePath("../Mouse")
 
 [node name="Arm Foreground" type="Sprite2D" parent="Node2D2" unique_id=575907648]
 z_index = 12
 position = Vector2(312, 154)
 texture = ExtResource("7_ux80a")
-script = ExtResource("6_w7cay")
+script = ExtResource("7_1g62p")
+starts_shifted = true
 
 [node name="Arm Background" type="Sprite2D" parent="Node2D2" unique_id=883886422]
 z_index = 6
@@ -206,3 +208,15 @@ offset_left = 20.0
 offset_top = 120.0
 theme_override_font_sizes/font_size = 32
 text = "Food: 0"
+
+[node name="MeepleLabel" type="Label" parent="UI" unique_id=1048576015]
+offset_left = 20.0
+offset_top = 170.0
+theme_override_font_sizes/font_size = 32
+text = "Meeples: 0"
+
+[node name="JobLabel" type="Label" parent="UI" unique_id=1048576016]
+offset_left = 20.0
+offset_top = 220.0
+theme_override_font_sizes/font_size = 32
+text = "Jobs: 0 / 0"

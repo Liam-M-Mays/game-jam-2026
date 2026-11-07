@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://dimtm1kumkrks"]
 
 [ext_resource type="Texture2D" uid="uid://cm0ww7kvq7un2" path="res://assets/Art/Buildings/House_buildstates.png" id="1_hh3au"]
-[ext_resource type="Script" uid="uid://calo5niqysa1e" path="res://assets/Scenes/hut_build.gd" id="2_4xtmb"]
+[ext_resource type="Script" uid="uid://calo5niqysa1e" path="res://assets/Scripts/Buildings/hut.gd" id="2_4xtmb"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_nafr4"]
 size = Vector2(11, 9)
@@ -13,9 +13,9 @@ texture = ExtResource("1_hh3au")
 offset = Vector2(3.5, -3)
 hframes = 5
 script = ExtResource("2_4xtmb")
-width = 2
-wood_cost = 1
-stone_cost = 1
+costs = Dictionary[String, int]({"wood": 1, "stone": 1})
+footprint = 2
+hoverable = false
 area = NodePath("Area2D")
 
 [node name="Area2D" type="Area2D" parent="." unique_id=725244253]
