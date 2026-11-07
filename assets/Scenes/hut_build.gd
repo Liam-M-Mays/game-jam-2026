@@ -3,24 +3,6 @@ extends building
 const MEEPLE = preload("res://assets/Scenes/meeple.tscn")
 const DOOR_OFFSET := Vector2(40, 35)
 
-func start_build() -> void:
-	modulate = Color.WHITE
-	area.input_pickable = true
-
-func progress():
-	if frame >= hframes - 1:
-		return
-	if Inventory.wood < 1:
-		_flash(Color.RED)
-		return
-	Inventory.add(-1, 0)
-	frame += 1
-	if frame == hframes - 1:
-		finish_build()
-
-func _on_left_click() -> void:
-	progress()
-
 func _on_mouse_entered() -> void:
 	pass
 

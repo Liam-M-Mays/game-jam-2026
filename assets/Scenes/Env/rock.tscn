@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://cxcltn73yu7fw"]
+
+[ext_resource type="Texture2D" uid="uid://d1akfocjvfh3d" path="res://assets/Res/rocks.tres" id="1_3oyct"]
+[ext_resource type="Script" path="res://assets/Scripts/Resources/resource_drop.gd" id="2_drop"]
+
+[node name="rock" type="Sprite2D" unique_id=565270864]
+z_index = 1
+scale = Vector2(10, 10)
+texture = ExtResource("1_3oyct")
+script = ExtResource("2_drop")
+kind = "stone"

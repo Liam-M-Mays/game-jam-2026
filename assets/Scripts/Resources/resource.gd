@@ -10,9 +10,8 @@ const WOBBLE_DURATION := 0.25
 @export var squash_amount := 0.15
 @export var wood_yield := 0
 @export var stone_yield := 0
-@export var outline_color := Color.WHITE
 
-const FLASH_SHADER := preload("res://assets/Shaders/flash.gdshader")
+const OUTLINE_SHADER := preload("res://assets/Shaders/outline.gdshader")
 const FLASH_DURATION := 0.12
 const BREAK_HOLD := 0.06
 
@@ -24,14 +23,13 @@ var _squash_tween : Tween
 var _base_scale : Vector2
 
 const BREAK = preload("res://assets/Scenes/Resources/break.tscn")
+const WOOD = preload("res://assets/Scenes/Env/wood.tscn")
+const ROCK = preload("res://assets/Scenes/Env/rock.tscn")
 
 var cells : Array = []
 
 var _wobbles := 0
 var _mine_job : MineJob = null
-var _outline : Node2D = null
-
-const OUTLINE_DIRECTIONS : Array[Vector2] = [Vector2.LEFT, Vector2.RIGHT, Vector2.UP, Vector2.DOWN]
 
 func _ready() -> void:
 	_base_scale = scale
@@ -40,8 +38,19 @@ func _ready() -> void:
 	area.mouse_exited.connect(_on_mouse_exited)
 	
 	var mat := ShaderMaterial.new()
-	mat.shader = FLASH_SHADER
+	mat.shader = OUTLINE_SHADER
 	material = mat
+	# Outline/hover look is global: Project Settings > Globals > Shader Globals (select_*, hover_*).
+	mat.set_shader_parameter("region_rect", _uv_region())
+
+## UV bounds of this sprite inside its texture (handles AtlasTexture sheets).
+func _uv_region() -> Vector4:
+	if texture is AtlasTexture and texture.atlas:
+		var atlas_size : Vector2 = texture.atlas.get_size()
+		var r : Rect2 = texture.region
+		return Vector4(r.position.x / atlas_size.x, r.position.y / atlas_size.y,
+			r.end.x / atlas_size.x, r.end.y / atlas_size.y)
+	return Vector4(0, 0, 1, 1)
 
 func _flash(color := Color.WHITE) -> void:
 	if _flash_tween:
@@ -88,25 +97,7 @@ func _on_left_click() -> void:
 		_set_outline(false)
 
 func _set_outline(on : bool) -> void:
-	if _outline == null:
-		_outline = _make_outline()
-	_outline.visible = on
-
-func _make_outline() -> Node2D:
-	var holder := Node2D.new()
-	holder.show_behind_parent = true
-	var mat := ShaderMaterial.new()
-	mat.shader = FLASH_SHADER
-	mat.set_shader_parameter("flash", 1.0)
-	mat.set_shader_parameter("flash_color", outline_color)
-	for direction in OUTLINE_DIRECTIONS:
-		var copy := Sprite2D.new()
-		copy.texture = texture
-		copy.offset = offset + direction
-		copy.material = mat
-		holder.add_child(copy)
-	add_child(holder)
-	return holder
+	material.set_shader_parameter("selected", on)
 
 func _on_left_release() -> void:
 	pass
@@ -121,12 +112,12 @@ func _on_mouse_motion(event: InputEventMouseMotion) -> void:
 	pass
 
 func _on_mouse_entered() -> void:
-	self_modulate = Color.RED
+	material.set_shader_parameter("hovered", true)
 	for cell in cells:
 		cell.set_trans(0.5)
 
 func _on_mouse_exited() -> void:
-	self_modulate = Color.WHITE
+	material.set_shader_parameter("hovered", false)
 	for cell in cells:
 		cell.set_trans(0)
 
@@ -160,8 +151,16 @@ func _break() -> void:
 	get_parent().add_child(bre)
 	bre.animation_finished.connect(bre.queue_free)
 	bre.play("break")
-	Inventory.add(wood_yield, stone_yield)
 	for cell in cells:
 		cell.resource = null
 		cell.set_trans(0)
+	_spawn_drops(WOOD, wood_yield)
+	_spawn_drops(ROCK, stone_yield)
 	queue_free()
+
+func _spawn_drops(scene : PackedScene, amount : int) -> void:
+	for i in range(amount):
+		var drop : ResourceDrop = scene.instantiate()
+		drop.position = position + Vector2(offset.x * _base_scale.x, 0)
+		get_parent().add_child(drop)
+		drop.launch(get_parent())

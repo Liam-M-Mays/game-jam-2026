@@ -14,6 +14,8 @@ offset = Vector2(3.5, -3)
 hframes = 5
 script = ExtResource("2_4xtmb")
 width = 2
+wood_cost = 1
+stone_cost = 1
 area = NodePath("Area2D")
 
 [node name="Area2D" type="Area2D" parent="." unique_id=725244253]

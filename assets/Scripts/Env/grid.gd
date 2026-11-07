@@ -18,6 +18,8 @@ var grid : Array[Array] = []
 var _cell_scale : Vector2
 var _cell_offset : Vector2
 
+var count := 0
+
 func _cell_position(x : int, y : int) -> Vector2:
 	return Vector2(
 		(x * _cell_scale.x * 7) + (5 * y * _cell_scale.x),
@@ -47,6 +49,7 @@ func place_cell(x : int, y : int):
 	var cell = CELL.instantiate()
 	cell.position = pos
 	grid[x][y] = cell
+	count += 1
 	add_child(cell)
 
 func _ready() -> void:
@@ -63,10 +66,12 @@ func _ready() -> void:
 	for x in range(grid_size):
 		for y in range(grid_size):
 			place_cell(x,y)
-	
+	print(count)
 	for x in range(grid_size):
 		for y in range(grid_size):
 			place_resource(x,y)
+	print(count)
+
 
 
 func _coords_at(world_pos : Vector2) -> Vector2i:
@@ -103,6 +108,7 @@ func place_resource(x, y):
 		cell.resource = tree
 		tree.cells.append(cell)
 		add_child(tree)
+		count -= 1
 		return
 	if(randf() < 0.02):
 		var rock = ROCK.instantiate()
@@ -110,6 +116,7 @@ func place_resource(x, y):
 		cell.resource = rock
 		rock.cells.append(cell)
 		add_child(rock)
+		count -= 1
 		return
 	if x == grid_size-1:
 		return
@@ -124,6 +131,7 @@ func place_resource(x, y):
 		big_tree.cells.append(cell)
 		big_tree.cells.append(next_cell)
 		add_child(big_tree)
+		count -= 2
 	elif(randf() < 0.04):
 		var big_rock = BIG_ROCK.instantiate()
 		big_rock.position = cell.position
@@ -132,4 +140,5 @@ func place_resource(x, y):
 		big_rock.cells.append(cell)
 		big_rock.cells.append(next_cell)
 		add_child(big_rock)
+		count -= 2
 	

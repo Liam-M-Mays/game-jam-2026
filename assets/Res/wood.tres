@@ -1,0 +1,7 @@
+[gd_resource type="AtlasTexture" format=3 uid="uid://ft1hc56gfbhh"]
+
+[ext_resource type="Texture2D" uid="uid://dgdpk1f74a04t" path="res://ART/Meeple_holding_shizz.png" id="1_7hdg5"]
+
+[resource]
+atlas = ExtResource("1_7hdg5")
+region = Rect2(1, 3, 3, 1)

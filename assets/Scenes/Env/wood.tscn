@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://gpbn4xm54dyl"]
+
+[ext_resource type="Texture2D" uid="uid://ft1hc56gfbhh" path="res://assets/Res/wood.tres" id="1_3tlch"]
+[ext_resource type="Script" path="res://assets/Scripts/Resources/resource_drop.gd" id="2_drop"]
+
+[node name="wood" type="Sprite2D" unique_id=16562704]
+z_index = 1
+scale = Vector2(10, 10)
+texture = ExtResource("1_3tlch")
+script = ExtResource("2_drop")
+kind = "wood"

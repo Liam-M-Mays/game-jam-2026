@@ -11,8 +11,8 @@ func cancel_job(job : MineJob) -> void:
 	jobs.erase(job)
 	job.cancelled = true
 
-func add_build_job(site : building) -> void:
-	jobs.push_back(BuildJob.new(site))
+func add_haul_job(site : building, kind : String) -> void:
+	jobs.push_back(HaulJob.new(site, kind))
 
 func take_job() -> Job:
 	return jobs.pop_front()
