@@ -295,3 +295,5 @@ func _sum_frame_costs() -> Dictionary[String, int]:
 		for kind in cost:
 			sum[kind] = sum.get(kind, 0) + cost[kind]
 	return sum
+func built_stage() -> int:
+	return _built
