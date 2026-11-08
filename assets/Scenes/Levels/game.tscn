@@ -97,8 +97,8 @@ scale = Vector2(0.7, 1)
 texture = ExtResource("8_uyqwq")
 
 [node name="Camera2D" type="Camera2D" parent="Node2D2/Node2D/Torso" unique_id=302911146]
-position = Vector2(-178, -28)
-zoom = Vector2(1.6, 1.6)
+position = Vector2(-1, -200)
+zoom = Vector2(8, 8)
 script = ExtResource("16_gcam")
 min_zoom = 1.6
 max_zoom = 20.0

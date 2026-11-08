@@ -43,7 +43,6 @@ min_to_start = Dictionary[String, int]({
 "wood": 2
 })
 area = NodePath("Area2D")
-hoverable = false
 
 [node name="Area2D" type="Area2D" parent="." unique_id=1373903475]
 

@@ -29,7 +29,6 @@ min_to_start = Dictionary[String, int]({
 area = NodePath("Area2D")
 footprint = 4
 footprint_depth = 3
-hoverable = false
 
 [node name="Area2D" type="Area2D" parent="." unique_id=503917264]
 

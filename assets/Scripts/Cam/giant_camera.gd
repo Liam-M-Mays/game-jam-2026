@@ -2,11 +2,6 @@ extends CameraControls
 
 @export var wide_position := Vector2(47, -86)
 
-func _ready() -> void:
-	zoom = Vector2(min_zoom, min_zoom)
-	global_position = wide_position
-	_keep_inside_wide_view()
-
 func _process(delta: float) -> void:
 	super(delta)
 	_keep_inside_wide_view()
