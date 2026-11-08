@@ -14,10 +14,6 @@ const GROUP := &"barns"
 
 var plots : Array[BarnPlot] = []
 
-func start_construction() -> void:
-	add_to_group(GROUP)
-	super()
-
 func complete() -> void:
 	add_to_group(GROUP)
 	super()

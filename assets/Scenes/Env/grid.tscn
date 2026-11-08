@@ -6,7 +6,7 @@
 [ext_resource type="PackedScene" uid="uid://bq8msd5k43k42" path="res://assets/Scenes/Resources/big-tree.tscn" id="4_bigtree"]
 [ext_resource type="PackedScene" uid="uid://fdmon1owxpbq" path="res://assets/Scenes/Resources/george_bush.tscn" id="5_bush"]
 [ext_resource type="PackedScene" uid="uid://bs6xoi7v5b3bc" path="res://assets/Scenes/Resources/big-rock.tscn" id="6_bigrock"]
-[ext_resource type="PackedScene" uid="uid://dimtm1kumkrks" path="res://assets/Scenes/Buildings/town_hall.tscn" id="7_hut"]
+[ext_resource type="PackedScene" uid="uid://bj1mtuewe62mc" path="res://assets/Scenes/Buildings/town_hall.tscn" id="7_hut"]
 
 [node name="Grid" type="Node2D" unique_id=1279537889]
 y_sort_enabled = true

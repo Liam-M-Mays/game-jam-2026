@@ -73,6 +73,10 @@ func available(kind : String) -> int:
 func reserve(kind : String, amount : int) -> void:
 	_reserved[kind] = _reserved.get(kind, 0) + amount
 
+func unreserve(kind : String, amount : int) -> void:
+	_reserved[kind] = _reserved.get(kind, 0) - amount
+	changed.emit()
+
 func claim_closest(kind : String, world_pos : Vector2) -> ResourceDrop:
 	var closest : ResourceDrop = null
 	for drop in _drops_of(kind):

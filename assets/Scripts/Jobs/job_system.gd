@@ -82,6 +82,16 @@ func take_partner(job : HaulJob) -> HaulJob:
 			return other
 	return null
 
+func take_pending_hauls(site : Building) -> Array[HaulJob]:
+	var taken : Array[HaulJob] = []
+	for job in _pending.duplicate():
+		if job is HaulJob and job.site == site:
+			_pending.erase(job)
+			taken.append(job)
+	if not taken.is_empty():
+		changed.emit()
+	return taken
+
 func finish(job : Job) -> void:
 	if job is IdleJob:
 		job.end()

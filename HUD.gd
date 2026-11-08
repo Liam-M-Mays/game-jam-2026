@@ -5,11 +5,13 @@ const FIRST_TIP_DELAY := 2.0
 const ROTATION_DELAY_MIN := 60.0
 const ROTATION_DELAY_MAX := 90.0
 const OPENING_TIP_GAP := 15.0
+const PAUSE_BUILDING_TIP := "Right-click a building under construction to pause it, and right-click again to resume"
 const OPENING_TIPS := [
 	"Tap on trees and stones to begin harvesting resources",
 	"Use WASD to pan the camera around",
 	"Picking berries will help feed your meeple",
 	"Click the build button to start expanding your meeple village",
+	PAUSE_BUILDING_TIP,
 ]
 
 const TIPS := [
@@ -18,7 +20,8 @@ const TIPS := [
 	"Keep your hunger bar up to keep your meeples happy (and alive)",
 	"You can upgrade your Town Hall level by increasing your Meeple population",
 	"Hover over build sites to see what materials it still needs",
-	"Use the number keys to place new buildings without opening the build menu"
+	"Use the number keys to place new buildings without opening the build menu",
+	PAUSE_BUILDING_TIP,
 ]
 
 const FUN_FACTS := [

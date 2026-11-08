@@ -13,6 +13,7 @@ const AREA_COLOR := Color(1.0, 0.95, 0.6)
 const AREA_ALPHA := 0.7
 const AREA_HOVER_COLOR := Color(1.0, 1.0, 1.0)
 const AREA_HOVER_ALPHA := 1.0
+const PAUSE_CLICK_MAX_DRAG := 6.0
 
 @export var grid : Grid
 @export var cursor : CellCursor
@@ -20,6 +21,7 @@ const AREA_HOVER_ALPHA := 1.0
 var _scene : PackedScene = null
 var _preview : Building = null
 var _area : Array[Cell] = []
+var _right_press_at := Vector2.ZERO
 
 func _ready() -> void:
 	add_child(ConstructionTooltip.new())
@@ -52,9 +54,19 @@ func _input(event : InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 func _unhandled_input(event : InputEvent) -> void:
-	if is_building() and event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_RIGHT:
+		_on_right_button(event)
+	elif is_building() and event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		_try_place()
 		get_viewport().set_input_as_handled()
+
+func _on_right_button(event : InputEventMouseButton) -> void:
+	if event.pressed:
+		_right_press_at = event.position
+	elif event.position.distance_to(_right_press_at) <= PAUSE_CLICK_MAX_DRAG:
+		var site := ConstructionTooltip.site_under_mouse(get_tree())
+		if site != null:
+			site.toggle_paused()
 
 func _process(_delta : float) -> void:
 	if not is_building():
@@ -112,6 +124,7 @@ func _try_place() -> void:
 	site.completed.connect(func(): building_completed.emit(site))
 	site.start_construction()
 	building_placed.emit(site)
+	end_build()
 
 func _clear_preview() -> void:
 	_show_area([])

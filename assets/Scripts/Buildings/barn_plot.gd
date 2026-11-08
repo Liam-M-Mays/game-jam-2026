@@ -19,7 +19,7 @@ func can_place_at(_grid : Grid, plot : Array[Cell]) -> bool:
 
 func placement_hint() -> String:
 	if _barns_with_room().is_empty():
-		return "%s needs a barn with a free slot. Build another barn or a windmill" % display_name()
+		return "%s needs a finished barn with a free slot. Finish or build a barn, or build a windmill" % display_name()
 	return "%s has to go in the highlighted area around a barn" % display_name()
 
 func start_construction() -> void:

@@ -5,6 +5,7 @@ const LAYER := 10
 const MOUSE_OFFSET := Vector2(24, 24)
 const FONT_SIZE := 24
 const STUCK_COLOR := "ff6b6b"
+const PAUSED_COLOR := "ffd91a"
 
 var _panel : PanelContainer
 var _label : RichTextLabel
@@ -47,13 +48,18 @@ static func describe(site : Building) -> String:
 		if stuck.has(kind):
 			line = "[color=#%s]%s  (not enough)[/color]" % [STUCK_COLOR, line]
 		lines.append(line)
+	if site.is_paused():
+		lines.append("[color=#%s]Paused - right-click to resume[/color]" % PAUSED_COLOR)
 	return "\n".join(lines)
 
 func _hovered_site() -> Building:
 	if get_tree().paused or get_viewport().gui_get_hovered_control() != null:
 		return null
+	return site_under_mouse(get_tree())
+
+static func site_under_mouse(tree : SceneTree) -> Building:
 	var best : Building = null
-	for site : Building in get_tree().get_nodes_in_group(Building.CONSTRUCTION_GROUP):
+	for site : Building in tree.get_nodes_in_group(Building.CONSTRUCTION_GROUP):
 		if not site.is_visible_in_tree() or not site.get_rect().has_point(site.get_local_mouse_position()):
 			continue
 		if best == null or site.global_position.y > best.global_position.y:

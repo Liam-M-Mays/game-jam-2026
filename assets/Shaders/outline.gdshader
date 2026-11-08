@@ -5,7 +5,9 @@ uniform vec3 flash_color : source_color = vec3(1.0);
 
 uniform bool selected = false;
 uniform bool hovered = false;
+uniform vec3 select_tint : source_color = vec3(1.0);
 uniform vec4 region_rect = vec4(0.0, 0.0, 1.0, 1.0);
+uniform vec2 shape_offset = vec2(0.0);
 
 global uniform vec4 select_color;
 global uniform float select_width;
@@ -51,7 +53,7 @@ bool in_region(vec2 uv) {
 }
 
 float alpha_at(sampler2D tex, vec2 uv) {
-	return in_region(uv) ? texture(tex, uv).a : 0.0;
+	return in_region(uv) ? max(texture(tex, uv).a, texture(tex, uv + shape_offset).a) : 0.0;
 }
 
 float style_strength(float dist, vec4 color, float width, float glow_size,
@@ -101,7 +103,7 @@ void fragment() {
 		if (selected) {
 			float s = style_strength(dist, select_color, select_width, select_glow_size,
 					select_glow_strength, select_pulse_speed, select_pulse_amount, TIME);
-			fx = vec4(select_color.rgb, s);
+			fx = vec4(select_color.rgb * select_tint, s);
 		}
 		if (hovered) {
 			float h = style_strength(dist, hover_color, hover_width, hover_glow_size,

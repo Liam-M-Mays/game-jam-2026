@@ -36,8 +36,9 @@ func _ready() -> void:
 func _on_clicked() -> void:
 	pass
 
-func set_selected(on : bool) -> void:
+func set_selected(on : bool, tint := Color.WHITE) -> void:
 	material.set_shader_parameter("selected", on)
+	material.set_shader_parameter("select_tint", tint)
 
 func flash(color := Color.WHITE) -> void:
 	_start_flash(color).tween_property(material, "shader_parameter/flash", 0.0, FLASH_DURATION)

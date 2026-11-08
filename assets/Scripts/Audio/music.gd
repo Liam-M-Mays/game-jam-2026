@@ -5,6 +5,7 @@ const GAME_SCENE := "res://assets/Scenes/Levels/game.tscn"
 const MENU_MUSIC := preload("uid://ccekgjd0hy55i")
 const GAMEPLAY_MUSIC := preload("res://assets/Audio/Music/gameplay.wav")
 const SUCCESS_RIFF := preload("uid://bnv37hep82f8")
+const UI_SOUNDS := preload("res://assets/Scripts/Audio/ui_sounds.gd")
 const SUCCESS_RIFF_DB := -6.0
 const MENU_DB := -12.0
 const GAMEPLAY_DB := -20.0
@@ -24,6 +25,7 @@ func _ready() -> void:
 	_riff.stream = SUCCESS_RIFF
 	_riff.volume_db = SUCCESS_RIFF_DB
 	add_child(_riff)
+	add_child(UI_SOUNDS.new())
 
 func _process(_delta : float) -> void:
 	var scene := get_tree().current_scene
