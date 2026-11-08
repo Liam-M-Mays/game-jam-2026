@@ -3,6 +3,7 @@ extends CanvasLayer
 const FIRST_TIP_DELAY := 2.0
 const LOW_FOOD := 5
 const LOW_HUNGER := 50.0
+const SPEED_KEY := KEY_F
 
 @export var build_system: BuildSystem
 @export var counters: Control
@@ -15,6 +16,7 @@ const LOW_HUNGER := 50.0
 @export var build_button: TextureButton
 @export var build_menu: BuildMenu
 @export var pause_menu: PauseMenu
+@export var speed_button: Button
 
 var _building_scene: PackedScene
 var _last_meeple_count := 0
@@ -35,11 +37,17 @@ func _ready() -> void:
 	_refresh_counters()
 	_setup_hunger_bar()
 	_setup_building()
+	_setup_speed_button()
 	get_tree().create_timer(FIRST_TIP_DELAY, false).timeout.connect(
 		_show_tip.bind("collect", "Tap on trees and stones to collect resources"))
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == SPEED_KEY:
+		if not get_tree().paused:
+			GameState.cycle_speed()
+			get_viewport().set_input_as_handled()
+		return
 	if not event.is_action_pressed("ui_cancel"):
 		return
 	if build_menu and build_menu.visible:
@@ -86,6 +94,19 @@ func _setup_building() -> void:
 		build_menu.build_system = build_system
 	if build_button:
 		build_button.pressed.connect(_on_build_pressed)
+
+
+func _setup_speed_button() -> void:
+	GameState.speed_changed.connect(_show_speed)
+	if speed_button:
+		speed_button.focus_mode = Control.FOCUS_NONE
+		speed_button.pressed.connect(GameState.cycle_speed)
+	_show_speed(GameState.speed)
+
+
+func _show_speed(value: float) -> void:
+	if speed_button:
+		speed_button.text = "x%s" % str(value).trim_suffix(".0")
 
 
 func _on_build_pressed() -> void:

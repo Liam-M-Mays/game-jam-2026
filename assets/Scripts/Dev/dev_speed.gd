@@ -8,8 +8,8 @@ func _ready() -> void:
 
 func _input(event : InputEvent) -> void:
 	if event is InputEventKey and event.physical_keycode == KEY and not event.echo:
-		Engine.time_scale = FAST if event.pressed else 1.0
+		Engine.time_scale = FAST if event.pressed else GameState.speed
 
 func _notification(what : int) -> void:
 	if what == NOTIFICATION_APPLICATION_FOCUS_OUT:
-		Engine.time_scale = 1.0
+		Engine.time_scale = GameState.speed
