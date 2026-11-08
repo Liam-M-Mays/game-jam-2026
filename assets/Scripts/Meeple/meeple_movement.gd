@@ -67,6 +67,11 @@ func has_arrived() -> bool:
 		stop()
 	return _target.distance_to(position) <= 1
 
+func abandon_job() -> void:
+	JobSystem.requeue(job, self)
+	job = null
+	stop()
+
 func die() -> void:
 	VillageAudio.play(&"hurt", global_position)
 	set_process(false)

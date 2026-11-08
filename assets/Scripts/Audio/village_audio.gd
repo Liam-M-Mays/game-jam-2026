@@ -1,6 +1,7 @@
 extends Node
 
-const MASTER_VOLUME := 1.0
+const MASTER_VOLUME := 1.5
+const VILLAGE_SFX_BOOST_DB := 4.0
 const VOICE_COUNT := 6
 const VILLAGE_ZOOM := 6.0
 const SILENT_ZOOM := 2.2
@@ -107,8 +108,8 @@ func play(sound_name : StringName, at : Vector2) -> void:
 	voice.stream = sound.sounds.pick_random()
 	voice.global_position = at
 	voice.pitch_scale = randf_range(0.94, 1.06)
-	voice.base_db = sound.db
-	voice.volume_db = sound.db + _placement_db(camera, at)
+	voice.base_db = sound.db + VILLAGE_SFX_BOOST_DB
+	voice.volume_db = voice.base_db + _placement_db(camera, at)
 	voice.play()
 
 func _free_voice() -> Voice:
