@@ -21,7 +21,7 @@ script = ExtResource("2_4sa4q")
 area = NodePath("Area2D")
 drops = Dictionary[PackedScene, int]({ExtResource("3_drop"): 2})
 food_cost = 1
-spawn_chance = 0.01
+target_count = 16
 footprint = 2
 edge_distance_curve = SubResource("Curve_edge")
 

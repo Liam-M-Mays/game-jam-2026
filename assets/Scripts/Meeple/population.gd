@@ -30,7 +30,6 @@ func _process(delta : float) -> void:
 	if Inventory.count("food") > 0 and JobSystem.workers.size() < capacity():
 		huts.pick_random().spawn_meeple()
 
-# One death roll per unit of food that was needed but missing.
 func _on_shortage(kind : String, missing : int) -> void:
 	if kind != "food":
 		return

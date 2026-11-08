@@ -1,10 +1,6 @@
 extends Node2D
 class_name GiantPart
 
-# Every part samples its pose from one accumulated clock (same as walk.gd),
-# instead of chaining awaited tweens/timers. Awaits drop the leftover frame
-# time at each phase boundary, which made the parts slowly drift behind the
-# walk shift. Sampling from elapsed time keeps everything locked together.
 
 @export var lift_time := 1.4
 @export var hang_time := 0.6
@@ -34,15 +30,12 @@ func _process(delta : float) -> void:
 func _setup() -> void:
 	pass
 
-# Override: return the position at time t (seconds) into cycle number `index`.
 func _pose(_index : int, _t : float) -> Vector2:
 	return base_pos
 
-# A keyframe: move to `to` over `duration` with the given easing.
 func _key(to : Vector2, duration : float, easing := Tween.EASE_IN_OUT, trans_y := Tween.TRANS_LINEAR, trans_x := trans_y) -> Dictionary:
 	return {to = to, d = duration, ease = easing, ty = trans_y, tx = trans_x}
 
-# Samples a chain of keyframes starting from `from` at time t.
 func _sample(from : Vector2, keys : Array, t : float) -> Vector2:
 	for k in keys:
 		var to : Vector2 = k.to

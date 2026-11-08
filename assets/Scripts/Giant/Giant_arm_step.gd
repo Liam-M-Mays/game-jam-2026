@@ -9,7 +9,6 @@ func _setup() -> void:
 	if starts_shifted:
 		base_pos.x += shift_distance
 
-# The arm alternates each cycle: swing back (left + up), then return.
 func _is_left(index : int) -> bool:
 	return (index % 2 == 0) != starts_shifted
 

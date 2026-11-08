@@ -8,16 +8,14 @@ const BUILD_EFFECT := preload("res://assets/Scenes/Effects/cloud.tscn")
 const EMPTY_STAGE := -1
 const BLUEPRINT_SHADER := preload("res://assets/Shaders/blueprint.gdshader")
 const PREVIEW_OPACITY := 0.5
+const COMPLETED_GROUP := &"completed_buildings"
+const CONSTRUCTION_GROUP := &"construction_sites"
 
-## Tick on if the sheet runs finished -> empty (left to right) instead of empty -> finished.
 @export var reverse_frames := false
 @export var build_frames := 0
-## Cost of each build frame, in order. Entry i pays for frame i. Missing entries are free.
 @export var frames : Array[BuildFrame] = []
-## Resources that must be available before the building can be placed.
 @export var min_to_start : Dictionary[String, int] = {}
 
-## Total cost of all frames (read-only; edit the frames instead).
 var costs : Dictionary[String, int]:
 	get:
 		return _sum_frame_costs()
@@ -38,7 +36,6 @@ func _ready() -> void:
 	if not frames.is_empty() and frames.size() != last_stage() + 1:
 		push_warning("%s has %d frame costs but %d build frames" % [display_name(), frames.size(), last_stage() + 1])
 
-## Call after the preview is in the tree (GridObject._ready sets the outline material).
 func show_as_preview() -> void:
 	_set_stage(last_stage())
 	material = ShaderMaterial.new()
@@ -53,7 +50,6 @@ func last_stage() -> int:
 
 func _set_stage(stage : int) -> void:
 	stage = mini(stage, last_stage())
-	# Hide only our own pixels when empty, so the blueprint child still shows.
 	self_modulate.a = 1.0 if stage > EMPTY_STAGE else 0.0
 	if stage > EMPTY_STAGE:
 		frame = _stage_frame(stage)
@@ -62,8 +58,6 @@ func _set_stage(stage : int) -> void:
 func _stage_frame(stage : int) -> int:
 	return last_stage() - stage if reverse_frames else stage
 
-## Blue ghost of the next frame, drawn behind the sprite so it only fills in
-## the parts that aren't built yet. Hidden once the building is finished.
 func _update_blueprint(stage : int) -> void:
 	var next := stage + 1
 	if next > last_stage():
@@ -98,9 +92,50 @@ func total_cost() -> int:
 		total += costs[kind]
 	return total
 
-## What the next frame still needs beyond what's delivered or on the way. Empty = not stuck.
 func missing() -> Dictionary[String, int]:
 	return _missing.duplicate()
+
+func next_stage_needs() -> Dictionary[String, int]:
+	var needs : Dictionary[String, int] = {}
+	if not _constructing:
+		return needs
+	var next := _frame_cost(_built + 1)
+	for kind in next:
+		var short : int = next[kind] - _banked.get(kind, 0)
+		if short > 0:
+			needs[kind] = short
+	return needs
+
+func is_under_construction() -> bool:
+	return _constructing
+
+func icon() -> Texture2D:
+	var sheet := region_rect if region_enabled else Rect2(Vector2.ZERO, texture.get_size())
+	var size := sheet.size / Vector2(hframes, vframes)
+	var index := _stage_frame(last_stage())
+	var cell := Vector2(index % hframes, floori(float(index) / hframes))
+	var region := Rect2(sheet.position + cell * size, size)
+	var image := texture.get_image()
+	if image != null and not image.is_compressed():
+		var used := image.get_region(Rect2i(region)).get_used_rect()
+		if used.has_area():
+			region = Rect2(region.position + Vector2(used.position), Vector2(used.size))
+	var atlas := AtlasTexture.new()
+	atlas.atlas = texture
+	atlas.region = region
+	return atlas
+
+func can_place_at(_grid : Grid, _cells : Array[Cell]) -> bool:
+	return true
+
+func restricts_placement() -> bool:
+	return false
+
+func placement_area(_grid : Grid) -> Array[Cell]:
+	return []
+
+func placement_hint() -> String:
+	return ""
 
 func can_afford() -> bool:
 	return _has_resources(min_to_start)
@@ -119,6 +154,7 @@ func start_construction() -> void:
 	_constructing = true
 	_banked.clear()
 	_incoming.clear()
+	add_to_group(CONSTRUCTION_GROUP)
 	Inventory.changed.connect(_request_hauls)
 	JobSystem.changed.connect(_post_jobs)
 	_advance()
@@ -135,6 +171,7 @@ func complete() -> void:
 	area.input_pickable = true
 	spawn_effect(BUILD_EFFECT, 1)
 	JobSystem.worker_idle.connect(_on_worker_idle)
+	add_to_group(COMPLETED_GROUP)
 	completed.emit()
 
 func has_idle_work(_worker : Meeple) -> bool:
@@ -173,6 +210,7 @@ func _advance() -> void:
 
 func _finish_construction() -> void:
 	_constructing = false
+	remove_from_group(CONSTRUCTION_GROUP)
 	_set_missing({})
 	Inventory.changed.disconnect(_request_hauls)
 	if JobSystem.changed.is_connected(_post_jobs):

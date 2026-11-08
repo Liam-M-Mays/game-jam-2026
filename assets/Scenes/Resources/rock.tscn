@@ -17,7 +17,7 @@ area = NodePath("Area2D")
 wobbles_to_break = 3
 drops = Dictionary[PackedScene, int]({ExtResource("3_drop"): 1})
 food_cost = 1
-spawn_chance = 0.02
+target_count = 40
 
 [node name="Area2D" type="Area2D" parent="." unique_id=1452940078]
 

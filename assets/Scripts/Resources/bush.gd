@@ -8,23 +8,35 @@ class_name Bush
 
 var _stage := 0
 var _regrow_timer := 0.0
+var _clearing := false
 
 func _ready() -> void:
 	super()
 	_set_stage(0)
 
 func _process(delta : float) -> void:
-	if _stage == 0:
+	if _stage == 0 or _clearing:
 		return
 	_regrow_timer += delta
 	if _regrow_timer >= regrow_time:
 		_regrow_timer = 0.0
 		_set_stage(_stage - 1)
 
+func _on_clicked() -> void:
+	if _job == null and _stage >= _last_stage():
+		_clearing = true
+	super()
+	if _job == null:
+		_clearing = false
+
 func can_harvest() -> bool:
+	if _clearing:
+		return super()
 	return _stage < _last_stage()
 
 func _hit() -> bool:
+	if _clearing:
+		return super()
 	_react()
 	_set_stage(_stage + 1)
 	_regrow_timer = 0.0

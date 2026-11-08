@@ -6,6 +6,8 @@ const CARRY_FRAMES := { "wood": 2, "stone": 4 }
 const CARRY_HEAD_OFFSET := -0.5
 const SORT_BIAS := Vector2(0, 3)
 const IDLE_CHECK_INTERVAL := 0.5
+const WANDER_JITTER := Vector2(12, 6)
+const PATH_CHECKS := 8
 
 @export var speed := 100
 @export var y_stretch := 0.1
@@ -16,6 +18,8 @@ const IDLE_CHECK_INTERVAL := 0.5
 @export var wander_speed := 30
 @export var wander_pause_min := 1.0
 @export var wander_pause_max := 3.5
+@export var wander_ring := 2
+@export var building_hop_chance := 0.15
 
 @export var grid : Grid
 
@@ -26,6 +30,7 @@ var _stop_cells : Array[Cell] = []
 var _wandering := false
 var _wander_home : Vector2
 var _wander_pause := 0.0
+var _wander_building : Building = null
 var _idle_check := 0.0
 
 @onready var _base_scale_y := scale.y
@@ -76,7 +81,7 @@ func _physics_process(delta : float) -> void:
 
 func _process(delta : float) -> void:
 	if job is IdleJob and JobSystem.has_pending():
-		JobSystem.requeue(job, self) #This is making main queue absolute priority. 
+		JobSystem.requeue(job, self)
 		job = null
 	if job == null:
 		job = JobSystem.take()
@@ -104,13 +109,73 @@ func _wander(delta : float) -> void:
 	if not _wandering:
 		_wandering = true
 		_wander_home = position
+		_wander_building = _nearest_building()
 		_wander_pause = randf_range(wander_pause_min, wander_pause_max)
 	_wander_pause -= delta
 	if _wander_pause > 0:
 		return
 	_wander_pause = randf_range(wander_pause_min, wander_pause_max)
+	if not is_instance_valid(_wander_building) or randf() < building_hop_chance:
+		_wander_building = _pick_building()
+	if _wander_building != null:
+		var spot = _spot_near(_wander_building)
+		if spot != null:
+			_target = spot
+			return
 	for i in range(WANDER_ATTEMPTS):
 		var spot := _wander_home + Vector2.from_angle(randf() * TAU) * randf_range(wander_radius * 0.25, wander_radius)
 		if grid.cell_at(get_parent().to_global(spot)) != null:
 			_target = spot
 			return
+
+func _spot_near(building : Building):
+	var cells := grid.cells_around(building, wander_ring)
+	cells.shuffle()
+	var fallback = null
+	var fallback_dist := INF
+	for i in range(mini(cells.size(), WANDER_ATTEMPTS)):
+		var jitter := Vector2(randf_range(-1, 1), randf_range(-1, 1)) * WANDER_JITTER
+		var spot : Vector2 = get_parent().to_local(grid.to_global(cells[i].position)) + jitter
+		if _clear_path(spot):
+			return spot
+		var dist := position.distance_squared_to(spot)
+		if dist < fallback_dist:
+			fallback_dist = dist
+			fallback = spot
+	return fallback
+
+func _clear_path(to : Vector2) -> bool:
+	for i in range(1, PATH_CHECKS + 1):
+		var point : Vector2 = position.lerp(to, float(i) / PATH_CHECKS)
+		var cell := grid.cell_at(get_parent().to_global(point))
+		if cell != null and cell.occupant is Building:
+			return false
+	return true
+
+func _nearest_building() -> Building:
+	var best : Building = null
+	var best_dist := INF
+	for building in get_tree().get_nodes_in_group(Building.COMPLETED_GROUP):
+		var dist := global_position.distance_squared_to(building.global_position)
+		if dist < best_dist:
+			best_dist = dist
+			best = building
+	return best
+
+func _pick_building() -> Building:
+	var buildings := get_tree().get_nodes_in_group(Building.COMPLETED_GROUP)
+	if buildings.is_empty():
+		return null
+	var weights : Array[float] = []
+	var total := 0.0
+	for building in buildings:
+		var steps := global_position.distance_to(building.global_position) / 100.0
+		var weight := 1.0 / (1.0 + steps * steps)
+		weights.append(weight)
+		total += weight
+	var roll := randf() * total
+	for i in range(buildings.size()):
+		roll -= weights[i]
+		if roll <= 0.0:
+			return buildings[i]
+	return buildings.back()
