@@ -76,9 +76,9 @@ func _outcome_text(meeples: int) -> String:
 	if GameState.hunger < Population.STARVE_BELOW:
 		return "[color=#%s]Meeples will die[/color]" % BAD_COLOR
 	if GameState.hunger <= Population.GROW_ABOVE:
-		return "[color=#%s]Meeples are safe, but won't reproduce[/color]" % OK_COLOR
+		return "[color=#%s]Safe, won't reproduce[/color]" % OK_COLOR
 	if meeples >= Population.capacity():
-		return "[color=#%s]Meeples are safe, build more huts so they can reproduce[/color]" % OK_COLOR
+		return "[color=#%s]Safe, build huts to reproduce[/color]" % OK_COLOR
 	return "[color=#%s]Meeples will reproduce[/color]" % GOOD_COLOR
 
 

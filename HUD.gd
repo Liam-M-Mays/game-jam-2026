@@ -1,5 +1,7 @@
 extends CanvasLayer
 
+enum HungerBand { STARVING, FED, THRIVING }
+
 const SPEED_KEY := KEY_F
 const FIRST_TIP_DELAY := 2.0
 const ROTATION_DELAY_MIN := 60.0
@@ -60,6 +62,7 @@ const FUN_FACTS := [
 var _building_scene: PackedScene
 var _last_meeple_count := 0
 var _last_food := 0
+var _last_hunger_band := HungerBand.THRIVING
 var _upgrade_was_ready := false
 var _game_over := false
 var _deck: Array[Dictionary] = []
@@ -71,12 +74,14 @@ func _ready() -> void:
 		_ignore_mouse(counters)
 	Inventory.changed.connect(_refresh_counters)
 	Inventory.changed.connect(_check_food_empty)
+	GameState.hunger_changed.connect(_check_hunger_band)
 	JobSystem.changed.connect(_refresh_counters)
 	JobSystem.changed.connect(_check_meeples)
 	JobSystem.job_rejected.connect(func(_job): GameState.warn("Job queue is full"))
 	Population.all_meeples_died.connect(_on_all_meeples_died)
 	_last_meeple_count = JobSystem.workers.size()
 	_last_food = Inventory.count("food")
+	_last_hunger_band = _hunger_band(GameState.hunger)
 	_refresh_counters()
 	_setup_hunger_bar()
 	_setup_building()
@@ -251,6 +256,30 @@ func _check_food_empty() -> void:
 	if _last_food > 0 and food == 0:
 		GameState.warn("You're out of food! Pick berries or plant farms to gather more")
 	_last_food = food
+
+
+func _hunger_band(value: float) -> HungerBand:
+	if value < Population.STARVE_BELOW:
+		return HungerBand.STARVING
+	if value <= Population.GROW_ABOVE:
+		return HungerBand.FED
+	return HungerBand.THRIVING
+
+
+func _check_hunger_band(value: float) -> void:
+	if JobSystem.workers.is_empty():
+		return
+	var band := _hunger_band(value)
+	if band == _last_hunger_band:
+		return
+	_last_hunger_band = band
+	match band:
+		HungerBand.STARVING:
+			GameState.warn("Meeples are starving! Get more food")
+		HungerBand.FED:
+			GameState.toast("Meeples are fed, but won't reproduce")
+		HungerBand.THRIVING:
+			GameState.toast("Meeples are well fed and can reproduce")
 
 
 func _show_opening_tip(index: int) -> void:
