@@ -1,0 +1,72 @@
+[gd_scene format=3 uid="uid://cvxaesl5kibde"]
+
+[ext_resource type="Script" uid="uid://cmwljon6ih0lq" path="res://assets/Scripts/Cam/camera_controls.gd" id="1_w34p4"]
+[ext_resource type="PackedScene" path="res://assets/Scenes/meeple.tscn" id="2_xomjc"]
+[ext_resource type="PackedScene" path="res://assets/Scenes/grid.tscn" id="3_xomjc"]
+[ext_resource type="Script" uid="uid://d13jmgqp0eyq8" path="res://assets/Scripts/Cam/mouse.gd" id="5_ci4bg"]
+[ext_resource type="Script" uid="uid://dhxeaalsqdoin" path="res://assets/Scripts/Jobs/job_system.gd" id="6_rbwhl"]
+[ext_resource type="Script" uid="uid://clnxifq5klc7h" path="res://assets/Scripts/Buildings/build_system.gd" id="7_xomjc"]
+[ext_resource type="Script" uid="uid://durnxou7gvbj0" path="res://assets/Scripts/UI/resource_ui.gd" id="8_resui"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_g0qf3"]
+radius = 200.0
+
+[node name="Main" type="Node2D" unique_id=2023279790]
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=633916495]
+script = ExtResource("1_w34p4")
+
+[node name="Meeple" parent="." unique_id=381946220 instance=ExtResource("2_xomjc")]
+position = Vector2(609, 404)
+
+[node name="Grid" parent="." unique_id=1279537889 instance=ExtResource("3_xomjc")]
+position = Vector2(-1000, -600)
+
+[node name="Mouse" type="Area2D" parent="." unique_id=1782876279]
+input_pickable = false
+script = ExtResource("5_ci4bg")
+enabled = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Mouse" unique_id=1292404197]
+shape = SubResource("CircleShape2D_g0qf3")
+
+[node name="JobSystem" type="Node2D" parent="." unique_id=2146036250]
+script = ExtResource("6_rbwhl")
+
+[node name="BuildSystem" type="Node2D" parent="." unique_id=783348263 node_paths=PackedStringArray("grid", "cursor")]
+script = ExtResource("7_xomjc")
+grid = NodePath("../Grid")
+cursor = NodePath("../Mouse")
+
+[node name="UI" type="CanvasLayer" parent="." unique_id=1048576011]
+script = ExtResource("8_resui")
+
+[node name="WoodLabel" type="Label" parent="UI" unique_id=1048576012]
+offset_left = 20.0
+offset_top = 20.0
+theme_override_font_sizes/font_size = 32
+text = "Wood: 0"
+
+[node name="StoneLabel" type="Label" parent="UI" unique_id=1048576013]
+offset_left = 20.0
+offset_top = 70.0
+theme_override_font_sizes/font_size = 32
+text = "Stone: 0"
+
+[node name="FoodLabel" type="Label" parent="UI" unique_id=1048576014]
+offset_left = 20.0
+offset_top = 120.0
+theme_override_font_sizes/font_size = 32
+text = "Food: 0"
+
+[node name="MeepleLabel" type="Label" parent="UI" unique_id=1048576015]
+offset_left = 20.0
+offset_top = 170.0
+theme_override_font_sizes/font_size = 32
+text = "Meeples: 0"
+
+[node name="JobLabel" type="Label" parent="UI" unique_id=1048576016]
+offset_left = 20.0
+offset_top = 220.0
+theme_override_font_sizes/font_size = 32
+text = "Jobs: 0 / 0"
