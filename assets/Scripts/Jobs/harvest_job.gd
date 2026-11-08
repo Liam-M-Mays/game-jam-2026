@@ -21,7 +21,6 @@ func update(worker : Meeple, delta : float) -> bool:
 		return false
 	_timer -= target.wobble_interval
 	if not target.harvest():
-		#Inventory.spend("food", target.food_cost)
 		return false
 	Inventory.spend("food", target.food_cost)
 	return true

@@ -5,5 +5,5 @@ const HIGHLIGHT_COLOR := Color(0.4, 0.4, 0.4)
 
 var occupant : GridObject = null
 
-func highlight(alpha : float) -> void:
-	modulate = Color(HIGHLIGHT_COLOR, alpha)
+func highlight(alpha : float, color := HIGHLIGHT_COLOR) -> void:
+	modulate = Color(color, alpha)

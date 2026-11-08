@@ -18,7 +18,7 @@ wobble_interval = 0.7
 wobbles_to_break = 6
 drops = Dictionary[PackedScene, int]({ExtResource("3_drop"): 2})
 food_cost = 1
-spawn_chance = 0.01
+target_count = 20
 footprint = 2
 
 [node name="Area2D" type="Area2D" parent="." unique_id=389299539]

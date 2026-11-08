@@ -1,6 +1,19 @@
 class_name BuildMenu
 extends Control
 
+const BUILDINGS: Array[PackedScene] = [
+	preload("res://assets/Scenes/Buildings/small_hut.tscn"),
+	preload("res://assets/Scenes/Buildings/stone_hut.tscn"),
+	preload("res://assets/Scenes/Buildings/lumberjack.tscn"),
+	preload("res://assets/Scenes/Buildings/farm.tscn"),
+	preload("res://assets/Scenes/Buildings/barn.tscn"),
+	preload("res://assets/Scenes/Buildings/wood_pile.tscn"),
+	preload("res://assets/Scenes/Buildings/stone_pile.tscn"),
+]
+const BUTTON_SIZE := Vector2(360, 96)
+const ICON_SIZE := 96
+const FONT_SIZE := 24
+
 @export var building_list: Container
 @export var back_button: TextureButton
 @export var button_size := Vector2(200, 220)
@@ -28,10 +41,19 @@ func _ready() -> void:
 	hide()
 	if back_button:
 		back_button.pressed.connect(close)
-	for scene in building_scenes():
+	for scene in BUILDINGS:
 		var template: Building = scene.instantiate()
 		_templates[scene] = template
-		building_list.add_child(_make_button(scene, template))
+		var button := Button.new()
+		button.set_meta("scene", scene)
+		button.icon = template.icon()
+		button.expand_icon = true
+		button.custom_minimum_size = BUTTON_SIZE
+		button.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		button.add_theme_constant_override("icon_max_width", ICON_SIZE)
+		button.add_theme_font_size_override("font_size", FONT_SIZE)
+		button.pressed.connect(_on_building_pressed.bind(scene))
+		building_list.add_child(button)
 	Inventory.changed.connect(_refresh)
 	JobSystem.changed.connect(_refresh)
 	_refresh()
@@ -92,7 +114,7 @@ func _refresh() -> void:
 		if not _templates.has(scene):
 			continue
 		var building: Building = _templates[scene]
-		button.text = "%s\n%s" % [display_name(scene), _cost_text(building.min_to_start)]
+		button.text = "%s   %s" % [display_name(scene), _cost_text(building.min_to_start)]
 		button.modulate = Color.WHITE if building.can_start() else unavailable_tint
 
 

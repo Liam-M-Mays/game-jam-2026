@@ -1,7 +1,6 @@
 extends Building
 class_name Lumberjack
 
-## Chops harvestables that drop this scene (the wood drop).
 @export var chops : PackedScene = preload("res://assets/Scenes/Resources/Drops/wood.tscn")
 
 func has_idle_work(_worker : Meeple) -> bool:

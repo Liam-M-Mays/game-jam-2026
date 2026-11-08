@@ -6,6 +6,7 @@ const GROUP := &"harvestables"
 const BREAK_HOLD := 0.06
 const WOBBLE_DURATION := 0.25
 const SQUASH_DURATION := 0.2
+const GROW_DURATION := 0.5
 
 @export var wobble_interval := 0.6
 @export var wobbles_to_break := 4
@@ -15,7 +16,8 @@ const SQUASH_DURATION := 0.2
 @export var food_cost := 0
 
 @export_group("Spawning")
-@export_range(0.0, 1.0, 0.001) var spawn_chance := 0.0
+@export var target_count := 0
+@export_range(0.0, 1.0, 0.01) var respawn_chance := 0.5
 @export var edge_distance_curve : Curve
 @export var cluster_bonus := 0.0
 
@@ -25,6 +27,11 @@ var _job : Job = null
 func _ready() -> void:
 	super()
 	add_to_group(GROUP)
+
+func grow_in() -> void:
+	scale = _base_scale * Vector2(0.4, 0.05)
+	var tween := _tween(&"squash").set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(self, "scale", _base_scale, GROW_DURATION)
 
 func _on_clicked() -> void:
 	if _job is HarvestJob:

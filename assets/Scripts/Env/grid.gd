@@ -15,19 +15,30 @@ const CELL_OUTLINE : Array[Vector2] = [
 @export var start_building : PackedScene
 @export var spawnables : Array[PackedScene] = []
 @export var generation_seed := 0
+@export var respawn_interval := 2.0
+
+@export var building_clearance := 4
+
+const SPAWN_ATTEMPTS := 100
 
 class Spawnable:
 	var scene : PackedScene
-	var chance : float
+	var target : int
+	var respawn_chance : float
 	var footprint : int
 	var curve : Curve
 	var cluster_bonus : float
+	var max_weight : float
 
 var _cells : Array[Array] = []
 var _cell_scale : Vector2
 var _cell_offset : Vector2
 var _edge_distance := {}
 var _rng := RandomNumberGenerator.new()
+var _spawnables : Array[Spawnable] = []
+var _spots : Array = []
+var _respawn_timer := 0.0
+var _coords_of := {}
 
 func _ready() -> void:
 	var template := CELL.instantiate()
@@ -44,6 +55,23 @@ func cell_at(world_pos : Vector2) -> Cell:
 
 func free_cells_at(world_pos : Vector2, width := 1) -> Array[Cell]:
 	return _free_cells(_coords_at(world_pos), width)
+
+func cells_around(obj : GridObject, radius := 1) -> Array[Cell]:
+	var found : Array[Cell] = []
+	for cell in obj.cells:
+		var center : Vector2i = _coords_of.get(cell, Vector2i(-1, -1))
+		for dx in range(-radius, radius + 1):
+			for dy in range(-radius, radius + 1):
+				var offset := Vector2i(dx, dy)
+				if _hex_distance(offset) > radius:
+					continue
+				var near := _cell_or_null(center + offset)
+				if near != null and near.occupant == null and not found.has(near):
+					found.append(near)
+	return found
+
+func cell_distance(a : Cell, b : Cell) -> int:
+	return _hex_distance(_coords_of[a] - _coords_of[b])
 
 func place(obj : GridObject, cells : Array[Cell]) -> void:
 	obj.grid = self
@@ -77,6 +105,7 @@ func _build_cells() -> void:
 				var cell := CELL.instantiate()
 				cell.position = pos
 				column[y] = cell
+				_coords_of[cell] = Vector2i(x, y)
 				add_child(cell)
 
 func _cell_position(x : int, y : int) -> Vector2:
@@ -165,13 +194,15 @@ func _generate_resources() -> void:
 		_rng.seed = generation_seed
 	else:
 		_rng.randomize()
-	var options := _load_spawnables()
-	if options.is_empty():
-		return
-	var spots := _edge_distance.keys()
-	_shuffle(spots)
-	for coords in spots:
-		_try_spawn_at(coords, options)
+	_spawnables = _load_spawnables()
+	_spots = _edge_distance.keys()
+	var queue : Array[Spawnable] = []
+	for s in _spawnables:
+		for i in range(s.target):
+			queue.append(s)
+	_shuffle(queue)
+	for s in queue:
+		_spawn(s)
 
 func _load_spawnables() -> Array[Spawnable]:
 	var list : Array[Spawnable] = []
@@ -179,43 +210,107 @@ func _load_spawnables() -> Array[Spawnable]:
 		if scene == null:
 			continue
 		var template = scene.instantiate()
-		if template is Harvestable and template.spawn_chance > 0.0:
+		if template is Harvestable and template.target_count > 0:
 			var s := Spawnable.new()
 			s.scene = scene
-			s.chance = template.spawn_chance
+			s.target = template.target_count
+			s.respawn_chance = template.respawn_chance
 			s.footprint = template.footprint
 			s.curve = template.edge_distance_curve
 			s.cluster_bonus = template.cluster_bonus
+			s.max_weight = template.edge_distance_curve.max_value if template.edge_distance_curve != null else 1.0
+			if s.cluster_bonus > 0.0:
+				s.max_weight *= 1.0 + s.cluster_bonus * NEIGHBOURS.size() * s.footprint
 			list.append(s)
 		template.free()
 	return list
 
-func _try_spawn_at(coords : Vector2i, options : Array[Spawnable]) -> void:
-	var candidates : Array = []
-	var total := 0.0
-	for s in options:
+func _process(delta : float) -> void:
+	if _spawnables.is_empty():
+		return
+	_respawn_timer += delta
+	if _respawn_timer < respawn_interval:
+		return
+	_respawn_timer -= respawn_interval
+	_respawn()
+
+func _respawn() -> void:
+	var counts := {}
+	for node in get_tree().get_nodes_in_group(Harvestable.GROUP):
+		if not node.is_queued_for_deletion():
+			counts[node.scene_file_path] = counts.get(node.scene_file_path, 0) + 1
+	var blocked := {}
+	var blocked_ready := false
+	for s in _spawnables:
+		var missing : int = s.target - counts.get(s.scene.resource_path, 0)
+		if missing <= 0:
+			continue
+		if _rng.randf() >= s.respawn_chance * missing / float(s.target):
+			continue
+		if not blocked_ready:
+			blocked = _cells_with_movers()
+			blocked_ready = true
+		var obj := _spawn(s, blocked)
+		if obj != null:
+			obj.grow_in()
+
+func _cells_with_movers() -> Dictionary:
+	var blocked := {}
+	var movers : Array = JobSystem.workers.duplicate()
+	for child in get_children():
+		if child is ResourceDrop:
+			movers.append(child)
+	for mover in movers:
+		var cell := cell_at(mover.global_position)
+		if cell != null:
+			blocked[cell] = true
+	return blocked
+
+func _spawn(s : Spawnable, blocked := {}) -> Harvestable:
+	if _spots.is_empty():
+		return null
+	var building_coords := _building_coords()
+	for i in range(SPAWN_ATTEMPTS):
+		var coords : Vector2i = _spots[_rng.randi_range(0, _spots.size() - 1)]
 		var cells := _free_cells(coords, s.footprint)
-		if cells.is_empty():
+		if cells.is_empty() or cells.any(func(c): return blocked.has(c)):
 			continue
-		var weight := _spawn_weight(s, coords)
-		if weight <= 0.0:
+		var weight := _spawn_weight(s, coords) * _building_factor(s, coords, building_coords)
+		if _rng.randf() * s.max_weight >= weight:
 			continue
-		candidates.append([s, cells, weight])
-		total += weight
-	var roll := _rng.randf() * maxf(total, 1.0)
-	for candidate in candidates:
-		roll -= candidate[2]
-		if roll < 0.0:
-			place(candidate[0].scene.instantiate(), candidate[1])
-			return
+		var obj : Harvestable = s.scene.instantiate()
+		place(obj, cells)
+		return obj
+	return null
 
 func _spawn_weight(s : Spawnable, coords : Vector2i) -> float:
-	var weight := s.chance
+	var weight := 1.0
 	if s.curve != null:
 		weight *= maxf(s.curve.sample(_edge_distance[coords]), 0.0)
 	if s.cluster_bonus != 0.0:
 		weight *= maxf(1.0 + s.cluster_bonus * _matching_neighbours(s, coords), 0.0)
 	return weight
+
+func _building_coords() -> Array[Vector2i]:
+	var list : Array[Vector2i] = []
+	for child in get_children():
+		if child is Building:
+			for cell in child.cells:
+				list.append(_coords_of[cell])
+	return list
+
+func _building_factor(s : Spawnable, coords : Vector2i, building_coords : Array[Vector2i]) -> float:
+	if building_clearance <= 0 or building_coords.is_empty():
+		return 1.0
+	var nearest := building_clearance
+	for i in range(s.footprint):
+		for b in building_coords:
+			nearest = mini(nearest, _hex_distance(coords + Vector2i(i, 0) - b))
+	var t := float(nearest) / building_clearance
+	return t * t
+
+func _hex_distance(offset : Vector2i) -> int:
+	return (absi(offset.x) + absi(offset.y) + absi(offset.x + offset.y)) / 2
 
 func _matching_neighbours(s : Spawnable, coords : Vector2i) -> int:
 	var found := 0
