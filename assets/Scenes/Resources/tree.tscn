@@ -18,6 +18,9 @@ wobbles_to_break = 2
 drops = Dictionary[PackedScene, int]({ExtResource("3_drop"): 1})
 food_cost = 1
 target_count = 40
+dark_weight = 0
+mid_weight = 0.5
+light_weight = 1
 
 [node name="Area2D" type="Area2D" parent="." unique_id=1707068377]
 

@@ -138,16 +138,13 @@ func placement_hint() -> String:
 	return ""
 
 func can_afford() -> bool:
-	return _has_resources(min_to_start)
-
-func jobs_needed() -> int:
-	var total := 0
 	for kind in min_to_start:
-		total += min_to_start[kind]
-	return mini(total, JobSystem.capacity())
+		if Inventory.count(kind) < min_to_start[kind]:
+			return false
+	return true
 
 func can_start() -> bool:
-	return can_afford() and JobSystem.has_room(jobs_needed())
+	return can_afford()
 
 func start_construction() -> void:
 	_built = EMPTY_STAGE
@@ -273,12 +270,6 @@ func _remaining_costs() -> Dictionary[String, int]:
 func _covers(have : Dictionary, need : Dictionary[String, int]) -> bool:
 	for kind in need:
 		if have.get(kind, 0) < need[kind]:
-			return false
-	return true
-
-func _has_resources(need : Dictionary[String, int]) -> bool:
-	for kind in need:
-		if Inventory.available(kind) < need[kind]:
 			return false
 	return true
 

@@ -10,6 +10,8 @@ const HOVER_CELL_ALPHA := 0.5
 
 @export var area : Area2D
 @export_range(1, 4) var footprint := 1
+@export_range(1, 4) var footprint_depth := 1
+@export var effect_offset := Vector2.ZERO
 @export var hoverable := true
 
 var grid : Grid
@@ -49,7 +51,7 @@ func reject() -> void:
 
 func spawn_effect(scene : PackedScene, z_offset := 0) -> void:
 	var effect : AnimatedSprite2D = scene.instantiate()
-	effect.position = position + _base_offset * _base_scale
+	effect.position = position + (_base_offset + effect_offset) * _base_scale
 	effect.scale = _base_scale
 	effect.z_index = z_index + z_offset
 	effect.animation_finished.connect(effect.queue_free)

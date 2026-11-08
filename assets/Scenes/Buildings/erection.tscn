@@ -1,0 +1,38 @@
+[gd_scene format=3 uid="uid://c61n7h44m7dng"]
+
+[ext_resource type="Texture2D" uid="uid://ca82qatjxyrk5" path="res://ART/erection_sheet.png" id="1_tex"]
+[ext_resource type="Script" uid="uid://dmfxbb6f2f1x3" path="res://assets/Scripts/Buildings/building.gd" id="2_scr"]
+[ext_resource type="Script" uid="uid://cyj5e8cr4hrge" path="res://assets/Scripts/Buildings/build_frame.gd" id="3_phase"]
+
+[sub_resource type="Resource" id="Frame_0"]
+script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"stone": 2,
+"wood": 1
+})
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
+size = Vector2(28, 61)
+
+[node name="erection" type="Sprite2D" unique_id=1648205937 node_paths=PackedStringArray("area")]
+z_index = 1
+scale = Vector2(10, 10)
+texture = ExtResource("1_tex")
+offset = Vector2(10, -30)
+hframes = 48
+script = ExtResource("2_scr")
+frames = Array[ExtResource("3_phase")]([SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0")])
+min_to_start = Dictionary[String, int]({
+"stone": 10,
+"wood": 5
+})
+area = NodePath("Area2D")
+footprint = 4
+footprint_depth = 3
+hoverable = false
+
+[node name="Area2D" type="Area2D" parent="." unique_id=503917264]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=1172640385]
+position = Vector2(9.1, -30.199999)
+shape = SubResource("RectangleShape2D_1")

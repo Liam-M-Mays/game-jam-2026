@@ -52,9 +52,12 @@ func claim_closest(kind : String, world_pos : Vector2) -> ResourceDrop:
 			continue
 		if closest == null or world_pos.distance_squared_to(drop.global_position) < world_pos.distance_squared_to(closest.global_position):
 			closest = drop
-	closest.claimed = true
-	_reserved[kind] -= 1
+	claim_reserved(closest)
 	return closest
+
+func claim_reserved(drop : ResourceDrop) -> void:
+	drop.claimed = true
+	_reserved[drop.kind] -= 1
 
 func closest_loose(kind : String, world_pos : Vector2) -> ResourceDrop:
 	var closest : ResourceDrop = null

@@ -3,21 +3,24 @@
 [ext_resource type="Shader" uid="uid://v0emffg1i3le" path="res://assets/Shaders/yard_ground.gdshader" id="1_shader"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_srvn5"]
+seed = 7
 frequency = 0.006
 fractal_octaves = 4
 
 [sub_resource type="NoiseTexture2D" id="NoiseTexture2D_yard"]
 width = 1024
-height = 1024
 noise = SubResource("FastNoiseLite_srvn5")
 
 [resource]
 shader = ExtResource("1_shader")
 shader_parameter/noise_tex = SubResource("NoiseTexture2D_yard")
-shader_parameter/dark_color = Color(0.3513047, 0.5496958, 0.34730846, 1)
+shader_parameter/edge_origin = Vector2(0, 0)
+shader_parameter/dark_color = Color(0.3686, 0.5765, 0.3647, 1)
 shader_parameter/base_color = Color(0.3922, 0.6, 0.3843, 1)
 shader_parameter/light_color = Color(0.4353, 0.6431, 0.4235, 1)
 shader_parameter/dark_below = 0.3910000185725
 shader_parameter/light_above = 0.6130000291175
-shader_parameter/pixel_size = 1.0
+shader_parameter/noise_strength = 0.5
+shader_parameter/edge_curve = 0.6
+shader_parameter/use_edge = false
 shader_parameter/row_shift = 1.0

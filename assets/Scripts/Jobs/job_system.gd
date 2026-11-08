@@ -52,6 +52,34 @@ func find_idle_job(worker : Meeple) -> IdleJob:
 		var job : IdleJob = building.claim_idle_job(worker)
 		if job != null:
 			return job
+	return _find_store_job(worker)
+
+func _find_store_job(worker : Meeple) -> StoreJob:
+	var from := worker.global_position
+	var best_storage : Storage = null
+	var best_drop : ResourceDrop = null
+	var best_trip := INF
+	for storage : Storage in get_tree().get_nodes_in_group(Storage.GROUP):
+		if not storage.has_room() or Inventory.available(storage.kind) <= 0:
+			continue
+		var drop := Inventory.closest_loose(storage.kind, from)
+		if drop == null:
+			continue
+		var trip := from.distance_to(drop.global_position) + drop.global_position.distance_to(storage.global_position)
+		if trip < best_trip:
+			best_trip = trip
+			best_storage = storage
+			best_drop = drop
+	if best_storage == null:
+		return null
+	return best_storage.make_store_job(best_drop)
+
+func take_partner(job : HaulJob) -> HaulJob:
+	for other in _pending:
+		if other is HaulJob and other.site == job.site and other.kind == job.kind:
+			_pending.erase(other)
+			_active.append(other)
+			return other
 	return null
 
 func finish(job : Job) -> void:

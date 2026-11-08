@@ -87,7 +87,6 @@ texture = ExtResource("8_uyqwq")
 script = ExtResource("18_yardscript")
 preset = 0
 frequency = 0.006
-noise_seed = 0
 
 [node name="Yard" type="Sprite2D" parent="Node2D2/Node2D/Torso/Yard" unique_id=941309571]
 z_index = -5

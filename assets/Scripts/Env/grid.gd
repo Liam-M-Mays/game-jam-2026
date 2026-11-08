@@ -29,6 +29,7 @@ class Spawnable:
 	var curve : Curve
 	var cluster_bonus : float
 	var max_weight : float
+	var band_weights : Array[float]
 
 var _cells : Array[Array] = []
 var _cell_scale : Vector2
@@ -39,6 +40,7 @@ var _spawnables : Array[Spawnable] = []
 var _spots : Array = []
 var _respawn_timer := 0.0
 var _coords_of := {}
+var _cell_bands := {}
 
 func _ready() -> void:
 	var template := CELL.instantiate()
@@ -47,14 +49,15 @@ func _ready() -> void:
 	template.free()
 	_build_cells()
 	_compute_edge_distance()
+	_seed_world()
 	_place_start_building()
 	_generate_resources()
 
 func cell_at(world_pos : Vector2) -> Cell:
 	return _cell_or_null(_coords_at(world_pos))
 
-func free_cells_at(world_pos : Vector2, width := 1) -> Array[Cell]:
-	return _free_cells(_coords_at(world_pos), width)
+func free_cells_at(world_pos : Vector2, width := 1, depth := 1) -> Array[Cell]:
+	return _free_cells(_coords_at(world_pos), width, depth)
 
 func cells_around(obj : GridObject, radius := 1) -> Array[Cell]:
 	var found : Array[Cell] = []
@@ -70,8 +73,13 @@ func cells_around(obj : GridObject, radius := 1) -> Array[Cell]:
 					found.append(near)
 	return found
 
-func cell_distance(a : Cell, b : Cell) -> int:
-	return _hex_distance(_coords_of[a] - _coords_of[b])
+func cells_at_offsets(origin : Cell, offsets : Array[Vector2i]) -> Array[Cell]:
+	var found : Array[Cell] = []
+	for offset in offsets:
+		var cell := _cell_or_null(_coords_of[origin] + offset)
+		if cell != null:
+			found.append(cell)
+	return found
 
 func place(obj : GridObject, cells : Array[Cell]) -> void:
 	obj.grid = self
@@ -122,13 +130,14 @@ func _cell_or_null(coords : Vector2i) -> Cell:
 		return null
 	return _cells[coords.x][coords.y]
 
-func _free_cells(coords : Vector2i, width : int) -> Array[Cell]:
+func _free_cells(coords : Vector2i, width : int, depth := 1) -> Array[Cell]:
 	var cells : Array[Cell] = []
-	for i in range(width):
-		var cell := _cell_or_null(coords + Vector2i(i, 0))
-		if cell == null or cell.occupant != null:
-			return []
-		cells.append(cell)
+	for row in range(depth):
+		for i in range(width):
+			var cell := _cell_or_null(coords + Vector2i(i, row))
+			if cell == null or cell.occupant != null:
+				return []
+			cells.append(cell)
 	return cells
 
 func _fits_ground(pos : Vector2) -> bool:
@@ -182,18 +191,27 @@ func _place_start_building() -> void:
 	var spots := _edge_distance.keys()
 	spots.sort_custom(func(a, b): return _edge_distance[a] > _edge_distance[b])
 	for coords in spots:
-		var cells := _free_cells(coords, building.footprint)
+		var cells := _free_cells(coords, building.footprint, building.footprint_depth)
 		if not cells.is_empty():
 			place(building, cells)
 			building.complete()
 			return
 	building.free()
 
-func _generate_resources() -> void:
+func _seed_world() -> void:
 	if generation_seed != 0:
 		_rng.seed = generation_seed
 	else:
 		_rng.randomize()
+	print("World seed: ", _rng.seed)
+	if ground_sprites.is_empty() or not ground_sprites[0] is YardGround:
+		return
+	var yard : YardGround = ground_sprites[0]
+	yard.generate(_rng.seed, _is_ground)
+	for cell in _coords_of:
+		_cell_bands[_coords_of[cell]] = yard.band_at(to_global(cell.position + _cell_offset * _cell_scale))
+
+func _generate_resources() -> void:
 	_spawnables = _load_spawnables()
 	_spots = _edge_distance.keys()
 	var queue : Array[Spawnable] = []
@@ -218,6 +236,7 @@ func _load_spawnables() -> Array[Spawnable]:
 			s.footprint = template.footprint
 			s.curve = template.edge_distance_curve
 			s.cluster_bonus = template.cluster_bonus
+			s.band_weights = [template.dark_weight, template.mid_weight, template.light_weight]
 			s.max_weight = template.edge_distance_curve.max_value if template.edge_distance_curve != null else 1.0
 			if s.cluster_bonus > 0.0:
 				s.max_weight *= 1.0 + s.cluster_bonus * NEIGHBOURS.size() * s.footprint
@@ -285,12 +304,26 @@ func _spawn(s : Spawnable, blocked := {}) -> Harvestable:
 	return null
 
 func _spawn_weight(s : Spawnable, coords : Vector2i) -> float:
-	var weight := 1.0
+	var weight := _band_factor(s, coords)
 	if s.curve != null:
 		weight *= maxf(s.curve.sample(_edge_distance[coords]), 0.0)
 	if s.cluster_bonus != 0.0:
 		weight *= maxf(1.0 + s.cluster_bonus * _matching_neighbours(s, coords), 0.0)
 	return weight
+
+func _band_factor(s : Spawnable, coords : Vector2i) -> float:
+	var factor := 1.0
+	for i in range(s.footprint):
+		var cell_coords := coords + Vector2i(i, 0)
+		var band : int = _cell_bands.get(cell_coords, -1)
+		if band < 0:
+			continue
+		factor = minf(factor, s.band_weights[band])
+		for n in NEIGHBOURS:
+			var near : int = _cell_bands.get(cell_coords + n, -1)
+			if near >= 0 and s.band_weights[near] == 0.0:
+				return 0.0
+	return factor
 
 func _building_coords() -> Array[Vector2i]:
 	var list : Array[Vector2i] = []
