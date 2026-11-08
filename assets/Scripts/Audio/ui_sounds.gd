@@ -18,6 +18,12 @@ func _ready() -> void:
 	add_child(_warning)
 	GameState.toast_requested.connect(_on_toast_requested)
 	get_tree().node_added.connect(_on_node_added)
+	_connect_existing(get_tree().root)
+
+func _connect_existing(node : Node) -> void:
+	_on_node_added(node)
+	for child in node.get_children():
+		_connect_existing(child)
 
 func _on_node_added(node : Node) -> void:
 	var button := node as BaseButton
