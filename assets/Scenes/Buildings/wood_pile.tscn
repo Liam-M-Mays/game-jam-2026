@@ -1,10 +1,34 @@
 [gd_scene format=3 uid="uid://di6o41uf0d2fo"]
 
-[ext_resource type="Texture2D" uid="uid://dv6u8vxfs8b8p" path="res://ART/fuh_u_n_yo_big_ass_dih_liam.png" id="1_tex"]
+[ext_resource type="Texture2D" uid="uid://c4sg8gy2lto3w" path="res://ART/wood_pile_sheet.png" id="1_tex"]
 [ext_resource type="Script" uid="uid://n3jjbjcel18r" path="res://assets/Scripts/Buildings/storage.gd" id="2_scr"]
 [ext_resource type="Script" uid="uid://cyj5e8cr4hrge" path="res://assets/Scripts/Buildings/build_frame.gd" id="3_phase"]
 
 [sub_resource type="Resource" id="Frame_0"]
+script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"wood": 1
+})
+
+[sub_resource type="Resource" id="Frame_1"]
+script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"wood": 1
+})
+
+[sub_resource type="Resource" id="Frame_2"]
+script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"wood": 1
+})
+
+[sub_resource type="Resource" id="Frame_3"]
+script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"wood": 1
+})
+
+[sub_resource type="Resource" id="Frame_4"]
 script = ExtResource("3_phase")
 costs = Dictionary[String, int]({
 "wood": 1
@@ -17,12 +41,12 @@ size = Vector2(9, 9)
 z_index = 1
 scale = Vector2(10, 10)
 texture = ExtResource("1_tex")
-offset = Vector2(-0.5, -2.5)
-hframes = 41
+offset = Vector2(-0.5, -2)
+hframes = 45
 script = ExtResource("2_scr")
 kind = "wood"
-build_frames = 1
-frames = Array[ExtResource("3_phase")]([SubResource("Frame_0")])
+build_frames = 5
+frames = Array[ExtResource("3_phase")]([SubResource("Frame_0"), SubResource("Frame_1"), SubResource("Frame_2"), SubResource("Frame_3"), SubResource("Frame_4")])
 min_to_start = Dictionary[String, int]({
 "wood": 1
 })

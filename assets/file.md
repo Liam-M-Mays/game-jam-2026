@@ -100,7 +100,7 @@ How it behaves:
 - **A failed click** (blocked cells, can't afford, queue full) makes the preview flash red and shake, emits `placement_failed(reason)`, and stays in build mode.
 - **Farm plots** can only go near a barn. Each barn takes 3 plots within 3 cells of it, and a barn counts as soon as it's placed (it doesn't have to be finished). While placing a farm, the normal cell cursor is off. Only the free cells around barns are shown, and the ghost plot appears only when the mouse is on one of them. A click outside them fails with `OUT_OF_AREA`, which `HUD._on_placement_failed` doesn't handle yet.
 - **Esc** calls `end_build()` and marks the event handled, so your HUD's `_unhandled_input` never sees that Esc. Outside build mode, Esc passes through to the HUD normally.
-- **Playtest hotkeys** (the `HOTKEYS` dict at the top of the file): `2` small hut, `3` stone hut, `4` barn, `5` farm, `6` stone pile, `7` wood pile, `8` lumberjack.
+- **Playtest hotkeys** (the `HOTKEYS` dict at the top of the file): `2` small hut, `3` stone hut, `4` barn, `5` farm, `6` stone pile, `7` wood pile, `8` lumberjack, `9` miner.
 - **The town hall is not buildable.** It's the starting building (`grid.tscn` → `start_building`), so leave it out of the build menu.
 - `BuildSystem` is `PAUSABLE`. Start placement from a menu, then **unpause**, or the preview won't follow the mouse.
 
@@ -252,7 +252,7 @@ assets/Scripts/
   Buildings/building.gd       Costs, haul jobs, construction frames, completed signal
   Buildings/hut.gd            Spawns a meeple when completed (town hall, small hut, stone hut)
   Buildings/storage.gd        Stone / wood piles: idle job hauls loose drops in
-  Buildings/lumberjack.gd     Idle job: one meeple at a time chops the free tree closest to the building
+  Buildings/lumberjack.gd     Idle job: one meeple at a time chops the free tree closest to the building. miner.tscn reuses it with chops = the rock drop, so it mines rocks
   Buildings/barn.gd           Allows up to 3 farm plots within farm_radius cells
   Buildings/farm.gd           1 build frame, then grows through the rest of the sheet. Ripe = idle job harvests 1 food and resets
   Buildings/build_system.gd   class BuildSystem: build mode, preview, placement

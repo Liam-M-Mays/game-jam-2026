@@ -20,6 +20,8 @@
 [ext_resource type="Texture2D" uid="uid://b1rkpw2ub3gk0" path="res://ART/sky_sprites_mountains1.tres" id="14_uyqwq"]
 [ext_resource type="Texture2D" uid="uid://mwo2krs3ioat" path="res://ART/sky_sprites_sky.tres" id="15_vq7lj"]
 [ext_resource type="Script" uid="uid://dsqse147e1lpv" path="res://assets/Scripts/Cam/giant_camera.gd" id="16_gcam"]
+[ext_resource type="Material" uid="uid://bvwf5d3484eng" path="res://assets/Res/yard_ground.tres" id="17_yard"]
+[ext_resource type="Script" uid="uid://cw0qdpuqfhjiu" path="res://assets/Scripts/Env/yard_ground.gd" id="18_yardscript"]
 
 [sub_resource type="Gradient" id="Gradient_8ptjo"]
 
@@ -78,12 +80,19 @@ texture = ExtResource("6_vbtyo")
 
 [node name="Yard" type="Sprite2D" parent="Node2D2/Node2D/Torso" unique_id=1897193016]
 z_index = -5
+material = ExtResource("17_yard")
 position = Vector2(-1, -152)
 scale = Vector2(150, 70)
 texture = ExtResource("8_uyqwq")
+script = ExtResource("18_yardscript")
+preset = 0
+frequency = 0.006
+noise_seed = 0
 
 [node name="Yard" type="Sprite2D" parent="Node2D2/Node2D/Torso/Yard" unique_id=941309571]
 z_index = -5
+material = ExtResource("17_yard")
+instance_shader_parameters/yard_origin = Vector2(-15, -46)
 position = Vector2(-0.1, -0.6571429)
 scale = Vector2(0.7, 1)
 texture = ExtResource("8_uyqwq")
