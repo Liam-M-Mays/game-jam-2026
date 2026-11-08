@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://bh51rkt6yrbvy"
+path="res://.godot/imported/WoodLogHandling2.wav-a79f4b484f07630d8fb0abbe1556fe80.sample"
+
+[deps]
+
+source_file="res://Claude Picked Sound Effects/Hauling Wood and Stone/WoodLogHandling2.wav"
+dest_files=["res://.godot/imported/WoodLogHandling2.wav-a79f4b484f07630d8fb0abbe1556fe80.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2

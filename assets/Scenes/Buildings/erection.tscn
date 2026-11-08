@@ -21,12 +21,12 @@ texture = ExtResource("1_tex")
 offset = Vector2(10, -30)
 hframes = 48
 script = ExtResource("2_scr")
-show_blueprint = false
 frames = Array[ExtResource("3_phase")]([SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0")])
 min_to_start = Dictionary[String, int]({
 "stone": 10,
 "wood": 5
 })
+show_blueprint = false
 area = NodePath("Area2D")
 footprint = 4
 footprint_depth = 3

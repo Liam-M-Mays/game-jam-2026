@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://be6po8ft44avw"
+path="res://.godot/imported/Rockfall2.wav-aa54cc411d21264e1a86d70e71458872.sample"
+
+[deps]
+
+source_file="res://Claude Picked Sound Effects/Giant Stomp/Rockfall2.wav"
+dest_files=["res://.godot/imported/Rockfall2.wav-aa54cc411d21264e1a86d70e71458872.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2

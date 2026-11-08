@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://dsqp7m4yck4c7"
+path="res://.godot/imported/DesignedPickaxe3.wav-503fc2416d93b951581b827166c26d43.sample"
+
+[deps]
+
+source_file="res://Claude Picked Sound Effects/Mining Rocks/DesignedPickaxe3.wav"
+dest_files=["res://.godot/imported/DesignedPickaxe3.wav-503fc2416d93b951581b827166c26d43.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2
