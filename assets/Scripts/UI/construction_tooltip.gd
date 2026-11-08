@@ -39,7 +39,7 @@ func _process(_delta : float) -> void:
 	_panel.position = pos.clamp(Vector2.ZERO, (screen - _panel.size).max(Vector2.ZERO))
 
 static func describe(site : Building) -> String:
-	var lines := ["[b]%s[/b]" % site.display_name(), "Next stage needs:"]
+	var lines := ["[b]%s[/b]" % site.display_name(), "Built %d / %d" % [site.built_stage() + 1, site.last_stage() + 1], "Next stage needs:"]
 	var stuck := site.missing()
 	var needs := site.next_stage_needs()
 	for kind in needs:

@@ -5,7 +5,6 @@
 [ext_resource type="Texture2D" uid="uid://b30hablfkuedq" path="res://ART/shi.png" id="2_gudfk"]
 [ext_resource type="Script" uid="uid://bs3wgvy4ufnu8" path="res://Build_Menu.gd" id="3_gudfk"]
 [ext_resource type="Script" uid="uid://co4meqn1plgk2" path="res://Pause_Menu.gd" id="5_1m68m"]
-[ext_resource type="Script" uid="uid://bb8dea8yxh2tq" path="res://Build_tooltip.gd" id="6_quk1y"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_3wxnk"]
 atlas = ExtResource("2_gudfk")
@@ -63,7 +62,7 @@ region = Rect2(506, 25, 40, 22)
 atlas = ExtResource("2_gudfk")
 region = Rect2(628, 25, 40, 20)
 
-[node name="HUD" type="CanvasLayer" unique_id=1588467611 node_paths=PackedStringArray("counters", "stone_label", "wood_label", "meeple_label", "hunger_bar", "build_button", "build_menu", "pause_menu", "build_tooltip")]
+[node name="HUD" type="CanvasLayer" unique_id=1588467611 node_paths=PackedStringArray("counters", "stone_label", "wood_label", "meeple_label", "hunger_bar", "build_button", "build_menu", "pause_menu")]
 script = ExtResource("1_uj4j1")
 counters = NodePath("Counters")
 stone_label = NodePath("Counters/Stone/StoneLabel")
@@ -73,7 +72,6 @@ hunger_bar = NodePath("Hunger/HungerBar")
 build_button = NodePath("BuildButton")
 build_menu = NodePath("BuildMenu")
 pause_menu = NodePath("PauseMenu")
-build_tooltip = NodePath("BuildToolTip")
 
 [node name="Counters" type="HBoxContainer" parent="." unique_id=279582234]
 anchors_preset = 5
@@ -276,12 +274,3 @@ grow_vertical = 0
 pivot_offset = Vector2(24, -24)
 theme_override_constants/separation = 8
 script = ExtResource("1_knk3d")
-
-[node name="BuildToolTip" type="PanelContainer" parent="." unique_id=775837357 node_paths=PackedStringArray("label")]
-offset_right = 40.0
-offset_bottom = 40.0
-script = ExtResource("6_quk1y")
-label = NodePath("Label")
-
-[node name="Label" type="Label" parent="BuildToolTip" unique_id=825891909]
-layout_mode = 2
