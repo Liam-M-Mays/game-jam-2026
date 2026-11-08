@@ -70,11 +70,15 @@ func _hit() -> bool:
 	if _wobbles < wobbles_to_break:
 		_react()
 		return false
+	_shatter()
+	return true
+
+func _shatter() -> void:
+	_wobbles = wobbles_to_break
 	_squash()
 	var tween := _start_flash(Color.WHITE)
 	tween.tween_interval(BREAK_HOLD)
 	tween.tween_callback(_break)
-	return true
 
 func _react() -> void:
 	_squash()

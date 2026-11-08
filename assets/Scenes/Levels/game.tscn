@@ -11,7 +11,6 @@
 [ext_resource type="Script" uid="uid://dh1q7oir02v0t" path="res://assets/Scripts/Giant/Giant_arm_step.gd" id="7_1g62p"]
 [ext_resource type="Texture2D" uid="uid://dqt5vqxk0sdc6" path="res://assets/Art/Characters/Big_back_diddy_arm_foreground.png" id="7_ux80a"]
 [ext_resource type="Script" uid="uid://clnxifq5klc7h" path="res://assets/Scripts/Buildings/build_system.gd" id="7_xomjc"]
-[ext_resource type="Script" uid="uid://durnxou7gvbj0" path="res://assets/Scripts/UI/resource_ui.gd" id="8_resui"]
 [ext_resource type="Texture2D" uid="uid://cf5wt1v7gvafk" path="res://ART/green.tres" id="8_uyqwq"]
 [ext_resource type="Texture2D" uid="uid://jmnrxvgesex7" path="res://assets/Art/Characters/Big_back_diddy_arm_background.png" id="9_rni5u"]
 [ext_resource type="Texture2D" uid="uid://x200khdp0ig0" path="res://ART/sky_sprites_trees1.tres" id="11_aah2l"]
@@ -22,6 +21,7 @@
 [ext_resource type="Script" uid="uid://dsqse147e1lpv" path="res://assets/Scripts/Cam/giant_camera.gd" id="16_gcam"]
 [ext_resource type="Material" uid="uid://bvwf5d3484eng" path="res://assets/Res/yard_ground.tres" id="17_yard"]
 [ext_resource type="Script" uid="uid://cw0qdpuqfhjiu" path="res://assets/Scripts/Env/yard_ground.gd" id="18_yardscript"]
+[ext_resource type="PackedScene" uid="uid://ikcvt7q7gjvs" path="res://assets/hud.tscn" id="19_hud"]
 
 [sub_resource type="Gradient" id="Gradient_8ptjo"]
 
@@ -196,35 +196,6 @@ repeat_times = 4
 [node name="Sprite2D" type="Sprite2D" parent="Sky" unique_id=699937425]
 texture = ExtResource("15_vq7lj")
 
-[node name="UI" type="CanvasLayer" parent="." unique_id=1048576011]
-script = ExtResource("8_resui")
-
-[node name="WoodLabel" type="Label" parent="UI" unique_id=1048576012]
-offset_left = 20.0
-offset_top = 20.0
-theme_override_font_sizes/font_size = 32
-text = "Wood: 0"
-
-[node name="StoneLabel" type="Label" parent="UI" unique_id=1048576013]
-offset_left = 20.0
-offset_top = 70.0
-theme_override_font_sizes/font_size = 32
-text = "Stone: 0"
-
-[node name="FoodLabel" type="Label" parent="UI" unique_id=1048576014]
-offset_left = 20.0
-offset_top = 120.0
-theme_override_font_sizes/font_size = 32
-text = "Food: 0"
-
-[node name="MeepleLabel" type="Label" parent="UI" unique_id=1048576015]
-offset_left = 20.0
-offset_top = 170.0
-theme_override_font_sizes/font_size = 32
-text = "Meeples: 0"
-
-[node name="JobLabel" type="Label" parent="UI" unique_id=1048576016]
-offset_left = 20.0
-offset_top = 220.0
-theme_override_font_sizes/font_size = 32
-text = "Jobs: 0 / 0"
+[node name="HUD" parent="." unique_id=1588467611 node_paths=PackedStringArray("build_system", "camera") instance=ExtResource("19_hud")]
+build_system = NodePath("../Node2D2/Node2D/Torso/Back/BuildSystem")
+camera = NodePath("../Node2D2/Node2D/Torso/Camera2D")

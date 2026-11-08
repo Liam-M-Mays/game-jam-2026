@@ -104,6 +104,7 @@ texture = ExtResource("1_tex")
 offset = Vector2(3.5, -8.5)
 hframes = 16
 script = ExtResource("2_scr")
+required_town_hall_level = 4
 wheel = NodePath("Wheel")
 reverse_frames = true
 build_frames = 15
@@ -122,7 +123,7 @@ shape = SubResource("RectangleShape2D_1")
 
 [node name="Wheel" type="Sprite2D" parent="." unique_id=1949943799]
 visible = false
-position = Vector2(4.5, -7.5)
+position = Vector2(4.5, -10.5)
 texture = ExtResource("1_tex")
 hframes = 16
 frame = 15

@@ -14,11 +14,11 @@ costs = Dictionary[String, int]({
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
 size = Vector2(28, 61)
 
-[node name="erection" type="Sprite2D" unique_id=1648205937 node_paths=PackedStringArray("area")]
+[node name="statue" type="Sprite2D" unique_id=1648205937 node_paths=PackedStringArray("area")]
 z_index = 1
 scale = Vector2(10, 10)
 texture = ExtResource("1_tex")
-offset = Vector2(10, -30)
+offset = Vector2(10, -18)
 hframes = 48
 script = ExtResource("2_scr")
 frames = Array[ExtResource("3_phase")]([SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0")])
@@ -26,6 +26,7 @@ min_to_start = Dictionary[String, int]({
 "stone": 10,
 "wood": 5
 })
+required_town_hall_level = 5
 show_blueprint = false
 area = NodePath("Area2D")
 footprint = 4
@@ -34,5 +35,5 @@ footprint_depth = 3
 [node name="Area2D" type="Area2D" parent="." unique_id=503917264]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=1172640385]
-position = Vector2(9.1, -30.199999)
+position = Vector2(9.1, -18.5)
 shape = SubResource("RectangleShape2D_1")

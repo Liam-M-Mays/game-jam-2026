@@ -68,6 +68,7 @@ texture = ExtResource("1_dcq31")
 offset = Vector2(7, -4)
 hframes = 9
 script = ExtResource("2_7tv1p")
+required_town_hall_level = 3
 meeple_capacity = 4
 reverse_frames = true
 frames = Array[ExtResource("3_phase")]([SubResource("Frame_0"), SubResource("Frame_1"), SubResource("Frame_2"), SubResource("Frame_3"), SubResource("Frame_4"), SubResource("Frame_5"), SubResource("Frame_6"), SubResource("Frame_7"), SubResource("Frame_8")])

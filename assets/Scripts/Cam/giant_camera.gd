@@ -9,5 +9,5 @@ func _process(delta: float) -> void:
 func _keep_inside_wide_view() -> void:
 	var slack := get_viewport_rect().size * 0.5 * (1.0 / min_zoom - 1.0 / zoom.x)
 	var clamped := global_position.clamp(wide_position - slack, wide_position + slack)
-	top_level = is_equal_approx(zoom.x, min_zoom)
+	top_level = is_zoomed_out()
 	global_position = clamped

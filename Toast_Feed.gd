@@ -26,6 +26,7 @@ func _ready() -> void:
 func push(text: String, kind: int = 0) -> void:
 	var label := Label.new()
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	match kind:
 		GameState.ToastKind.TIP:
 			label.text = tip_prefix + text
@@ -42,7 +43,7 @@ func push(text: String, kind: int = 0) -> void:
 	if font:
 		label.add_theme_font_override("font", font)
 	label.add_theme_font_size_override("font_size", font_size)
-	label.add_theme_constant_override("outline_size", 8)
+	label.add_theme_constant_override("outline_size", 4)
 	label.add_theme_color_override("font_outline_color", Color.BLACK)
 	add_child(label)
 

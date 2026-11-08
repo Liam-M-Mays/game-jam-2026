@@ -1,14 +1,31 @@
 extends Node
 
 signal changed
-signal shortage(kind : String, missing : int)
 
 const START_STOCK := { "food": 10 }
 const BASE_FOOD_CAP := 20
+const MAX_GROUND_DROPS := 30
+const GROUND_DROP_LIFETIME := 20.0
 
 var _drops := {}
+var _all_drops : Array[ResourceDrop] = []
 var _stored := START_STOCK.duplicate()
 var _reserved := {}
+
+func _process(delta : float) -> void:
+	var surplus := _all_drops.filter(_is_loose).size() - MAX_GROUND_DROPS
+	var spare := {}
+	for kind in _drops:
+		spare[kind] = available(kind)
+	for drop in _all_drops:
+		if surplus > 0 and _is_loose(drop) and spare[drop.kind] > 0:
+			surplus -= 1
+			spare[drop.kind] -= 1
+			drop.surplus_time += delta
+			if drop.surplus_time >= GROUND_DROP_LIFETIME:
+				drop.expire()
+		else:
+			drop.surplus_time = 0.0
 
 func reset() -> void:
 	_stored = START_STOCK.duplicate()
@@ -38,15 +55,15 @@ func spend(kind : String, amount : int) -> void:
 	var have : int = _stored.get(kind, 0)
 	_stored[kind] = maxi(have - amount, 0)
 	changed.emit()
-	if amount > have:
-		shortage.emit(kind, amount - have)
 
 func register(drop : ResourceDrop) -> void:
 	_drops_of(drop.kind).append(drop)
+	_all_drops.append(drop)
 	changed.emit()
 
 func unregister(drop : ResourceDrop) -> void:
 	_drops_of(drop.kind).erase(drop)
+	_all_drops.erase(drop)
 	changed.emit()
 
 func available(kind : String) -> int:
@@ -73,11 +90,14 @@ func claim_reserved(drop : ResourceDrop) -> void:
 func closest_loose(kind : String, world_pos : Vector2) -> ResourceDrop:
 	var closest : ResourceDrop = null
 	for drop in _drops_of(kind):
-		if drop.claimed or drop.storage != null:
+		if not _is_loose(drop):
 			continue
 		if closest == null or world_pos.distance_squared_to(drop.global_position) < world_pos.distance_squared_to(closest.global_position):
 			closest = drop
 	return closest
+
+func _is_loose(drop : ResourceDrop) -> bool:
+	return not drop.claimed and drop.storage == null
 
 func set_claimed(drop : ResourceDrop, on : bool) -> void:
 	drop.claimed = on

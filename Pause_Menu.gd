@@ -1,7 +1,7 @@
 class_name PauseMenu
 extends Control
 
-const MAIN_MENU_SCENE := "res://main_menu.tscn"
+const MAIN_MENU_SCENE := "res://Main_Menu.tscn"
 
 @export var resume_button: TextureButton
 @export var menu_button: TextureButton

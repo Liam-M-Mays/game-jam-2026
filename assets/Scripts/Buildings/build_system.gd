@@ -15,7 +15,7 @@ const AREA_HOVER_COLOR := Color(1.0, 1.0, 1.0)
 const AREA_HOVER_ALPHA := 1.0
 
 const HOTKEYS := {
-	"1": preload("res://assets/Scenes/Buildings/erection.tscn"),
+	"1": preload("res://assets/Scenes/Buildings/statue.tscn"),
 	"2": preload("res://assets/Scenes/Buildings/small_hut.tscn"),
 	"3": preload("res://assets/Scenes/Buildings/stone_hut.tscn"),
 	"4": preload("res://assets/Scenes/Buildings/barn.tscn"),
@@ -65,12 +65,12 @@ func _input(event : InputEvent) -> void:
 		if event.is_action_pressed(action):
 			start_build(HOTKEYS[action])
 			return
-	if not is_building():
-		return
-	if event.is_action_pressed("ui_cancel"):
+	if is_building() and event.is_action_pressed("ui_cancel"):
 		end_build()
 		get_viewport().set_input_as_handled()
-	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+
+func _unhandled_input(event : InputEvent) -> void:
+	if is_building() and event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
 		_try_place()
 		get_viewport().set_input_as_handled()
 

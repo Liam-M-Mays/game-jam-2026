@@ -3,16 +3,23 @@ extends Control
 
 const BUILDINGS: Array[PackedScene] = [
 	preload("res://assets/Scenes/Buildings/small_hut.tscn"),
-	preload("res://assets/Scenes/Buildings/stone_hut.tscn"),
-	preload("res://assets/Scenes/Buildings/lumberjack.tscn"),
-	preload("res://assets/Scenes/Buildings/farm.tscn"),
-	preload("res://assets/Scenes/Buildings/barn.tscn"),
 	preload("res://assets/Scenes/Buildings/wood_pile.tscn"),
 	preload("res://assets/Scenes/Buildings/stone_pile.tscn"),
+	preload("res://assets/Scenes/Buildings/lumberjack.tscn"),
+	preload("res://assets/Scenes/Buildings/miner.tscn"),
+	preload("res://assets/Scenes/Buildings/barn.tscn"),
+	preload("res://assets/Scenes/Buildings/farm.tscn"),
+	preload("res://assets/Scenes/Buildings/stone_hut.tscn"),
+	preload("res://assets/Scenes/Buildings/silo.tscn"),
+	preload("res://assets/Scenes/Buildings/windmill.tscn"),
+	preload("res://assets/Scenes/Buildings/statue.tscn"),
 ]
-const BUTTON_SIZE := Vector2(360, 96)
-const ICON_SIZE := 96
+const BUTTON_SIZE := Vector2(440, 80)
+const ICON_SIZE := 80
 const FONT_SIZE := 24
+const ICON_TEXT_GAP := 20
+const LOCKED_FONT_COLORS: Array[StringName] = [&"font_color", &"font_hover_color", &"font_pressed_color", &"font_focus_color"]
+const LOCKED_ICON_COLORS: Array[StringName] = [&"icon_normal_color", &"icon_hover_color", &"icon_pressed_color", &"icon_focus_color"]
 
 @export var building_list: Container
 @export var back_button: TextureButton
@@ -63,7 +70,6 @@ func _exit_tree() -> void:
 func open() -> void:
 	_refresh()
 	show()
-	get_tree().paused = true
 
 
 func unlocked_names(level: int) -> PackedStringArray:
@@ -76,7 +82,6 @@ func unlocked_names(level: int) -> PackedStringArray:
 
 func close() -> void:
 	hide()
-	get_tree().paused = false
 
 
 func _make_button() -> Button:
@@ -85,6 +90,7 @@ func _make_button() -> Button:
 	button.custom_minimum_size = BUTTON_SIZE
 	button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	button.add_theme_constant_override("icon_max_width", ICON_SIZE)
+	button.add_theme_constant_override("h_separation", ICON_TEXT_GAP)
 	button.add_theme_font_size_override("font_size", FONT_SIZE)
 	return button
 
@@ -99,7 +105,7 @@ func _refresh_upgrade() -> void:
 	if _upgrade_icon_level != next_level:
 		_upgrade_button.icon = hall.level_icon(next_level)
 		_upgrade_icon_level = next_level
-	_upgrade_button.text = "Upgrade Town Hall to lv %d   %d meeples" % [next_level, hall.meeples_for_next_level()]
+	_upgrade_button.text = "Upgrade lv %d   %d meeples" % [next_level, hall.meeples_for_next_level()]
 	_upgrade_button.modulate = Color.WHITE if hall.can_upgrade() else unavailable_tint
 
 
@@ -125,9 +131,15 @@ func _refresh() -> void:
 			continue
 		var building: Building = _templates[scene]
 		if _is_locked(building):
-			button.text = "%s   Town Hall lv %d" % [display_name(scene), building.required_town_hall_level]
-			button.modulate = locked_tint
+			button.text = "%s   Hall lv %d" % [display_name(scene), building.required_town_hall_level]
+			button.modulate = Color.WHITE
+			for color_name in LOCKED_FONT_COLORS:
+				button.add_theme_color_override(color_name, locked_tint)
+			for color_name in LOCKED_ICON_COLORS:
+				button.add_theme_color_override(color_name, Color.BLACK)
 			continue
+		for color_name in LOCKED_FONT_COLORS + LOCKED_ICON_COLORS:
+			button.remove_theme_color_override(color_name)
 		button.text = "%s   %s" % [display_name(scene), _cost_text(building.min_to_start)]
 		button.modulate = Color.WHITE if building.can_start() else unavailable_tint
 

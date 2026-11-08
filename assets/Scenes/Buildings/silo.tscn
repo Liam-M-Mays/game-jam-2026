@@ -56,6 +56,7 @@ texture = ExtResource("1_tex")
 offset = Vector2(0, -3.5)
 hframes = 7
 script = ExtResource("2_scr")
+required_town_hall_level = 3
 reverse_frames = true
 frames = Array[ExtResource("3_phase")]([SubResource("Frame_0"), SubResource("Frame_1"), SubResource("Frame_2"), SubResource("Frame_3"), SubResource("Frame_4"), SubResource("Frame_5"), SubResource("Frame_6")])
 min_to_start = Dictionary[String, int]({
