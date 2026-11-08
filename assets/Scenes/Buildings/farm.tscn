@@ -20,7 +20,6 @@ script = ExtResource("2_scr")
 build_frames = 1
 frames = Array[ExtResource("3_phase")]([SubResource("Frame_0")])
 area = NodePath("Area2D")
-hoverable = false
 
 [node name="Area2D" type="Area2D" parent="." unique_id=805800037]
 

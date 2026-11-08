@@ -8,6 +8,9 @@ enum Preset { SOFT, PERLIN, BLOCKY, CELLS, CRACKS, RIDGES, RINGS, SWIRLS, SPOTS 
 const CELLULAR_FREQUENCY_SCALE := 3.0
 const NOISE_SIZE := Vector2i(1024, 512)
 const EDGE_STEP := 4
+const STREAK_FREQUENCY := 0.035
+const STREAK_WARP := 45.0
+const STREAK_WARP_FREQUENCY := 0.012
 const EDGE_NEIGHBOURS_BACK : Array[Vector3i] = [Vector3i(-1, 0, 0), Vector3i(0, -1, 0), Vector3i(-1, -1, 1), Vector3i(1, -1, 1)]
 const EDGE_NEIGHBOURS_FORWARD : Array[Vector3i] = [Vector3i(1, 0, 0), Vector3i(0, 1, 0), Vector3i(1, 1, 1), Vector3i(-1, 1, 1)]
 
@@ -26,36 +29,56 @@ const EDGE_NEIGHBOURS_FORWARD : Array[Vector3i] = [Vector3i(1, 0, 0), Vector3i(0
 
 var _map : ShaderMaterial
 var _noise_image : Image
+var _streak_image : Image
 var _edge_image : Image
 var _edge_origin : Vector2i
+var _row_shift : float
+var _noise_strength : float
+var _edge_curve : float
+var _streak_strength : float
+var _streak_mask_offset : Vector2i
+var _dark_below : float
+var _light_above : float
 
 func _ready() -> void:
 	_apply_preview()
 
 func generate(world_seed : int, is_ground : Callable) -> void:
 	_noise_image = _build_noise(world_seed & 0x7FFFFFFF).get_image(NOISE_SIZE.x, NOISE_SIZE.y, false, false, true)
+	_streak_image = _build_streaks((world_seed + 1) & 0x7FFFFFFF)
 	_bake_edge(is_ground)
 	_map = material.duplicate()
 	_map.set_shader_parameter("noise_tex", ImageTexture.create_from_image(_noise_image))
 	_map.set_shader_parameter("edge_tex", ImageTexture.create_from_image(_edge_image))
+	_map.set_shader_parameter("streak_tex", ImageTexture.create_from_image(_streak_image))
 	_map.set_shader_parameter("edge_origin", Vector2(_edge_origin))
 	_map.set_shader_parameter("use_edge", true)
 	material = _map
 	$Yard.material = _map
+	_row_shift = _map.get_shader_parameter("row_shift")
+	_noise_strength = _map.get_shader_parameter("noise_strength")
+	_edge_curve = _map.get_shader_parameter("edge_curve")
+	_streak_strength = _map.get_shader_parameter("streak_strength")
+	_streak_mask_offset = Vector2i(_map.get_shader_parameter("streak_mask_offset"))
+	_dark_below = _map.get_shader_parameter("dark_below")
+	_light_above = _map.get_shader_parameter("light_above")
 
 func band_at(world_pos : Vector2) -> Band:
 	var cell := Vector2i((to_local(world_pos) * scale + Vector2.ONE * 0.0001).floor())
-	var shift : float = _map.get_shader_parameter("row_shift")
-	var noise_x := posmod(cell.x - floori(cell.y * shift) + NOISE_SIZE.x / 2, NOISE_SIZE.x)
+	var noise_x := posmod(cell.x - floori(cell.y * _row_shift) + NOISE_SIZE.x / 2, NOISE_SIZE.x)
 	var noise_y := posmod(cell.y + NOISE_SIZE.y / 2, NOISE_SIZE.y)
 	var edge_pos := (cell - _edge_origin).clamp(Vector2i.ZERO, _edge_image.get_size() - Vector2i.ONE)
-	var strength : float = _map.get_shader_parameter("noise_strength")
-	var curve : float = _map.get_shader_parameter("edge_curve")
-	var depth := pow(_edge_image.get_pixelv(edge_pos).r, curve)
-	var value := depth + (_noise_image.get_pixel(noise_x, noise_y).r - 0.5) * strength
-	if value < _map.get_shader_parameter("dark_below"):
+	var depth := pow(_edge_image.get_pixelv(edge_pos).r, _edge_curve)
+	var calm := 1.0 - smoothstep(0.6, 1.0, depth)
+	var value := depth + (_noise_image.get_pixel(noise_x, noise_y).r - 0.5) * _noise_strength * calm
+	var mask_x := posmod(noise_x + _streak_mask_offset.x, NOISE_SIZE.x)
+	var mask_y := posmod(noise_y + _streak_mask_offset.y, NOISE_SIZE.y)
+	var streak_mask := smoothstep(0.55, 0.75, _noise_image.get_pixel(mask_x, mask_y).r)
+	var streak_x := posmod(cell.x + NOISE_SIZE.x / 2, NOISE_SIZE.x)
+	value += (_streak_image.get_pixel(streak_x, noise_y).r - 0.5) * _streak_strength * streak_mask * calm
+	if value < _dark_below:
 		return Band.DARK
-	if value > _map.get_shader_parameter("light_above"):
+	if value > _light_above:
 		return Band.LIGHT
 	return Band.MID
 
@@ -115,6 +138,18 @@ func _relax(distances : PackedFloat32Array, width : int, height : int, x : int, 
 			near = distances[nx + ny * width]
 		best = minf(best, near + cost)
 	distances[x + y * width] = best
+
+func _build_streaks(noise_seed : int) -> Image:
+	var noise := FastNoiseLite.new()
+	noise.seed = noise_seed
+	noise.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
+	noise.frequency = STREAK_FREQUENCY
+	noise.fractal_octaves = 2
+	noise.domain_warp_enabled = true
+	noise.domain_warp_amplitude = STREAK_WARP
+	noise.domain_warp_frequency = STREAK_WARP_FREQUENCY
+	noise.domain_warp_fractal_octaves = 2
+	return noise.get_image(NOISE_SIZE.x, NOISE_SIZE.y, false, false, true)
 
 func _build_noise(noise_seed : int) -> FastNoiseLite:
 	var noise := FastNoiseLite.new()

@@ -28,6 +28,7 @@ func _ready() -> void:
 	material.shader = OUTLINE_SHADER
 	_refresh_region()
 	texture_changed.connect(_refresh_region)
+	frame_changed.connect(_refresh_region)
 	area.input_event.connect(_on_area_input_event)
 	area.mouse_entered.connect(_set_hovered.bind(true))
 	area.mouse_exited.connect(_set_hovered.bind(false))
@@ -81,9 +82,15 @@ func _on_area_input_event(_viewport : Viewport, event : InputEvent, _shape_idx :
 		_on_clicked()
 
 func _refresh_region() -> void:
-	var region := Vector4(0, 0, 1, 1)
+	if texture == null:
+		material.set_shader_parameter("region_rect", Vector4(0, 0, 1, 1))
+		return
+	var size : Vector2 = texture.get_size()
+	var sheet := region_rect if region_enabled else Rect2(Vector2.ZERO, size)
+	var cell := sheet.size / Vector2(hframes, vframes)
+	var coords := Vector2(frame % hframes, floori(float(frame) / hframes))
+	var r := Rect2(sheet.position + cell * coords, cell)
 	if texture is AtlasTexture and texture.atlas:
-		var size : Vector2 = texture.atlas.get_size()
-		var r : Rect2 = texture.region
-		region = Vector4(r.position.x / size.x, r.position.y / size.y, r.end.x / size.x, r.end.y / size.y)
-	material.set_shader_parameter("region_rect", region)
+		r.position += texture.region.position
+		size = texture.atlas.get_size()
+	material.set_shader_parameter("region_rect", Vector4(r.position.x / size.x, r.position.y / size.y, r.end.x / size.x, r.end.y / size.y))

@@ -59,7 +59,7 @@ frames = SubResource("SpriteFrames_g0qf3")
 target_count = 30
 dark_weight = 0
 mid_weight = 1
-light_weight = 0.05
+light_weight = 0.02
 area = NodePath("Area2D")
 footprint = 2
 
