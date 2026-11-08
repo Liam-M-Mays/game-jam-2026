@@ -6,6 +6,17 @@
 [ext_resource type="Script" uid="uid://bs3wgvy4ufnu8" path="res://Build_Menu.gd" id="3_gudfk"]
 [ext_resource type="Script" uid="uid://co4meqn1plgk2" path="res://Pause_Menu.gd" id="5_1m68m"]
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_backplate"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+bg_color = Color(0.1, 0.1, 0.1, 0.6)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
 [sub_resource type="AtlasTexture" id="AtlasTexture_3wxnk"]
 atlas = ExtResource("2_gudfk")
 region = Rect2(2274, 25, 19, 23)
@@ -37,6 +48,28 @@ region = Rect2(1678, 17, 37, 37)
 [sub_resource type="AtlasTexture" id="AtlasTexture_0o3b6"]
 atlas = ExtResource("2_gudfk")
 region = Rect2(1796, 18, 36, 36)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tooltip"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+bg_color = Color(0.1, 0.1, 0.1, 0.92)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_menu"]
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.16, 0.18, 0.16, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_gudfk"]
 atlas = ExtResource("2_gudfk")
@@ -70,34 +103,12 @@ region = Rect2(506, 25, 40, 22)
 atlas = ExtResource("2_gudfk")
 region = Rect2(628, 25, 40, 20)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_menu"]
-content_margin_left = 12.0
-content_margin_top = 12.0
-content_margin_right = 12.0
-content_margin_bottom = 12.0
-bg_color = Color(0.16, 0.18, 0.16, 1)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_backplate"]
-content_margin_left = 12.0
-content_margin_top = 6.0
-content_margin_right = 12.0
-content_margin_bottom = 6.0
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_toast"]
+content_margin_left = 16.0
+content_margin_top = 10.0
+content_margin_right = 16.0
+content_margin_bottom = 10.0
 bg_color = Color(0.1, 0.1, 0.1, 0.6)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tooltip"]
-content_margin_left = 12.0
-content_margin_top = 8.0
-content_margin_right = 12.0
-content_margin_bottom = 8.0
-bg_color = Color(0.1, 0.1, 0.1, 0.92)
 corner_radius_top_left = 3
 corner_radius_top_right = 3
 corner_radius_bottom_right = 3
@@ -134,7 +145,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_backplate")
 layout_mode = 2
 theme_override_constants/separation = 48
 
-[node name="Stone" type="HBoxContainer" parent="CountersPanel/Counters"unique_id=1220213737]
+[node name="Stone" type="HBoxContainer" parent="CountersPanel/Counters" unique_id=1220213737]
 layout_mode = 2
 
 [node name="StoneIcon" type="TextureRect" parent="CountersPanel/Counters/Stone" unique_id=715279436]
@@ -148,7 +159,7 @@ stretch_mode = 5
 layout_mode = 2
 text = "Stone"
 
-[node name="WoodGroup" type="HBoxContainer" parent="CountersPanel/Counters"unique_id=930566024]
+[node name="WoodGroup" type="HBoxContainer" parent="CountersPanel/Counters" unique_id=930566024]
 layout_mode = 2
 
 [node name="WoodIcon" type="TextureRect" parent="CountersPanel/Counters/WoodGroup" unique_id=1133490112]
@@ -162,7 +173,7 @@ stretch_mode = 5
 layout_mode = 2
 text = "Wood"
 
-[node name="MeepleGroup" type="HBoxContainer" parent="CountersPanel/Counters"unique_id=105766014]
+[node name="MeepleGroup" type="HBoxContainer" parent="CountersPanel/Counters" unique_id=105766014]
 layout_mode = 2
 
 [node name="MeepleIcon" type="TextureRect" parent="CountersPanel/Counters/MeepleGroup" unique_id=343891385]
@@ -176,7 +187,7 @@ stretch_mode = 5
 layout_mode = 2
 text = "Meeggas"
 
-[node name="JobGroup" type="HBoxContainer" parent="CountersPanel/Counters"unique_id=730114585]
+[node name="JobGroup" type="HBoxContainer" parent="CountersPanel/Counters" unique_id=730114585]
 layout_mode = 2
 
 [node name="JobTitle" type="Label" parent="CountersPanel/Counters/JobGroup" unique_id=730114586]
@@ -385,11 +396,11 @@ anchor_top = 1.0
 anchor_bottom = 1.0
 offset_left = 24.0
 offset_top = -64.0
-offset_right = 484.0
+offset_right = 604.0
 offset_bottom = -24.0
 grow_vertical = 0
 pivot_offset = Vector2(24, -24)
 theme_override_constants/separation = 8
 script = ExtResource("1_knk3d")
-font_size = 24
-backplate = SubResource("StyleBoxFlat_backplate")
+font_size = 30
+backplate = SubResource("StyleBoxFlat_toast")
