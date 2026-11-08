@@ -164,18 +164,18 @@ texture_pressed = SubResource("AtlasTexture_36vlq")
 [node name="TextureRect" type="TextureRect" parent="." unique_id=239408209]
 layout_mode = 0
 offset_left = -50.0
-offset_top = 55.0
+offset_top = 60.0
 offset_right = 460.0
-offset_bottom = 189.0
+offset_bottom = 194.0
 scale = Vector2(4, 4)
 texture = SubResource("AtlasTexture_spy7q")
 
 [node name="StartButton" type="TextureButton" parent="." unique_id=701129200]
 layout_mode = 0
 offset_left = 852.0
-offset_top = 697.0
+offset_top = 727.0
 offset_right = 897.0
-offset_bottom = 719.0
+offset_bottom = 749.0
 scale = Vector2(4, 4)
 size_flags_horizontal = 0
 size_flags_stretch_ratio = 0.0
@@ -186,9 +186,9 @@ texture_hover = SubResource("AtlasTexture_5cvai")
 [node name="CreditsButton" type="TextureButton" parent="." unique_id=657891541]
 layout_mode = 0
 offset_left = 824.0
-offset_top = 809.0
+offset_top = 839.0
 offset_right = 884.0
-offset_bottom = 831.0
+offset_bottom = 861.0
 scale = Vector2(4, 4)
 size_flags_horizontal = 0
 texture_normal = SubResource("AtlasTexture_es6ti")
@@ -198,9 +198,9 @@ texture_hover = SubResource("AtlasTexture_domf7")
 [node name="QuitButton" type="TextureButton" parent="." unique_id=2017726884]
 layout_mode = 0
 offset_left = 861.0
-offset_top = 923.0
+offset_top = 953.0
 offset_right = 901.0
-offset_bottom = 945.0
+offset_bottom = 975.0
 scale = Vector2(4, 4)
 size_flags_horizontal = 0
 texture_normal = SubResource("AtlasTexture_gtid3")
@@ -211,9 +211,9 @@ texture_hover = SubResource("AtlasTexture_tu7k8")
 
 [node name="Trees1" type="Parallax2D" parent="." unique_id=767882199]
 scroll_scale = Vector2(1.18, 1.18)
-scroll_offset = Vector2(0, 1)
+scroll_offset = Vector2(-14, 81)
 repeat_size = Vector2(1580, 0)
-autoscroll = Vector2(2.79, 0)
+autoscroll = Vector2(10, 0)
 repeat_times = 4
 
 [node name="Sprite2D" type="Sprite2D" parent="Trees1" unique_id=1687484879]
@@ -224,9 +224,9 @@ texture = ExtResource("5_domf7")
 
 [node name="Trees2" type="Parallax2D" parent="." unique_id=1177479965]
 scroll_scale = Vector2(1.18, 1.18)
-scroll_offset = Vector2(-1532, -26)
+scroll_offset = Vector2(-1538, 43)
 repeat_size = Vector2(1580, 0)
-autoscroll = Vector2(2.23, 0)
+autoscroll = Vector2(8, 0)
 repeat_times = 4
 
 [node name="Sprite2D" type="Sprite2D" parent="Trees2" unique_id=236311419]
@@ -237,9 +237,9 @@ texture = ExtResource("6_es6ti")
 
 [node name="Mountains1" type="Parallax2D" parent="." unique_id=1256668120]
 scroll_scale = Vector2(1.18, 1.18)
-scroll_offset = Vector2(0, -34)
+scroll_offset = Vector2(0, -36)
 repeat_size = Vector2(1580, 0)
-autoscroll = Vector2(1.67, 0)
+autoscroll = Vector2(5, 0)
 repeat_times = 4
 
 [node name="Sprite2D" type="Sprite2D" parent="Mountains1" unique_id=678625156]
@@ -252,7 +252,7 @@ texture = ExtResource("7_t301m")
 scroll_scale = Vector2(1.18, 1.18)
 scroll_offset = Vector2(0, -135)
 repeat_size = Vector2(1580, 0)
-autoscroll = Vector2(1.12, 0)
+autoscroll = Vector2(4, 0)
 repeat_times = 4
 
 [node name="Sprite2D" type="Sprite2D" parent="Mountains2" unique_id=81979314]
@@ -265,7 +265,7 @@ texture = ExtResource("8_wrfco")
 scroll_scale = Vector2(1.18, 1.18)
 scroll_offset = Vector2(0, -372)
 repeat_size = Vector2(1580, 0)
-autoscroll = Vector2(0.28, 0)
+autoscroll = Vector2(0.1, 0)
 repeat_times = 4
 
 [node name="Sprite2D" type="Sprite2D" parent="Sky" unique_id=1063587573]
@@ -278,7 +278,7 @@ texture = ExtResource("9_teegn")
 scroll_scale = Vector2(1.18, 1.18)
 scroll_offset = Vector2(48, -459)
 repeat_size = Vector2(1580, 0)
-autoscroll = Vector2(0.28, 0)
+autoscroll = Vector2(0.1, 0)
 repeat_times = 4
 
 [node name="Sprite2D" type="Sprite2D" parent="Sky/Sky" unique_id=473511298]
