@@ -82,6 +82,11 @@ func take_partner(job : HaulJob) -> HaulJob:
 			return other
 	return null
 
+func recall_hauls(site : Building) -> void:
+	for worker in workers:
+		if worker.job is HaulJob and worker.job.site == site:
+			worker.abandon_job()
+
 func take_pending_hauls(site : Building) -> Array[HaulJob]:
 	var taken : Array[HaulJob] = []
 	for job in _pending.duplicate():

@@ -128,6 +128,7 @@ func toggle_paused() -> void:
 	_paused = not _paused
 	set_selected(_paused, PAUSED_OUTLINE)
 	if _paused:
+		JobSystem.recall_hauls(self)
 		_drop_queued_hauls()
 		_set_missing({})
 	else:

@@ -3,7 +3,7 @@ extends Node
 const CLICK := preload("res://assets/Audio/UI/click.wav")
 const WARNING := preload("res://assets/Audio/UI/warning.wav")
 const CLICK_DB := -14.0
-const WARNING_DB := -14.0
+const WARNING_DB := -11.0
 const NORMAL_SPEED_INDEX := 0
 
 var _click := AudioStreamPlayer.new()
