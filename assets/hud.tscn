@@ -276,40 +276,39 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("3_gudfk")
-building_list = NodePath("Panel/VBoxContainer/BuildingList")
-back_button = NodePath("Panel/VBoxContainer/BackButton")
+building_list = NodePath("Center/Panel/VBoxContainer/BuildingList")
+back_button = NodePath("Center/Panel/VBoxContainer/BackButton")
 tooltip_style = SubResource("StyleBoxFlat_tooltip")
 
-[node name="Panel" type="PanelContainer" parent="BuildMenu" unique_id=1922507713]
+[node name="Center" type="CenterContainer" parent="BuildMenu" unique_id=1922507720]
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -20.0
-offset_top = -20.0
-offset_right = 20.0
-offset_bottom = 20.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="BuildMenu/Center" unique_id=1922507713]
+layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_menu")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="BuildMenu/Panel" unique_id=2034054651]
+[node name="VBoxContainer" type="VBoxContainer" parent="BuildMenu/Center/Panel" unique_id=2034054651]
 layout_mode = 2
+theme_override_constants/separation = 12
 
-[node name="Title" type="Label" parent="BuildMenu/Panel/VBoxContainer" unique_id=1927844377]
+[node name="Title" type="Label" parent="BuildMenu/Center/Panel/VBoxContainer" unique_id=1927844377]
 layout_mode = 2
 text = "BUILD"
 horizontal_alignment = 1
 
-[node name="BuildingList" type="GridContainer" parent="BuildMenu/Panel/VBoxContainer" unique_id=1172581780]
+[node name="BuildingList" type="GridContainer" parent="BuildMenu/Center/Panel/VBoxContainer" unique_id=1172581780]
 layout_mode = 2
 theme_override_constants/h_separation = 12
 theme_override_constants/v_separation = 12
 columns = 2
 
-[node name="BackButton" type="TextureButton" parent="BuildMenu/Panel/VBoxContainer" unique_id=1236127176]
+[node name="BackButton" type="TextureButton" parent="BuildMenu/Center/Panel/VBoxContainer" unique_id=1236127176]
 custom_minimum_size = Vector2(152, 88)
 layout_mode = 2
 size_flags_horizontal = 4

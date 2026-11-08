@@ -3,8 +3,18 @@
 [ext_resource type="Script" uid="uid://w0xs4pt03wem" path="res://Main_Menu.gd" id="1_wugcc"]
 [ext_resource type="Texture2D" uid="uid://b30hablfkuedq" path="res://ART/shi.png" id="2_gtid3"]
 [ext_resource type="Texture2D" uid="uid://c8g4e1jhi7wup" path="res://ART/Mighty_meeple_logo_andbutons.png" id="3_dnfjo"]
+[ext_resource type="Script" uid="uid://fmylrcu361v3" path="res://assets/Scripts/Meeple/menu_meeple_spawner.gd" id="4_spawner"]
+[ext_resource type="Texture2D" uid="uid://4fiwuumegt1s" path="res://ART/sky_sprites_trees2.tres" id="5_domf7"]
+[ext_resource type="Texture2D" uid="uid://x200khdp0ig0" path="res://ART/sky_sprites_trees1.tres" id="6_es6ti"]
+[ext_resource type="Texture2D" uid="uid://bmpxugd4jadpy" path="res://ART/sky_sprites_mountains2.tres" id="7_t301m"]
+[ext_resource type="Texture2D" uid="uid://b1rkpw2ub3gk0" path="res://ART/sky_sprites_mountains1.tres" id="8_wrfco"]
+[ext_resource type="Texture2D" uid="uid://mwo2krs3ioat" path="res://ART/sky_sprites_sky.tres" id="9_teegn"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_t7ae5"]
+content_margin_left = 6.0
+content_margin_top = 6.0
+content_margin_right = 6.0
+content_margin_bottom = 6.0
 bg_color = Color(0.32156864, 0.46666667, 0.45490196, 1)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_4anfs"]
@@ -90,6 +100,17 @@ grow_horizontal = 2
 grow_vertical = 2
 expand_mode = 1
 
+[node name="MeeplesBehind" type="Node2D" parent="." unique_id=1183406227 node_paths=PackedStringArray("front_layer")]
+script = ExtResource("4_spawner")
+front_layer = NodePath("../MeeplesFront")
+front_chance = 0.05
+min_delay = 0.01
+max_delay = 0.05
+min_fall_speed = 250.0
+max_tilt_degrees = 0.48
+spin_chance = 0.75
+max_spin_degrees = 135.0
+
 [node name="Buttons" type="VBoxContainer" parent="." unique_id=1350401670]
 layout_mode = 1
 anchors_preset = 7
@@ -142,18 +163,18 @@ texture_pressed = SubResource("AtlasTexture_36vlq")
 [node name="TextureRect" type="TextureRect" parent="." unique_id=239408209]
 layout_mode = 0
 offset_left = -54.0
-offset_top = 62.0
+offset_top = 11.0
 offset_right = 456.0
-offset_bottom = 196.0
+offset_bottom = 145.0
 scale = Vector2(4, 4)
 texture = SubResource("AtlasTexture_spy7q")
 
 [node name="StartButton" type="TextureButton" parent="." unique_id=701129200]
 layout_mode = 0
 offset_left = 852.0
-offset_top = 600.0
+offset_top = 697.0
 offset_right = 897.0
-offset_bottom = 622.0
+offset_bottom = 719.0
 scale = Vector2(4, 4)
 size_flags_horizontal = 0
 size_flags_stretch_ratio = 0.0
@@ -164,9 +185,9 @@ texture_hover = SubResource("AtlasTexture_5cvai")
 [node name="CreditsButton" type="TextureButton" parent="." unique_id=657891541]
 layout_mode = 0
 offset_left = 824.0
-offset_top = 712.0
+offset_top = 809.0
 offset_right = 884.0
-offset_bottom = 734.0
+offset_bottom = 831.0
 scale = Vector2(4, 4)
 size_flags_horizontal = 0
 texture_normal = SubResource("AtlasTexture_es6ti")
@@ -176,11 +197,76 @@ texture_hover = SubResource("AtlasTexture_domf7")
 [node name="QuitButton" type="TextureButton" parent="." unique_id=2017726884]
 layout_mode = 0
 offset_left = 862.0
-offset_top = 826.0
+offset_top = 923.0
 offset_right = 902.0
-offset_bottom = 848.0
+offset_bottom = 945.0
 scale = Vector2(4, 4)
 size_flags_horizontal = 0
 texture_normal = SubResource("AtlasTexture_gtid3")
 texture_pressed = SubResource("AtlasTexture_3mro0")
 texture_hover = SubResource("AtlasTexture_tu7k8")
+
+[node name="MeeplesFront" type="Node2D" parent="." unique_id=1760392418]
+
+[node name="Trees1" type="Parallax2D" parent="." unique_id=767882199]
+scroll_scale = Vector2(1.18, 1.18)
+scroll_offset = Vector2(0, 62)
+repeat_size = Vector2(1580, 0)
+autoscroll = Vector2(2.79, 0)
+repeat_times = 4
+
+[node name="Sprite2D" type="Sprite2D" parent="Trees1" unique_id=1687484879]
+z_index = -1
+texture_filter = 2
+position = Vector2(0, 783)
+texture = ExtResource("5_domf7")
+
+[node name="Trees2" type="Parallax2D" parent="." unique_id=1177479965]
+scroll_scale = Vector2(1.18, 1.18)
+scroll_offset = Vector2(-1532, 17)
+repeat_size = Vector2(1580, 0)
+autoscroll = Vector2(2.23, 0)
+repeat_times = 4
+
+[node name="Sprite2D" type="Sprite2D" parent="Trees2" unique_id=236311419]
+z_index = -2
+texture_filter = 2
+position = Vector2(0, 762)
+texture = ExtResource("6_es6ti")
+
+[node name="Mountains1" type="Parallax2D" parent="." unique_id=1256668120]
+scroll_scale = Vector2(1.18, 1.18)
+repeat_size = Vector2(1580, 0)
+autoscroll = Vector2(1.67, 0)
+repeat_times = 4
+
+[node name="Sprite2D" type="Sprite2D" parent="Mountains1" unique_id=678625156]
+z_index = -3
+texture_filter = 2
+position = Vector2(0, 568)
+texture = ExtResource("7_t301m")
+
+[node name="Mountains2" type="Parallax2D" parent="." unique_id=830921935]
+scroll_scale = Vector2(1.18, 1.18)
+repeat_size = Vector2(1580, 0)
+autoscroll = Vector2(1.12, 0)
+repeat_times = 4
+
+[node name="Sprite2D" type="Sprite2D" parent="Mountains2" unique_id=81979314]
+z_index = -4
+texture_filter = 2
+position = Vector2(0, 589)
+texture = ExtResource("8_wrfco")
+
+[node name="Sky" type="Parallax2D" parent="." unique_id=11324170]
+scroll_scale = Vector2(1.18, 1.18)
+scroll_offset = Vector2(0, -372)
+repeat_size = Vector2(1580, 0)
+autoscroll = Vector2(0.28, 0)
+repeat_times = 4
+
+[node name="Sprite2D" type="Sprite2D" parent="Sky" unique_id=1063587573]
+z_index = -5
+texture_filter = 2
+position = Vector2(0, 608)
+texture = ExtResource("9_teegn")

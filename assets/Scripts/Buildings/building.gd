@@ -121,9 +121,12 @@ func icon() -> Texture2D:
 		return _cropped_icon(icon_texture, Rect2(Vector2.ZERO, icon_texture.get_size()))
 	var sheet := region_rect if region_enabled else Rect2(Vector2.ZERO, texture.get_size())
 	var size := sheet.size / Vector2(hframes, vframes)
-	var index := _stage_frame(last_stage())
+	var index := _icon_frame()
 	var cell := Vector2(index % hframes, floori(float(index) / hframes))
 	return _cropped_icon(texture, Rect2(sheet.position + cell * size, size))
+
+func _icon_frame() -> int:
+	return _stage_frame(last_stage())
 
 func _cropped_icon(source : Texture2D, region : Rect2) -> Texture2D:
 	var image := source.get_image()

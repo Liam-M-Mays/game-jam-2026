@@ -11,7 +11,7 @@ costs = Dictionary[String, int]({
 })
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_nafr4"]
-size = Vector2(11, 9)
+size = Vector2(15, 22)
 
 [node name="town_hall" type="Sprite2D" unique_id=534808495 node_paths=PackedStringArray("area")]
 z_index = 1
@@ -32,5 +32,5 @@ footprint = 2
 [node name="Area2D" type="Area2D" parent="." unique_id=725244253]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=1604481275]
-position = Vector2(3.5, -3.5)
+position = Vector2(3.5, -10)
 shape = SubResource("RectangleShape2D_nafr4")

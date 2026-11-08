@@ -1,0 +1,18 @@
+[gd_scene format=3]
+
+[ext_resource type="Texture2D" uid="uid://bmse7b3nrfyty" path="res://assets/Res/meep-shirt.tres" id="1_shirt"]
+[ext_resource type="Texture2D" uid="uid://dndh48dkfcegh" path="res://assets/Art/Characters/meeple.png" id="2_art"]
+[ext_resource type="Script" path="res://assets/Scripts/Meeple/menu_meeple.gd" id="3_script"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_head"]
+atlas = ExtResource("2_art")
+region = Rect2(0, 0, 3, 2)
+
+[node name="MenuMeeple" type="Sprite2D"]
+texture = ExtResource("1_shirt")
+script = ExtResource("3_script")
+
+[node name="head" type="Sprite2D" parent="."]
+self_modulate = Color(0.9054981, 0.91442734, 0.909581, 1)
+position = Vector2(0, -2)
+texture = SubResource("AtlasTexture_head")

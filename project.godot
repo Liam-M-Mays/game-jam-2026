@@ -23,6 +23,7 @@ GameState="*uid://cthjkibwb0p7g"
 Population="*res://assets/Scripts/Meeple/population.gd"
 DevSpeed="*res://assets/Scripts/Dev/dev_speed.gd"
 VillageAudio="*res://assets/Scripts/Audio/village_audio.gd"
+Music="*res://assets/Scripts/Audio/music.gd"
 
 [display]
 

@@ -15,6 +15,9 @@ func capacity() -> int:
 func _fill_frames() -> int:
 	return hframes - (last_stage() + 1)
 
+func _icon_frame() -> int:
+	return last_stage() + _fill_frames()
+
 func held() -> int:
 	return _held.size()
 

@@ -56,5 +56,5 @@ area = NodePath("Area2D")
 [node name="Area2D" type="Area2D" parent="." unique_id=1383702269]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=1114214740]
-position = Vector2(-0.5999999, -2.5)
+position = Vector2(-0.5, -2.5)
 shape = SubResource("RectangleShape2D_1")
