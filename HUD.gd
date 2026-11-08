@@ -50,6 +50,7 @@ const FUN_FACTS := [
 @export var build_menu: BuildMenu
 @export var pause_menu: PauseMenu
 @export var speed_button: Button
+@export var camera: CameraControls
 
 var _building_scene: PackedScene
 var _last_meeple_count := 0
@@ -77,6 +78,11 @@ func _ready() -> void:
 	_wait(FIRST_TIP_DELAY).connect(_show_opening_tip.bind(0))
 
 
+func _process(_delta: float) -> void:
+	if camera:
+		visible = not camera.is_zoomed_out() or get_tree().paused
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == SPEED_KEY:
 		if not get_tree().paused:
@@ -102,7 +108,7 @@ func _refresh_counters() -> void:
 	if wood_label:
 		wood_label.text = str(Inventory.count("wood"))
 	if food_label:
-		food_label.text = str(Inventory.count("food"))
+		food_label.text = "%d / %d" % [Inventory.count("food"), Inventory.food_cap()]
 	if meeple_label:
 		meeple_label.text = "%d / %d" % [JobSystem.workers.size(), Population.capacity()]
 	if job_label:
@@ -122,7 +128,7 @@ func _setup_hunger_bar() -> void:
 
 func _setup_building() -> void:
 	if build_system:
-		build_system.build_started.connect(func(scene: PackedScene): _building_scene = scene)
+		build_system.build_started.connect(_on_build_started)
 		build_system.building_completed.connect(_on_building_completed)
 		build_system.placement_failed.connect(_on_placement_failed)
 	if build_menu:
@@ -142,6 +148,12 @@ func _setup_speed_button() -> void:
 func _show_speed(value: float) -> void:
 	if speed_button:
 		speed_button.text = "x%s" % str(value).trim_suffix(".0")
+
+
+func _on_build_started(scene: PackedScene) -> void:
+	_building_scene = scene
+	if build_menu and build_menu.visible:
+		build_menu.close()
 
 
 func _on_build_pressed() -> void:

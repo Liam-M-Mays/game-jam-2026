@@ -3,7 +3,7 @@ class_name TownHall
 
 signal upgraded(new_level : int)
 
-@export var meeples_required : Array[int] = [3, 6, 10]
+@export var meeples_required : Array[int] = [3, 6, 10, 15]
 
 var _level := 1
 

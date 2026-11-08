@@ -37,6 +37,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event is InputEventPanGesture:
 		zoom_to_mouse(pow(1.0 + zoom_speed, -event.delta.y))
 
+func is_zoomed_out() -> bool:
+	return is_equal_approx(zoom.x, min_zoom)
+
 func zoom_by(factor: float) -> void:
 	var new_zoom = clamp(zoom.x * factor, min_zoom, max_zoom)
 	zoom = Vector2(new_zoom, new_zoom)

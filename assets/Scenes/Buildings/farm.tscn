@@ -17,6 +17,7 @@ texture = ExtResource("1_tex")
 offset = Vector2(-0.5, -1)
 hframes = 6
 script = ExtResource("2_scr")
+required_town_hall_level = 2
 build_frames = 1
 frames = Array[ExtResource("3_phase")]([SubResource("Frame_0")])
 area = NodePath("Area2D")

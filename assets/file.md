@@ -103,7 +103,7 @@ How it behaves:
 - **Windmills** go anywhere. Each finished windmill gives every barn +1 farm slot and +1 silo slot.
 - **Food cap** starts at 20 (`Inventory.BASE_FOOD_CAP`) and each finished silo adds 20. While food is full, bushes reject clicks and meeples leave ripe farms alone.
 - **Esc** calls `end_build()` and marks the event handled, so your HUD's `_unhandled_input` never sees that Esc. Outside build mode, Esc passes through to the HUD normally.
-- **Playtest hotkeys** (the `HOTKEYS` dict at the top of the file): `1` erection, `2` small hut, `3` stone hut, `4` barn, `5` farm, `6` stone pile, `7` wood pile, `8` lumberjack, `9` miner, `0` silo, `-` windmill.
+- **Playtest hotkeys** (the `HOTKEYS` dict at the top of the file): `1` statue, `2` small hut, `3` stone hut, `4` barn, `5` farm, `6` stone pile, `7` wood pile, `8` lumberjack, `9` miner, `0` silo, `-` windmill.
 - **The town hall is not buildable.** It's the starting building (`grid.tscn` → `start_building`), so leave it out of the build menu.
 - `BuildSystem` is `PAUSABLE`. Start placement from a menu, then **unpause**, or the preview won't follow the mouse.
 

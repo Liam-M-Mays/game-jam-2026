@@ -70,12 +70,25 @@ region = Rect2(506, 25, 40, 22)
 atlas = ExtResource("2_gudfk")
 region = Rect2(628, 25, 40, 20)
 
-[node name="HUD" type="CanvasLayer" unique_id=1588467611 node_paths=PackedStringArray("counters", "stone_label", "wood_label", "meeple_label", "hunger_bar", "build_button", "build_menu", "pause_menu", "speed_button")]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_menu"]
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.16, 0.18, 0.16, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[node name="HUD" type="CanvasLayer" unique_id=1588467611 node_paths=PackedStringArray("counters", "stone_label", "wood_label", "food_label", "meeple_label", "job_label", "hunger_bar", "build_button", "build_menu", "pause_menu", "speed_button")]
 script = ExtResource("1_uj4j1")
 counters = NodePath("Counters")
 stone_label = NodePath("Counters/Stone/StoneLabel")
 wood_label = NodePath("Counters/WoodGroup/WoodLabel")
+food_label = NodePath("FoodGroup/FoodLabel")
 meeple_label = NodePath("Counters/MeepleGroup/MeepleLabel")
+job_label = NodePath("Counters/JobGroup/JobLabel")
 hunger_bar = NodePath("Hunger/HungerBar")
 build_button = NodePath("BuildButton")
 build_menu = NodePath("BuildMenu")
@@ -87,8 +100,9 @@ anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
 offset_left = -20.0
+offset_top = 24.0
 offset_right = 20.0
-offset_bottom = 40.0
+offset_bottom = 64.0
 grow_horizontal = 2
 offset_transform_enabled = true
 theme_override_constants/separation = 48
@@ -135,6 +149,17 @@ stretch_mode = 5
 layout_mode = 2
 text = "Meeggas"
 
+[node name="JobGroup" type="HBoxContainer" parent="Counters" unique_id=730114585]
+layout_mode = 2
+
+[node name="JobTitle" type="Label" parent="Counters/JobGroup" unique_id=730114586]
+layout_mode = 2
+text = "Jobs"
+
+[node name="JobLabel" type="Label" parent="Counters/JobGroup" unique_id=730114587]
+layout_mode = 2
+text = "0 / 0"
+
 [node name="Hunger" type="HBoxContainer" parent="." unique_id=644346435]
 custom_minimum_size = Vector2(100, 100)
 anchors_preset = 3
@@ -142,8 +167,10 @@ anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -79.0
-offset_top = -65.0
+offset_left = -103.0
+offset_top = -89.0
+offset_right = -24.0
+offset_bottom = -24.0
 grow_horizontal = 0
 grow_vertical = 0
 offset_transform_enabled = true
@@ -165,6 +192,25 @@ nine_patch_stretch = true
 texture_under = SubResource("AtlasTexture_gilah")
 texture_progress = SubResource("AtlasTexture_36vlq")
 
+[node name="FoodGroup" type="HBoxContainer" parent="." unique_id=730114582]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -124.0
+offset_top = -316.0
+offset_right = -56.0
+offset_bottom = -292.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+alignment = 1
+
+[node name="FoodLabel" type="Label" parent="FoodGroup" unique_id=730114584]
+layout_mode = 2
+text = "0"
+
 [node name="BuildButton" type="TextureButton" parent="." unique_id=1803173659]
 custom_minimum_size = Vector2(148, 148)
 anchors_preset = 7
@@ -173,8 +219,9 @@ anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
 offset_left = -20.0
-offset_top = -40.0
+offset_top = -64.0
 offset_right = 20.0
+offset_bottom = -24.0
 grow_horizontal = 2
 grow_vertical = 0
 texture_normal = SubResource("AtlasTexture_f8ot1")
@@ -189,23 +236,25 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 script = ExtResource("3_gudfk")
 building_list = NodePath("Panel/VBoxContainer/BuildingList")
 back_button = NodePath("Panel/VBoxContainer/BackButton")
 
-[node name="Dim" type="ColorRect" parent="BuildMenu" unique_id=7642622]
+[node name="Panel" type="PanelContainer" parent="BuildMenu" unique_id=1922507713]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0, 0, 0, 0.5)
-
-[node name="Panel" type="PanelContainer" parent="BuildMenu" unique_id=1922507713]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_menu")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="BuildMenu/Panel" unique_id=2034054651]
 layout_mode = 2
@@ -215,13 +264,20 @@ layout_mode = 2
 text = "BUILD"
 horizontal_alignment = 1
 
-[node name="BuildingList" type="VBoxContainer" parent="BuildMenu/Panel/VBoxContainer" unique_id=1172581780]
+[node name="BuildingList" type="GridContainer" parent="BuildMenu/Panel/VBoxContainer" unique_id=1172581780]
 layout_mode = 2
+theme_override_constants/h_separation = 12
+theme_override_constants/v_separation = 12
+columns = 2
 
 [node name="BackButton" type="TextureButton" parent="BuildMenu/Panel/VBoxContainer" unique_id=1236127176]
+custom_minimum_size = Vector2(152, 88)
 layout_mode = 2
+size_flags_horizontal = 4
 texture_normal = SubResource("AtlasTexture_gudfk")
 texture_pressed = SubResource("AtlasTexture_1m68m")
+ignore_texture_size = true
+stretch_mode = 5
 
 [node name="PauseMenu" type="Control" parent="." unique_id=424902096 node_paths=PackedStringArray("resume_button", "menu_button", "quit_button")]
 layout_mode = 3
@@ -288,17 +344,23 @@ custom_minimum_size = Vector2(96, 64)
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-offset_left = -8.0
-offset_bottom = 8.0
+offset_left = -32.0
+offset_top = 24.0
+offset_right = -24.0
+offset_bottom = 32.0
 grow_horizontal = 0
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 24
 
 [node name="ToastFeed" type="VBoxContainer" parent="." unique_id=133880500]
 anchors_preset = 2
 anchor_top = 1.0
 anchor_bottom = 1.0
-offset_top = -40.0
+offset_left = 24.0
+offset_top = -64.0
+offset_right = 484.0
+offset_bottom = -24.0
 grow_vertical = 0
 pivot_offset = Vector2(24, -24)
 theme_override_constants/separation = 8
 script = ExtResource("1_knk3d")
+font_size = 24

@@ -30,6 +30,10 @@ window/size/viewport_height=1080
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 
+[gui]
+
+theme/custom_font="res://assets/Fonts/Undead Pixel 8.ttf"
+
 [input]
 
 1={

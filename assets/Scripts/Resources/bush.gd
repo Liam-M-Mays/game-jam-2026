@@ -5,7 +5,9 @@ class_name Bush
 @export var animation := &"default"
 @export var food_per_harvest := 2
 @export var regrow_time := 15.0
+@export var empties_to_destroy := 3
 
+var _times_emptied := 0
 var _stage := 0
 var _regrow_timer := 0.0
 var _clearing := false
@@ -13,6 +15,12 @@ var _clearing := false
 func _ready() -> void:
 	super()
 	_set_stage(0)
+	Inventory.changed.connect(_cancel_picking_if_full)
+
+func _cancel_picking_if_full() -> void:
+	if _job is HarvestJob and not _clearing and Inventory.food_full():
+		JobSystem.cancel(_job)
+		_set_job(null)
 
 func _process(delta : float) -> void:
 	if _stage == 0 or _clearing:
@@ -43,10 +51,15 @@ func _hit() -> bool:
 		return super()
 	if Inventory.food_full():
 		return true
-	_react()
 	_set_stage(_stage + 1)
 	_regrow_timer = 0.0
 	Inventory.add("food", food_per_harvest)
+	if _stage >= _last_stage():
+		_times_emptied += 1
+		if _times_emptied >= empties_to_destroy:
+			_shatter()
+			return true
+	_react()
 	return not can_harvest()
 
 func _last_stage() -> int:

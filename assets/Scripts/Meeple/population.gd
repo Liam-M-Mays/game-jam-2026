@@ -2,13 +2,12 @@ extends Node
 
 const TICK := 4.0
 const DEATH_CHANCE := 0.25
+const STARVE_BELOW := 25.0
+const GROW_ABOVE := 50.0
 
 var huts : Array[Hut] = []
 
 var _timer := 0.0
-
-func _ready() -> void:
-	Inventory.shortage.connect(_on_shortage)
 
 func capacity() -> int:
 	var total := 0
@@ -27,14 +26,10 @@ func _process(delta : float) -> void:
 	if _timer < TICK:
 		return
 	_timer -= TICK
-	if Inventory.count("food") > 0 and JobSystem.workers.size() < capacity():
-		huts.pick_random().spawn_meeple()
-
-func _on_shortage(kind : String, missing : int) -> void:
-	if kind != "food":
-		return
-	for i in missing:
+	if GameState.hunger < STARVE_BELOW:
 		_starve()
+	elif GameState.hunger > GROW_ABOVE and Inventory.count("food") > 0 and JobSystem.workers.size() < capacity():
+		huts.pick_random().spawn_meeple()
 
 func _starve() -> void:
 	if JobSystem.workers.is_empty() or randf() >= DEATH_CHANCE:
