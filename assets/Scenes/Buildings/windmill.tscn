@@ -104,8 +104,6 @@ texture = ExtResource("1_tex")
 offset = Vector2(3.5, -8.5)
 hframes = 16
 script = ExtResource("2_scr")
-description = "Gives every barn room for more farms and silos."
-required_town_hall_level = 4
 wheel = NodePath("Wheel")
 reverse_frames = true
 build_frames = 15
@@ -113,6 +111,8 @@ frames = Array[ExtResource("3_phase")]([SubResource("Frame_0"), SubResource("Fra
 min_to_start = Dictionary[String, int]({
 "wood": 2
 })
+required_town_hall_level = 5
+description = "+1 farm plot and silo per farm"
 area = NodePath("Area2D")
 footprint = 2
 

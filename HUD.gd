@@ -249,7 +249,7 @@ func _show_death_screen() -> void:
 func _check_food_empty() -> void:
 	var food := Inventory.count("food")
 	if _last_food > 0 and food == 0:
-		GameState.warn("You're out of food! Tap on bushes to gather more")
+		GameState.warn("You're out of food! Pick berries or plant farms to gather more")
 	_last_food = food
 
 

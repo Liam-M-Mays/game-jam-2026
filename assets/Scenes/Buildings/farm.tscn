@@ -17,10 +17,10 @@ texture = ExtResource("1_tex")
 offset = Vector2(-0.5, -1)
 hframes = 6
 script = ExtResource("2_scr")
-description = "Grows crops that idle meeples harvest for food. Has to go next to a barn."
-required_town_hall_level = 2
 build_frames = 1
 frames = Array[ExtResource("3_phase")]([SubResource("Frame_0")])
+required_town_hall_level = 2
+description = "Grows crops that feed meeples when collected. Must be placed near a barn."
 area = NodePath("Area2D")
 
 [node name="Area2D" type="Area2D" parent="." unique_id=805800037]
