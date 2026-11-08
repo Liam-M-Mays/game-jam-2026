@@ -256,7 +256,8 @@ func _respawn() -> void:
 
 func _cells_with_movers() -> Dictionary:
 	var blocked := {}
-	var movers : Array = JobSystem.workers.duplicate()
+	var movers : Array[Node2D] = []
+	movers.append_array(JobSystem.workers)
 	for child in get_children():
 		if child is ResourceDrop:
 			movers.append(child)
