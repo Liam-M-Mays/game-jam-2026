@@ -14,7 +14,7 @@ const PAUSE_BUILDING_TIP := "Right-click a building under construction to pause 
 const OPENING_TIPS := [
 	"Tap on trees and stones to begin harvesting resources",
 	"Use WASD or the mouse wheel to pan the camera around",
-	"Picking berries will help feed your meeple",
+	"Picking berries will feed your meeple",
 	"Click the build button to start expanding your meeple village",
 	PAUSE_BUILDING_TIP,
 ]
@@ -39,7 +39,6 @@ const FUN_FACTS := [
 	"Sharks are older than trees",
 	"Did you know that cashews came from a fruit?",
 	"The Great Meeple War took place from 1508 to 1521",
-	"Brady Stewart is a really cool guy imo",
 	"Today I saw a balloon",
 	"This game has no affiliation with The Mighty Meeple Retail Business",
 ]
