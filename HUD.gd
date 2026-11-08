@@ -15,7 +15,6 @@ const LOW_HUNGER := 50.0
 @export var build_button: TextureButton
 @export var build_menu: BuildMenu
 @export var pause_menu: PauseMenu
-@export var build_tooltip: BuildTooltip
 
 var _building_scene: PackedScene
 var _last_meeple_count := 0
@@ -85,8 +84,6 @@ func _setup_building() -> void:
 		build_system.placement_failed.connect(_on_placement_failed)
 	if build_menu:
 		build_menu.build_system = build_system
-	if build_tooltip and build_system:
-		build_tooltip.setup(build_system)
 	if build_button:
 		build_button.pressed.connect(_on_build_pressed)
 
