@@ -103,7 +103,7 @@ expand_mode = 1
 [node name="MeeplesBehind" type="Node2D" parent="." unique_id=1183406227 node_paths=PackedStringArray("front_layer")]
 script = ExtResource("4_spawner")
 front_layer = NodePath("../MeeplesFront")
-front_chance = 0.05
+front_chance = 0.1
 min_delay = 0.01
 max_delay = 0.05
 min_fall_speed = 250.0

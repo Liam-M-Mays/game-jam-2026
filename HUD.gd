@@ -49,7 +49,6 @@ const FUN_FACTS := [
 @export var wood_label: Label
 @export var food_label: Label
 @export var meeple_label: Label
-@export var job_label: Label
 @export var hunger_bar: TextureProgressBar
 @export var build_button: TextureButton
 @export var build_menu: BuildMenu
@@ -119,11 +118,9 @@ func _refresh_counters() -> void:
 	if wood_label:
 		wood_label.text = str(Inventory.count("wood"))
 	if food_label:
-		food_label.text = "%d / %d" % [Inventory.count("food"), Inventory.food_cap()]
+		food_label.text = "%d/%d food" % [Inventory.count("food"), Inventory.food_cap()]
 	if meeple_label:
 		meeple_label.text = "%d / %d" % [JobSystem.workers.size(), Population.capacity()]
-	if job_label:
-		job_label.text = "%d / %d" % [JobSystem.job_count(), JobSystem.capacity()]
 
 
 func _setup_hunger_bar() -> void:

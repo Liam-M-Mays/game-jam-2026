@@ -1,7 +1,5 @@
 extends TextureProgressBar
 
-const GREEN_ABOVE := 0.5
-const RED_BELOW := 0.25
 const GREEN := Color("4fc24a")
 const YELLOW := Color("ffd91a")
 const RED := Color("c8242e")
@@ -15,10 +13,13 @@ const OK_COLOR := "ffd91a"
 const BAD_COLOR := "ff6b5b"
 
 @export var tooltip_style: StyleBox
+@export var food_plate: Control
+@export var food_label: Label
 
 var _fill_material: ShaderMaterial
 var _tooltip: PanelContainer
 var _tooltip_label: RichTextLabel
+var _label_color: Color
 
 
 func _ready() -> void:
@@ -38,25 +39,42 @@ func _process(_delta: float) -> void:
 func _refresh() -> void:
 	max_value = Inventory.food_cap()
 	value = Inventory.count("food")
-	_fill_material.set_shader_parameter("fill_color", _fill_color(ratio))
+	var color := _fill_color()
+	_fill_material.set_shader_parameter("fill_color", color)
+	_apply_label_color(color)
 
 
-func _fill_color(fill: float) -> Color:
-	if fill > GREEN_ABOVE:
+func _apply_label_color(color: Color) -> void:
+	if not food_label or color == _label_color:
+		return
+	_label_color = color
+	food_label.add_theme_color_override("font_color", color)
+
+
+func _fill_color() -> Color:
+	if GameState.hunger > Population.GROW_ABOVE:
 		return GREEN
-	if fill < RED_BELOW:
+	if GameState.hunger < Population.STARVE_BELOW:
 		return RED
 	return YELLOW
 
 
 func _update_tooltip() -> void:
-	if get_viewport().gui_get_hovered_control() != self:
+	var hovered := get_viewport().gui_get_hovered_control()
+	if hovered != self and hovered != food_plate:
 		_tooltip.hide()
 		return
 	_tooltip_label.text = _tooltip_text()
 	_tooltip.show()
 	_tooltip.reset_size()
-	_tooltip.global_position = global_position + Vector2(-_tooltip.size.x - TOOLTIP_GAP, (size.y - _tooltip.size.y) / 2.0)
+	_tooltip.global_position = Vector2(global_position.x - _tooltip.size.x - TOOLTIP_GAP, _tooltip_top())
+
+
+func _tooltip_top() -> float:
+	var centered := global_position.y + (size.y - _tooltip.size.y) / 2.0
+	if not food_plate:
+		return centered
+	return minf(centered, food_plate.global_position.y - _tooltip.size.y - TOOLTIP_GAP)
 
 
 func _tooltip_text() -> String:

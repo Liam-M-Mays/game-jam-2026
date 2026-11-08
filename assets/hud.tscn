@@ -122,14 +122,13 @@ region = Rect2(79, 1, 45, 22)
 atlas = ExtResource("7_ghiih")
 region = Rect2(128, 1, 45, 22)
 
-[node name="HUD" type="CanvasLayer" unique_id=1588467611 node_paths=PackedStringArray("counters", "stone_label", "wood_label", "food_label", "meeple_label", "job_label", "build_button", "build_menu", "pause_menu", "death_screen", "speed_button")]
+[node name="HUD" type="CanvasLayer" unique_id=1588467611 node_paths=PackedStringArray("counters", "stone_label", "wood_label", "food_label", "meeple_label", "build_button", "build_menu", "pause_menu", "death_screen", "speed_button")]
 script = ExtResource("1_uj4j1")
 counters = NodePath("CountersPanel")
 stone_label = NodePath("CountersPanel/Counters/Stone/StoneLabel")
 wood_label = NodePath("CountersPanel/Counters/WoodGroup/WoodLabel")
-food_label = NodePath("FoodGroup/FoodLabel")
+food_label = NodePath("Hunger/FoodPlate/FoodLabel")
 meeple_label = NodePath("CountersPanel/Counters/MeepleGroup/MeepleLabel")
-job_label = NodePath("CountersPanel/Counters/JobGroup/JobLabel")
 build_button = NodePath("BuildButton")
 build_menu = NodePath("BuildMenu")
 pause_menu = NodePath("PauseMenu")
@@ -201,21 +200,6 @@ theme_override_font_sizes/font_size = 32
 text = "Meeggas"
 vertical_alignment = 1
 
-[node name="JobGroup" type="HBoxContainer" parent="CountersPanel/Counters" unique_id=730114585]
-layout_mode = 2
-
-[node name="JobTitle" type="Label" parent="CountersPanel/Counters/JobGroup" unique_id=730114586]
-layout_mode = 2
-theme_override_font_sizes/font_size = 32
-text = "Jobs"
-vertical_alignment = 1
-
-[node name="JobLabel" type="Label" parent="CountersPanel/Counters/JobGroup" unique_id=730114587]
-layout_mode = 2
-theme_override_font_sizes/font_size = 32
-text = "0 / 0"
-vertical_alignment = 1
-
 [node name="Hunger" type="HBoxContainer" parent="." unique_id=644346435]
 custom_minimum_size = Vector2(100, 100)
 anchors_preset = 3
@@ -241,7 +225,18 @@ texture = SubResource("AtlasTexture_xb3ck")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="HungerBar" type="TextureProgressBar" parent="Hunger" unique_id=18425119]
+[node name="FoodPlate" type="PanelContainer" parent="Hunger" unique_id=730114582]
+layout_mode = 2
+size_flags_vertical = 8
+theme_override_styles/panel = SubResource("StyleBoxFlat_backplate")
+
+[node name="FoodLabel" type="Label" parent="Hunger/FoodPlate" unique_id=730114584]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "0/0 food"
+vertical_alignment = 1
+
+[node name="HungerBar" type="TextureProgressBar" parent="Hunger" unique_id=18425119 node_paths=PackedStringArray("food_plate", "food_label")]
 custom_minimum_size = Vector2(28, 260)
 layout_mode = 2
 size_flags_vertical = 4
@@ -251,25 +246,8 @@ texture_under = SubResource("AtlasTexture_gilah")
 texture_progress = SubResource("AtlasTexture_36vlq")
 script = ExtResource("6_hungerbar")
 tooltip_style = SubResource("StyleBoxFlat_tooltip")
-
-[node name="FoodGroup" type="HBoxContainer" parent="." unique_id=730114582]
-anchors_preset = 3
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -124.0
-offset_top = -316.0
-offset_right = -56.0
-offset_bottom = -292.0
-grow_horizontal = 2
-grow_vertical = 0
-mouse_filter = 2
-alignment = 1
-
-[node name="FoodLabel" type="Label" parent="FoodGroup" unique_id=730114584]
-layout_mode = 2
-text = "0"
+food_plate = NodePath("../FoodPlate")
+food_label = NodePath("../FoodPlate/FoodLabel")
 
 [node name="BuildButton" type="TextureButton" parent="." unique_id=1803173659]
 custom_minimum_size = Vector2(148, 148)
