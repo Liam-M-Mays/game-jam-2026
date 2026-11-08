@@ -21,6 +21,7 @@ JobSystem="*uid://dhxeaalsqdoin"
 Inventory="*res://assets/Scripts/Resources/inventory.gd"
 GameState="*uid://cthjkibwb0p7g"
 Population="*res://assets/Scripts/Meeple/population.gd"
+DevSpeed="*res://assets/Scripts/Dev/dev_speed.gd"
 
 [display]
 

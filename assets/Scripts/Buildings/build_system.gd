@@ -76,7 +76,7 @@ func _placement_error(cells : Array[Cell]) -> PlacementError:
 		return PlacementError.BLOCKED
 	if not _preview.can_afford():
 		return PlacementError.CANT_AFFORD
-	if not JobSystem.has_room(_preview.total_cost()):
+	if not JobSystem.has_room(_preview.jobs_needed()):
 		return PlacementError.QUEUE_FULL
 	return PlacementError.NONE
 
