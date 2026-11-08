@@ -95,7 +95,7 @@ costs = Dictionary[String, int]({
 })
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
-size = Vector2(11, 16)
+size = Vector2(17, 20)
 
 [node name="windmill" type="Sprite2D" unique_id=1363934093 node_paths=PackedStringArray("wheel", "area")]
 z_index = 1
@@ -118,7 +118,7 @@ footprint = 2
 [node name="Area2D" type="Area2D" parent="." unique_id=88545824]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=2085032327]
-position = Vector2(3.4, -7)
+position = Vector2(4.5, -9)
 shape = SubResource("RectangleShape2D_1")
 
 [node name="Wheel" type="Sprite2D" parent="." unique_id=1949943799]

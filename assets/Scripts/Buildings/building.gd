@@ -12,6 +12,7 @@ const COMPLETED_GROUP := &"completed_buildings"
 const CONSTRUCTION_GROUP := &"construction_sites"
 const POP_RISE := 0.05
 const POP_FALL := 0.13
+const PAUSED_OUTLINE := Color(1.0, 0.85, 0.1)
 
 @export var pop_amount := 0.05
 @export var reverse_frames := false
@@ -28,6 +29,7 @@ var costs : Dictionary[String, int]:
 
 var _built := EMPTY_STAGE
 var _constructing := false
+var _paused := false
 var _missing : Dictionary[String, int] = {}
 var _requesting := false
 var _banked : Dictionary[String, int] = {}
@@ -116,14 +118,31 @@ func next_stage_needs() -> Dictionary[String, int]:
 func is_under_construction() -> bool:
 	return _constructing
 
+func is_paused() -> bool:
+	return _paused
+
+func toggle_paused() -> void:
+	if not _constructing:
+		return
+	_paused = not _paused
+	set_selected(_paused, PAUSED_OUTLINE)
+	if _paused:
+		_drop_queued_hauls()
+		_set_missing({})
+	else:
+		_request_hauls()
+
 func icon() -> Texture2D:
 	if icon_texture != null:
 		return _cropped_icon(icon_texture, Rect2(Vector2.ZERO, icon_texture.get_size()))
 	var sheet := region_rect if region_enabled else Rect2(Vector2.ZERO, texture.get_size())
 	var size := sheet.size / Vector2(hframes, vframes)
-	var index := _stage_frame(last_stage())
+	var index := _icon_frame()
 	var cell := Vector2(index % hframes, floori(float(index) / hframes))
 	return _cropped_icon(texture, Rect2(sheet.position + cell * size, size))
+
+func _icon_frame() -> int:
+	return _stage_frame(last_stage())
 
 func _cropped_icon(source : Texture2D, region : Rect2) -> Texture2D:
 	var image := source.get_image()
@@ -238,6 +257,8 @@ func _advance() -> void:
 
 func _finish_construction() -> void:
 	_constructing = false
+	_paused = false
+	set_selected(false)
 	remove_from_group(CONSTRUCTION_GROUP)
 	_set_missing({})
 	Inventory.changed.disconnect(_request_hauls)
@@ -246,7 +267,7 @@ func _finish_construction() -> void:
 	complete()
 
 func _request_hauls() -> void:
-	if not _constructing or _requesting:
+	if not _constructing or _paused or _requesting:
 		return
 	_requesting = true
 	var remaining := _remaining_costs()
@@ -264,8 +285,16 @@ func _post_jobs() -> void:
 	while not _unposted.is_empty() and JobSystem.has_room():
 		JobSystem.add(_unposted.pop_front())
 
+func _drop_queued_hauls() -> void:
+	var dropped := JobSystem.take_pending_hauls(self)
+	dropped.append_array(_unposted)
+	_unposted.clear()
+	for job in dropped:
+		_incoming[job.kind] -= 1
+		Inventory.unreserve(job.kind, 1)
+
 func _refresh_missing() -> void:
-	if not _constructing:
+	if not _constructing or _paused:
 		return
 	var next := _frame_cost(_built + 1)
 	var now : Dictionary[String, int] = {}

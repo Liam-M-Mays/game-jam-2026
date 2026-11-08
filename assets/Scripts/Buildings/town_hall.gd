@@ -41,6 +41,7 @@ func upgrade() -> bool:
 		return false
 	_level += 1
 	_show_frame(last_stage() + _level - 1)
+	Music.play_success_riff()
 	upgraded.emit(_level)
 	return true
 
