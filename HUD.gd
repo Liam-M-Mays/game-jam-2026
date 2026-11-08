@@ -1,9 +1,42 @@
 extends CanvasLayer
 
-const FIRST_TIP_DELAY := 2.0
-const LOW_FOOD := 5
-const LOW_HUNGER := 50.0
 const SPEED_KEY := KEY_F
+const FIRST_TIP_DELAY := 2.0
+const ROTATION_DELAY_MIN := 45.0
+const ROTATION_DELAY_MAX := 90.0
+const OPENING_TIP_GAP := 5.0
+const OPENING_TIPS := [
+	"Tap on trees and stones to collect resources",
+	"Tap on bushes to get food",
+	"Use the tool button to build structures",
+	"Keep your hunger bar up to keep your meeples happy (and alive)",
+]
+
+const TIPS := [
+	"Tap on trees and stones to collect resources",
+	"Tap on bushes to get food",
+	"Use the tool button to build structures",
+	"Keep your hunger bar up to keep your meeples happy (and alive)",
+	"You can upgrade your Town Hall level by increasing your Meeple population",
+	"Meeples carry materials to construction sites. Hover over a site to see what it still needs",
+	"Press F or use the speed button to speed up time",
+	"Build more huts to grow your population",
+]
+
+const FUN_FACTS := [
+	"This game was created for The 2026 UNCC Fall Game Jam",
+	"Each Meeple has a real human soul trapped inside of them",
+	"Bananas are berries, but strawberries aren't",
+	"Oxford University is older than the Aztec Empire",
+	"Have you zoomed out all the way yet? If not, give it a try and see what you find!",
+	"Antarctica is technically a desert",
+	"Sharks are older than trees",
+	"Did you know that cashews came from a fruit?",
+	"The Great Meeple War took place from 1508 to 1521",
+	"Brady Stewart is a really cool guy imo",
+	"Today I saw a balloon",
+	"This game has no affiliation with The Mighty Meeple Retail Business",
+]
 
 @export var build_system: BuildSystem
 @export var counters: Control
@@ -20,7 +53,9 @@ const SPEED_KEY := KEY_F
 
 var _building_scene: PackedScene
 var _last_meeple_count := 0
-var _tips_shown := {}
+var _last_food := 0
+var _upgrade_was_ready := false
+var _deck: Array[Dictionary] = []
 
 
 func _ready() -> void:
@@ -28,18 +63,18 @@ func _ready() -> void:
 	if counters:
 		_ignore_mouse(counters)
 	Inventory.changed.connect(_refresh_counters)
-	Inventory.changed.connect(_check_resource_tips)
+	Inventory.changed.connect(_check_food_empty)
 	JobSystem.changed.connect(_refresh_counters)
-	JobSystem.changed.connect(_check_meeple_deaths)
+	JobSystem.changed.connect(_check_meeples)
 	JobSystem.job_rejected.connect(func(_job): GameState.warn("Job queue is full"))
-	GameState.hunger_changed.connect(_check_hunger_tip)
 	_last_meeple_count = JobSystem.workers.size()
+	_last_food = Inventory.count("food")
 	_refresh_counters()
 	_setup_hunger_bar()
 	_setup_building()
 	_setup_speed_button()
-	get_tree().create_timer(FIRST_TIP_DELAY, false).timeout.connect(
-		_show_tip.bind("collect", "Tap on trees and stones to collect resources"))
+	_watch_existing_town_halls.call_deferred()
+	_wait(FIRST_TIP_DELAY).connect(_show_opening_tip.bind(0))
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -121,6 +156,8 @@ func _on_build_pressed() -> void:
 
 
 func _on_building_completed(building: Building) -> void:
+	if building is TownHall:
+		_watch_town_hall(building)
 	if building is Hut:
 		GameState.toast("%s finished! A new meeple arrived" % building.display_name())
 	else:
@@ -138,30 +175,81 @@ func _on_placement_failed(reason: BuildSystem.PlacementError) -> void:
 			GameState.warn("Can't build there")
 
 
-func _check_meeple_deaths() -> void:
+func _watch_existing_town_halls() -> void:
+	for node in get_tree().get_nodes_in_group(Building.COMPLETED_GROUP):
+		if node is TownHall:
+			_watch_town_hall(node)
+	_check_upgrade_ready()
+
+
+func _watch_town_hall(hall: TownHall) -> void:
+	if not hall.upgraded.is_connected(_on_town_hall_upgraded):
+		hall.upgraded.connect(_on_town_hall_upgraded)
+
+
+func _check_upgrade_ready() -> void:
+	var hall := TownHall.find_town_hall()
+	var can_upgrade := hall != null and hall.can_upgrade()
+	if can_upgrade and not _upgrade_was_ready:
+		GameState.toast("You have enough meeples to upgrade your Town Hall! Open the build menu to upgrade it")
+	_upgrade_was_ready = can_upgrade
+
+
+func _on_town_hall_upgraded(level: int) -> void:
+	_upgrade_was_ready = false
+	_check_upgrade_ready.call_deferred()
+	GameState.toast("Town Hall reached level %d!" % level)
+	if not build_menu:
+		return
+	var names := build_menu.unlocked_names(level)
+	if not names.is_empty():
+		GameState.toast("New buildings unlocked: " + ", ".join(names))
+
+
+func _check_meeples() -> void:
 	var count := JobSystem.workers.size()
 	if count < _last_meeple_count:
 		GameState.warn("A meeple has died, watch your hunger bar!")
 	_last_meeple_count = count
+	_check_upgrade_ready()
 
 
-func _check_resource_tips() -> void:
-	if Inventory.count("wood") > 0 or Inventory.count("stone") > 0:
-		_show_tip("build", "Use the tool button to build structures")
-	if Inventory.count("food") <= LOW_FOOD:
-		_show_tip("food", "Tap on bushes to get food")
+func _check_food_empty() -> void:
+	var food := Inventory.count("food")
+	if _last_food > 0 and food == 0:
+		GameState.warn("You're out of food! Tap on bushes to gather more")
+	_last_food = food
 
 
-func _check_hunger_tip(value: float) -> void:
-	if value <= LOW_HUNGER:
-		_show_tip("hunger", "Keep your hunger bar up to keep your meeples happy")
+func _show_opening_tip(index: int) -> void:
+	GameState.tip(OPENING_TIPS[index])
+	if index + 1 < OPENING_TIPS.size():
+		_wait(OPENING_TIP_GAP).connect(_show_opening_tip.bind(index + 1))
+	else:
+		_wait(randf_range(ROTATION_DELAY_MIN, ROTATION_DELAY_MAX)).connect(_show_next_in_rotation)
 
 
-func _show_tip(id: String, text: String) -> void:
-	if _tips_shown.has(id):
-		return
-	_tips_shown[id] = true
-	GameState.tip(text)
+func _show_next_in_rotation() -> void:
+	if _deck.is_empty():
+		_refill_deck()
+	var entry: Dictionary = _deck.pop_back()
+	if entry["fact"]:
+		GameState.fact(entry["text"])
+	else:
+		GameState.tip(entry["text"])
+	_wait(randf_range(ROTATION_DELAY_MIN, ROTATION_DELAY_MAX)).connect(_show_next_in_rotation)
+
+
+func _refill_deck() -> void:
+	for text in TIPS:
+		_deck.append({"text": text, "fact": false})
+	for text in FUN_FACTS:
+		_deck.append({"text": text, "fact": true})
+	_deck.shuffle()
+
+
+func _wait(seconds: float) -> Signal:
+	return get_tree().create_timer(seconds, false, false, true).timeout
 
 
 func _ignore_mouse(node: Node) -> void:

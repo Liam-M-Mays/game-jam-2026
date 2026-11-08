@@ -1,0 +1,128 @@
+[gd_scene format=3 uid="uid://d60jawn51j7"]
+
+[ext_resource type="Texture2D" uid="uid://bqokwlx75wipj" path="res://ART/Windmill_build.png" id="1_tex"]
+[ext_resource type="Script" uid="uid://bk2gil1oa77o" path="res://assets/Scripts/Buildings/windmill.gd" id="2_scr"]
+[ext_resource type="Script" uid="uid://cyj5e8cr4hrge" path="res://assets/Scripts/Buildings/build_frame.gd" id="3_phase"]
+
+[sub_resource type="Resource" id="Frame_0"]
+script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"wood": 1
+})
+
+[sub_resource type="Resource" id="Frame_1"]
+script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"wood": 1
+})
+
+[sub_resource type="Resource" id="Frame_2"]
+script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"wood": 1
+})
+
+[sub_resource type="Resource" id="Frame_3"]
+script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"wood": 1
+})
+
+[sub_resource type="Resource" id="Frame_4"]
+script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"stone": 1
+})
+
+[sub_resource type="Resource" id="Frame_5"]
+script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"stone": 1
+})
+
+[sub_resource type="Resource" id="Frame_6"]
+script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"wood": 1
+})
+
+[sub_resource type="Resource" id="Frame_7"]
+script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"stone": 1
+})
+
+[sub_resource type="Resource" id="Frame_8"]
+script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"stone": 1
+})
+
+[sub_resource type="Resource" id="Frame_9"]
+script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"stone": 1
+})
+
+[sub_resource type="Resource" id="Frame_10"]
+script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"wood": 1
+})
+
+[sub_resource type="Resource" id="Frame_11"]
+script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"wood": 1
+})
+
+[sub_resource type="Resource" id="Frame_12"]
+script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"wood": 1
+})
+
+[sub_resource type="Resource" id="Frame_13"]
+script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"wood": 1
+})
+
+[sub_resource type="Resource" id="Frame_14"]
+script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"wood": 1
+})
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
+size = Vector2(11, 16)
+
+[node name="windmill" type="Sprite2D" unique_id=1363934093 node_paths=PackedStringArray("wheel", "area")]
+z_index = 1
+scale = Vector2(10, 10)
+texture = ExtResource("1_tex")
+offset = Vector2(3.5, -8.5)
+hframes = 16
+script = ExtResource("2_scr")
+wheel = NodePath("Wheel")
+reverse_frames = true
+build_frames = 15
+frames = Array[ExtResource("3_phase")]([SubResource("Frame_0"), SubResource("Frame_1"), SubResource("Frame_2"), SubResource("Frame_3"), SubResource("Frame_4"), SubResource("Frame_5"), SubResource("Frame_6"), SubResource("Frame_7"), SubResource("Frame_8"), SubResource("Frame_9"), SubResource("Frame_10"), SubResource("Frame_11"), SubResource("Frame_12"), SubResource("Frame_13"), SubResource("Frame_14")])
+min_to_start = Dictionary[String, int]({
+"wood": 2
+})
+area = NodePath("Area2D")
+footprint = 2
+
+[node name="Area2D" type="Area2D" parent="." unique_id=88545824]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=2085032327]
+position = Vector2(3.4, -7)
+shape = SubResource("RectangleShape2D_1")
+
+[node name="Wheel" type="Sprite2D" parent="." unique_id=1949943799]
+visible = false
+position = Vector2(4.5, -7.5)
+texture = ExtResource("1_tex")
+hframes = 16
+frame = 15

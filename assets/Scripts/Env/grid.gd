@@ -29,7 +29,6 @@ class Spawnable:
 	var curve : Curve
 	var cluster_bonus : float
 	var max_weight : float
-	var band_weights : Array[float]
 
 var _cells : Array[Array] = []
 var _cell_scale : Vector2
@@ -40,8 +39,7 @@ var _spawnables : Array[Spawnable] = []
 var _spots : Array = []
 var _respawn_timer := 0.0
 var _coords_of := {}
-var _cell_bands := {}
-var _cell_touched := {}
+var _keep_clear : Array[Cell] = []
 
 func _ready() -> void:
 	var template := CELL.instantiate()
@@ -196,6 +194,7 @@ func _place_start_building() -> void:
 		if not cells.is_empty():
 			place(building, cells)
 			building.complete()
+			_keep_clear = cells_around(building)
 			return
 	building.free()
 
@@ -209,14 +208,6 @@ func _seed_world() -> void:
 		return
 	var yard : YardGround = ground_sprites[0]
 	yard.generate(_rng.seed, _is_ground)
-	for cell in _coords_of:
-		var band := yard.band_at(to_global(cell.position + _cell_offset * _cell_scale))
-		var touched := 1 << band
-		for y in range(-2, 3):
-			for x in range(-5, 5):
-				touched |= 1 << yard.band_at(to_global(cell.position + Vector2(x, y) * _cell_scale))
-		_cell_bands[_coords_of[cell]] = band
-		_cell_touched[_coords_of[cell]] = touched
 
 func _generate_resources() -> void:
 	_spawnables = _load_spawnables()
@@ -243,7 +234,6 @@ func _load_spawnables() -> Array[Spawnable]:
 			s.footprint = template.footprint
 			s.curve = template.edge_distance_curve
 			s.cluster_bonus = template.cluster_bonus
-			s.band_weights = [template.dark_weight, template.mid_weight, template.light_weight]
 			s.max_weight = template.edge_distance_curve.max_value if template.edge_distance_curve != null else 1.0
 			if s.cluster_bonus > 0.0:
 				s.max_weight *= 1.0 + s.cluster_bonus * NEIGHBOURS.size() * s.footprint
@@ -300,7 +290,7 @@ func _spawn(s : Spawnable, blocked := {}) -> Harvestable:
 	for i in range(SPAWN_ATTEMPTS):
 		var coords : Vector2i = _spots[_rng.randi_range(0, _spots.size() - 1)]
 		var cells := _free_cells(coords, s.footprint)
-		if cells.is_empty() or cells.any(func(c): return blocked.has(c)):
+		if cells.is_empty() or cells.any(func(c): return blocked.has(c) or _keep_clear.has(c)):
 			continue
 		var weight := _spawn_weight(s, coords) * _building_factor(s, coords, building_coords)
 		if _rng.randf() * s.max_weight >= weight:
@@ -311,34 +301,12 @@ func _spawn(s : Spawnable, blocked := {}) -> Harvestable:
 	return null
 
 func _spawn_weight(s : Spawnable, coords : Vector2i) -> float:
-	var weight := _band_factor(s, coords)
+	var weight := 1.0
 	if s.curve != null:
 		weight *= maxf(s.curve.sample(_edge_distance[coords]), 0.0)
 	if s.cluster_bonus != 0.0:
 		weight *= maxf(1.0 + s.cluster_bonus * _matching_neighbours(s, coords), 0.0)
 	return weight
-
-func _band_factor(s : Spawnable, coords : Vector2i) -> float:
-	var factor := 1.0
-	for i in range(s.footprint):
-		var cell_coords := coords + Vector2i(i, 0)
-		var band : int = _cell_bands.get(cell_coords, -1)
-		if band < 0:
-			continue
-		factor = minf(factor, s.band_weights[band])
-		if _touches_banned_band(s, cell_coords):
-			return 0.0
-		for n in NEIGHBOURS:
-			if _touches_banned_band(s, cell_coords + n):
-				return 0.0
-	return factor
-
-func _touches_banned_band(s : Spawnable, coords : Vector2i) -> bool:
-	var touched : int = _cell_touched.get(coords, 0)
-	for band in range(s.band_weights.size()):
-		if touched & (1 << band) and s.band_weights[band] == 0.0:
-			return true
-	return false
 
 func _building_coords() -> Array[Vector2i]:
 	var list : Array[Vector2i] = []

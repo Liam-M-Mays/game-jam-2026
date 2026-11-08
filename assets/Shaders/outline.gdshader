@@ -71,6 +71,7 @@ float style_strength(float dist, vec4 color, float width, float glow_size,
 
 void fragment() {
 	vec4 base = vec4(0.0);
+	float shape = alpha_at(TEXTURE, UV);
 	if (in_region(UV)) {
 		base = texture(TEXTURE, UV) * modulate;
 	}
@@ -78,7 +79,7 @@ void fragment() {
 
 	float reach = min(max(select_reach(), hover_reach()), MAX_REACH);
 	vec4 result = base;
-	if (reach > 0.0 && base.a < 1.0) {
+	if (reach > 0.0 && shape < 1.0) {
 		vec2 px = fwidth(UV);
 		float dist = reach + 1.0;
 		for (float r = 1.0; r <= reach; r += 1.0) {
@@ -111,7 +112,7 @@ void fragment() {
 		}
 
 		result.rgb = mix(fx.rgb, base.rgb, base.a);
-		result.a = base.a + fx.a * (1.0 - base.a);
+		result.a = base.a + fx.a * (1.0 - shape);
 	}
 	COLOR = result;
 }

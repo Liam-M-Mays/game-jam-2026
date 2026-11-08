@@ -18,6 +18,8 @@ const POP_FALL := 0.13
 @export var build_frames := 0
 @export var frames : Array[BuildFrame] = []
 @export var min_to_start : Dictionary[String, int] = {}
+@export var required_town_hall_level := 1
+@export var show_blueprint := true
 
 var costs : Dictionary[String, int]:
 	get:
@@ -62,7 +64,7 @@ func _stage_frame(stage : int) -> int:
 
 func _update_blueprint(stage : int) -> void:
 	var next := stage + 1
-	if next > last_stage():
+	if next > last_stage() or not show_blueprint:
 		_outline_also_around(frame)
 		if _blueprint != null:
 			_blueprint.visible = false
@@ -142,13 +144,16 @@ func placement_hint() -> String:
 	return ""
 
 func can_afford() -> bool:
+	return _has_resources(min_to_start)
+
+func jobs_needed() -> int:
+	var total := 0
 	for kind in min_to_start:
-		if Inventory.count(kind) < min_to_start[kind]:
-			return false
-	return true
+		total += min_to_start[kind]
+	return mini(total, JobSystem.capacity())
 
 func can_start() -> bool:
-	return can_afford()
+	return can_afford() and JobSystem.has_room(jobs_needed())
 
 func start_construction() -> void:
 	_built = EMPTY_STAGE
@@ -263,7 +268,7 @@ func _refresh_missing() -> void:
 		if short > 0:
 			now[kind] = short
 	if not now.is_empty() and _missing.is_empty():
-		print("%s needs %s to keep building" % [display_name(), _missing_text(now)])
+		GameState.warn("%s needs %s to keep building" % [display_name(), _missing_text(now)])
 	_set_missing(now)
 
 func _set_missing(now : Dictionary[String, int]) -> void:
@@ -293,6 +298,12 @@ func _covers(have : Dictionary, need : Dictionary[String, int]) -> bool:
 			return false
 	return true
 
+func _has_resources(need : Dictionary[String, int]) -> bool:
+	for kind in need:
+		if Inventory.available(kind) < need[kind]:
+			return false
+	return true
+
 func _missing_text(need : Dictionary[String, int]) -> String:
 	var parts := []
 	for kind in need:
@@ -306,5 +317,6 @@ func _sum_frame_costs() -> Dictionary[String, int]:
 		for kind in cost:
 			sum[kind] = sum.get(kind, 0) + cost[kind]
 	return sum
+
 func built_stage() -> int:
 	return _built

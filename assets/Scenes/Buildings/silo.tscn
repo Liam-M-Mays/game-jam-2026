@@ -1,0 +1,70 @@
+[gd_scene format=3 uid="uid://hhr2wobg0jmh"]
+
+[ext_resource type="Texture2D" uid="uid://trsngvo3l5gf" path="res://ART/Silo_build.png" id="1_tex"]
+[ext_resource type="Script" uid="uid://bpst2lh3o3ram" path="res://assets/Scripts/Buildings/silo.gd" id="2_scr"]
+[ext_resource type="Script" uid="uid://cyj5e8cr4hrge" path="res://assets/Scripts/Buildings/build_frame.gd" id="3_phase"]
+
+[sub_resource type="Resource" id="Frame_0"]
+script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"wood": 1
+})
+
+[sub_resource type="Resource" id="Frame_1"]
+script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"wood": 1
+})
+
+[sub_resource type="Resource" id="Frame_2"]
+script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"wood": 1
+})
+
+[sub_resource type="Resource" id="Frame_3"]
+script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"stone": 1
+})
+
+[sub_resource type="Resource" id="Frame_4"]
+script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"stone": 1
+})
+
+[sub_resource type="Resource" id="Frame_5"]
+script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"stone": 1
+})
+
+[sub_resource type="Resource" id="Frame_6"]
+script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"stone": 1
+})
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
+size = Vector2(6, 9)
+
+[node name="silo" type="Sprite2D" unique_id=1051423833 node_paths=PackedStringArray("area")]
+z_index = 1
+scale = Vector2(10, 10)
+texture = ExtResource("1_tex")
+offset = Vector2(0, -3.5)
+hframes = 7
+script = ExtResource("2_scr")
+reverse_frames = true
+frames = Array[ExtResource("3_phase")]([SubResource("Frame_0"), SubResource("Frame_1"), SubResource("Frame_2"), SubResource("Frame_3"), SubResource("Frame_4"), SubResource("Frame_5"), SubResource("Frame_6")])
+min_to_start = Dictionary[String, int]({
+"wood": 2
+})
+area = NodePath("Area2D")
+
+[node name="Area2D" type="Area2D" parent="." unique_id=295796121]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=1716102182]
+position = Vector2(0, -3.4999998)
+shape = SubResource("RectangleShape2D_1")

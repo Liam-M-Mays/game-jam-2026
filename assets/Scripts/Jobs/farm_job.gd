@@ -8,7 +8,7 @@ func start(worker : Meeple) -> void:
 
 func update(worker : Meeple, delta : float) -> bool:
 	var farm := site as Farm
-	if not is_instance_valid(farm) or not farm.is_ripe():
+	if not is_instance_valid(farm) or not farm.can_harvest_now():
 		return true
 	if not worker.has_arrived():
 		return false

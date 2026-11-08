@@ -24,6 +24,8 @@ const HOTKEYS := {
 	"7": preload("res://assets/Scenes/Buildings/wood_pile.tscn"),
 	"8": preload("res://assets/Scenes/Buildings/lumberjack.tscn"),
 	"9": preload("res://assets/Scenes/Buildings/miner.tscn"),
+	"0": preload("res://assets/Scenes/Buildings/silo.tscn"),
+	"minus": preload("res://assets/Scenes/Buildings/windmill.tscn"),
 }
 
 @export var grid : Grid
