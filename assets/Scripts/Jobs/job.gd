@@ -8,3 +8,6 @@ func start(_worker : Meeple) -> void:
 
 func update(_worker : Meeple, _delta : float) -> bool:
 	return true
+
+func abort(_worker : Meeple) -> void:
+	pass

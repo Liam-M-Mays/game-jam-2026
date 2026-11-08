@@ -34,6 +34,7 @@ A quick map of the gameplay code, written for hooking up UI: what to read, which
 | `JobSystem` | `assets/Scripts/Jobs/job_system.gd` | Job queue + worker (meeple) registry + job cap |
 | `Inventory` | `assets/Scripts/Resources/inventory.gd` | All resource counts |
 | `GameState` | `Game_State.gd` | UI-side state (hunger, toasts) |
+| `Population` | `assets/Scripts/Meeple/population.gd` | Meeple cap (= completed huts), starvation deaths, respawns |
 
 ### `Inventory`
 
@@ -48,7 +49,7 @@ func reset()                           # clear stored stock + reservations (new 
 
 - **Kinds right now:** `"wood"`, `"stone"`, `"food"`. Kinds are just strings, so a new one appears the first time something adds or drops it. `count()` on an unknown kind returns `0`.
 - **Wood and stone are physical.** Each one is a `ResourceDrop` node on the grid, and `count` is how many exist. A build doesn't subtract when it's placed. Meeples carry the drops to the site, so the count goes down delivery by delivery.
-- **Food is a plain number.** Bushes call `add("food", n)`. Nothing consumes it yet.
+- **Food is a plain number.** Starts at 10 (`Inventory.START_STOCK`). Bushes call `add("food", n)`. A harvest charges the harvestable's `food_cost` (set per scene) when it finishes, clamped at 0.
 - **`count` vs `available`:** use `count` for the corner counter. After a hut is placed, `available` drops immediately, but `count` only drops as meeples haul.
 
 ### `JobSystem`
@@ -112,7 +113,7 @@ Then set it in the inspector on the `HUD` node of `Brady_Scene` / `game.tscn`, p
 
 ```gdscript
 const BUILDINGS: Array[PackedScene] = [
-	preload("res://assets/Scenes/hut_build.tscn"),
+	preload("res://assets/Scenes/Buildings/hut_build.tscn"),
 ]
 
 var build_system: BuildSystem
@@ -221,7 +222,7 @@ None of these were edited. They're listed so they can be changed when convenient
 5. **The "Built %s" toast fires when the menu button is pressed**, before anything exists. Toast on `build_system.building_completed`, or on `building_placed` ("Hut placed").
 6. **Hunger always ends in `starved`.** `GameState.hunger` drains and nothing calls `feed()`, so the starving toast fires at about 3 min 20 s every game. See [Hunger bar](#hunger-bar).
 7. **`GameState.reset()` doesn't reset the game systems.** Add `Inventory.reset()` and `JobSystem.reset()` alongside it (main menu start). Leftover jobs from a previous map can crash the next one.
-8. **`Main_Menu.GAME_SCENE` is `res://game.tscn`.** The real path is `res://assets/Scenes/game.tscn`. `Pause_Menu.MAIN_MENU_SCENE` points to a `main_menu.tscn` that doesn't exist yet.
+8. **`Main_Menu.GAME_SCENE` is `res://game.tscn`.** The real path is `res://assets/Scenes/Levels/game.tscn`. `Pause_Menu.MAIN_MENU_SCENE` points to a `main_menu.tscn` that doesn't exist yet.
 9. **`hud.tscn` only contains `ToastFeed`.** `HUD.gd` isn't attached yet, and its exported nodes (labels, `hunger_bar`, `build_button`, `build_menu`, `pause_menu`) don't exist. Once it's attached, every export needs assigning, or `_ready()` errors on null.
 10. **`Toast_Feed.gd` still has the `T` test key** (`_unhandled_input` spawning "Test toast N"). It will fire in real play.
 11. **`Brady_Scene` has two counters:** the old `UI` node (`resource_ui.gd`) plus the HUD. Delete the `UI` node once the HUD shows the same info.

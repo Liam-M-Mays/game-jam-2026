@@ -2,7 +2,7 @@
 
 [ext_resource type="Texture2D" uid="uid://dx1ud5pv7a6f1" path="res://assets/Res/rock.tres" id="1_5xsbf"]
 [ext_resource type="Script" uid="uid://c3elx78jjhpbp" path="res://assets/Scripts/Resources/harvestable.gd" id="2_ebimj"]
-[ext_resource type="PackedScene" uid="uid://cxcltn73yu7fw" path="res://assets/Scenes/Env/rock.tscn" id="3_drop"]
+[ext_resource type="PackedScene" uid="uid://cxcltn73yu7fw" path="res://assets/Scenes/Resources/Drops/rock.tscn" id="3_drop"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_nafr4"]
 size = Vector2(3.6000004, 3.4000015)
@@ -16,6 +16,7 @@ script = ExtResource("2_ebimj")
 area = NodePath("Area2D")
 wobbles_to_break = 3
 drops = Dictionary[PackedScene, int]({ExtResource("3_drop"): 1})
+food_cost = 1
 spawn_chance = 0.02
 
 [node name="Area2D" type="Area2D" parent="." unique_id=1452940078]

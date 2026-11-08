@@ -3,7 +3,7 @@ class_name Building
 
 signal completed
 
-const BUILD_EFFECT := preload("res://assets/Scenes/cloud.tscn")
+const BUILD_EFFECT := preload("res://assets/Scenes/Effects/cloud.tscn")
 
 @export var costs : Dictionary[String, int] = {}
 

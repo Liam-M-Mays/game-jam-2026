@@ -43,6 +43,13 @@ func finish(job : Job) -> void:
 	_active.erase(job)
 	changed.emit()
 
+func requeue(job : Job, worker : Meeple) -> void:
+	job.abort(worker)
+	_active.erase(job)
+	if not job.cancelled:
+		_pending.push_front(job)
+	changed.emit()
+
 func cancel(job : Job) -> void:
 	job.cancelled = true
 	_pending.erase(job)

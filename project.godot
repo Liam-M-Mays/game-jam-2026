@@ -20,6 +20,7 @@ config/icon="res://assets/Res/icon.svg"
 JobSystem="*uid://dhxeaalsqdoin"
 Inventory="*res://assets/Scripts/Resources/inventory.gd"
 GameState="*uid://cthjkibwb0p7g"
+Population="*res://assets/Scripts/Meeple/population.gd"
 
 [display]
 

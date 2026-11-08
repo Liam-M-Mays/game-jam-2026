@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://bx2tyffx4x7lt" path="res://assets/Scripts/Giant/Giant_step.gd" id="1_js8kw"]
 [ext_resource type="Script" uid="uid://cy6jj62vfqjhg" path="res://assets/Scripts/Giant/walk.gd" id="1_ki0cw"]
 [ext_resource type="Texture2D" uid="uid://ddh8slhh8qd5y" path="res://assets/Art/Characters/Big_back_diddy_face.png" id="2_aah2l"]
-[ext_resource type="PackedScene" uid="uid://mcu65uoclrgs" path="res://assets/Scenes/grid.tscn" id="3_xomjc"]
+[ext_resource type="PackedScene" uid="uid://mcu65uoclrgs" path="res://assets/Scenes/Env/grid.tscn" id="3_xomjc"]
 [ext_resource type="Texture2D" uid="uid://cqui0s7tsra0a" path="res://assets/Art/Characters/Big_back_diddy_eyes.png" id="4_aah2l"]
 [ext_resource type="Script" uid="uid://b5fecyvq8x7ho" path="res://assets/Scripts/Giant/Blink.gd" id="5_8ptjo"]
 [ext_resource type="Script" uid="uid://d13jmgqp0eyq8" path="res://assets/Scripts/Cam/mouse.gd" id="5_ci4bg"]
@@ -56,8 +56,8 @@ position = Vector2(-3.9999962, 5.000002)
 scale = Vector2(174, 74)
 texture = SubResource("GradientTexture2D_cauxy")
 script = ExtResource("1_js8kw")
-start_delay = 0.2
 step_height = 0.1
+start_delay = 0.2
 
 [node name="Left Eye" type="Sprite2D" parent="Node2D2/Node2D/Head/EyeBlack" unique_id=2085841384]
 position = Vector2(-0.37356323, -0.17567566)

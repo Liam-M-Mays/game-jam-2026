@@ -10,7 +10,7 @@ signal placement_failed(reason : PlacementError)
 enum PlacementError { NONE, BLOCKED, CANT_AFFORD, QUEUE_FULL }
 
 const HOTKEYS := {
-	"2": preload("res://assets/Scenes/hut_build.tscn"),
+	"2": preload("res://assets/Scenes/Buildings/hut_build.tscn"),
 }
 const PREVIEW_VALID := Color(0.3, 1, 0.3, 0.6)
 const PREVIEW_BLOCKED := Color(1, 0.3, 0.3, 0.6)

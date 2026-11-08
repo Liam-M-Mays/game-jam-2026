@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://c33bf3v6kerkq"]
 
 [ext_resource type="Script" uid="uid://cy6jj62vfqjhg" path="res://assets/Scripts/Giant/walk.gd" id="1_8qyee"]
-[ext_resource type="PackedScene" uid="uid://djvh1y4i7yuyv" path="res://assets/hud.tscn" id="1_gr521"]
+[ext_resource type="PackedScene" uid="uid://djvh1y4i7yuyv" path="res://assets/Scenes/UI/hud.tscn" id="1_gr521"]
 [ext_resource type="Script" uid="uid://bx2tyffx4x7lt" path="res://assets/Scripts/Giant/Giant_step.gd" id="2_gr521"]
 [ext_resource type="Texture2D" uid="uid://ddh8slhh8qd5y" path="res://assets/Art/Characters/Big_back_diddy_face.png" id="3_mlnhj"]
 [ext_resource type="Texture2D" uid="uid://cqui0s7tsra0a" path="res://assets/Art/Characters/Big_back_diddy_eyes.png" id="5_kjjxb"]
@@ -9,7 +9,7 @@
 [ext_resource type="Texture2D" uid="uid://da8ldifciodhe" path="res://assets/Art/Characters/Big_back_diddy_torso.png" id="7_7nwbc"]
 [ext_resource type="Texture2D" uid="uid://cf5wt1v7gvafk" path="res://ART/green.tres" id="8_hwq1a"]
 [ext_resource type="Script" uid="uid://dsqse147e1lpv" path="res://assets/Scripts/Cam/giant_camera.gd" id="9_lwgp0"]
-[ext_resource type="PackedScene" uid="uid://mcu65uoclrgs" path="res://assets/Scenes/grid.tscn" id="11_ag32q"]
+[ext_resource type="PackedScene" uid="uid://mcu65uoclrgs" path="res://assets/Scenes/Env/grid.tscn" id="11_ag32q"]
 [ext_resource type="Script" uid="uid://d13jmgqp0eyq8" path="res://assets/Scripts/Cam/mouse.gd" id="12_bcifo"]
 [ext_resource type="Script" uid="uid://clnxifq5klc7h" path="res://assets/Scripts/Buildings/build_system.gd" id="13_4n7fk"]
 [ext_resource type="Texture2D" uid="uid://dqt5vqxk0sdc6" path="res://assets/Art/Characters/Big_back_diddy_arm_foreground.png" id="14_y40hb"]
