@@ -1,0 +1,27 @@
+[gd_scene format=3 uid="uid://mv7buf160tw2"]
+
+[ext_resource type="Texture2D" uid="uid://cmsnrw3sxti0j" path="res://ART/Farm_food_growing_ass_bih.png" id="1_tex"]
+[ext_resource type="Script" uid="uid://d0plvjmb1nr0w" path="res://assets/Scripts/Buildings/farm.gd" id="2_scr"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
+size = Vector2(9, 6)
+
+[node name="farm" type="Sprite2D" unique_id=1607543358 node_paths=PackedStringArray("area")]
+z_index = 1
+scale = Vector2(10, 10)
+texture = ExtResource("1_tex")
+offset = Vector2(-0.5, -1)
+hframes = 6
+script = ExtResource("2_scr")
+costs = Dictionary[String, int]({
+"stone": 1,
+"wood": 1
+})
+area = NodePath("Area2D")
+hoverable = false
+
+[node name="Area2D" type="Area2D" parent="." unique_id=805800037]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=276213529]
+position = Vector2(-0.50000006, -1)
+shape = SubResource("RectangleShape2D_1")

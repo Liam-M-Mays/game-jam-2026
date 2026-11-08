@@ -1,0 +1,28 @@
+[gd_scene format=3 uid="uid://dvj52ktr0pqxh"]
+
+[ext_resource type="Texture2D" uid="uid://dmnl7hml46wtc" path="res://ART/big_gay_rocks.png" id="1_tex"]
+[ext_resource type="Script" uid="uid://bp2xqjhxnsh6a" path="res://assets/Scripts/Buildings/stone_pile.gd" id="2_scr"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
+size = Vector2(9, 7.0999994)
+
+[node name="stone_pile" type="Sprite2D" unique_id=1759700094 node_paths=PackedStringArray("area")]
+z_index = 1
+scale = Vector2(10, 10)
+texture = ExtResource("1_tex")
+offset = Vector2(-0.5, -2.5)
+hframes = 12
+script = ExtResource("2_scr")
+costs = Dictionary[String, int]({
+"stone": 1,
+"wood": 1
+})
+area = NodePath("Area2D")
+hoverable = false
+
+[node name="Area2D" type="Area2D" parent="." unique_id=1725772822]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=1202569559]
+position = Vector2(-0.5, -1.5)
+scale = Vector2(0.99999994, 0.99999994)
+shape = SubResource("RectangleShape2D_1")

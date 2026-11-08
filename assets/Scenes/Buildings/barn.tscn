@@ -1,0 +1,27 @@
+[gd_scene format=3 uid="uid://ctvpxvvq7sjvm"]
+
+[ext_resource type="Texture2D" uid="uid://bycvjokbbgjy4" path="res://ART/barn_build.png" id="1_tex"]
+[ext_resource type="Script" uid="uid://c5be5uborrvaj" path="res://assets/Scripts/Buildings/barn.gd" id="2_scr"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
+size = Vector2(9, 8)
+
+[node name="barn" type="Sprite2D" unique_id=1866275440 node_paths=PackedStringArray("area")]
+z_index = 1
+scale = Vector2(10, 10)
+texture = ExtResource("1_tex")
+offset = Vector2(3.5, -3)
+hframes = 5
+script = ExtResource("2_scr")
+costs = Dictionary[String, int]({
+"stone": 1,
+"wood": 1
+})
+area = NodePath("Area2D")
+hoverable = false
+
+[node name="Area2D" type="Area2D" parent="." unique_id=1209724057]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=1663955678]
+position = Vector2(-0.49999997, -3)
+shape = SubResource("RectangleShape2D_1")
