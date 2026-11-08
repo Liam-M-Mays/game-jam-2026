@@ -20,6 +20,9 @@ const GROW_DURATION := 0.5
 @export_range(0.0, 1.0, 0.01) var respawn_chance := 0.5
 @export var edge_distance_curve : Curve
 @export var cluster_bonus := 0.0
+@export_range(0.0, 1.0, 0.05) var dark_weight := 1.0
+@export_range(0.0, 1.0, 0.05) var mid_weight := 1.0
+@export_range(0.0, 1.0, 0.05) var light_weight := 1.0
 
 var _wobbles := 0
 var _job : Job = null

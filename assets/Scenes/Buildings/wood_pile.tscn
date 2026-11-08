@@ -45,6 +45,7 @@ offset = Vector2(-0.5, -2)
 hframes = 45
 script = ExtResource("2_scr")
 kind = "wood"
+max_items = 20
 build_frames = 5
 frames = Array[ExtResource("3_phase")]([SubResource("Frame_0"), SubResource("Frame_1"), SubResource("Frame_2"), SubResource("Frame_3"), SubResource("Frame_4")])
 min_to_start = Dictionary[String, int]({

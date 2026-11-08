@@ -1,10 +1,13 @@
 extends Building
 class_name Storage
 
+const GROUP := &"storages"
+
 @export var kind := "stone"
 @export var max_items := 0
 
 var _held : Array[ResourceDrop] = []
+var _en_route := 0
 
 func capacity() -> int:
 	return max_items if max_items > 0 else _fill_frames()
@@ -17,6 +20,7 @@ func held() -> int:
 
 func complete() -> void:
 	super()
+	add_to_group(GROUP)
 	_refresh()
 
 func store(drop : ResourceDrop) -> void:
@@ -32,14 +36,21 @@ func take(drop : ResourceDrop) -> void:
 	drop.storage = null
 	_refresh()
 
-func has_idle_work(_worker : Meeple) -> bool:
-	return _held.size() < capacity() and Inventory.available(kind) > 0 \
-		and Inventory.closest_loose(kind, global_position) != null
+func first_unclaimed() -> ResourceDrop:
+	for drop in _held:
+		if not drop.claimed:
+			return drop
+	return null
 
-func _make_idle_job(worker : Meeple) -> IdleJob:
-	if not has_idle_work(worker):
-		return null
-	return StoreJob.new(Inventory.closest_loose(kind, worker.global_position))
+func has_room() -> bool:
+	return _held.size() + _en_route < capacity()
+
+func make_store_job(drop : ResourceDrop) -> StoreJob:
+	_en_route += 1
+	return StoreJob.new(drop, self)
+
+func idle_job_ended() -> void:
+	_en_route -= 1
 
 func _refresh() -> void:
 	if capacity() <= 0:

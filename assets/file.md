@@ -16,7 +16,7 @@ A quick map of the gameplay code, written for hooking up UI: what to read, which
 | What a site under construction is stuck on | `site.missing()` → `{"wood": 1}`, empty when not stuck | `site.missing_changed` |
 | What a site needs for its next stage | `site.next_stage_needs()` → `{"stone": 1}` (minus what's already delivered). Hover tooltip for this is built in (`ConstructionTooltip`, created by `BuildSystem`) | poll / `Inventory.changed` |
 | Picture of a building (finished frame) | `building.icon()` → `Texture2D` (used by the build menu buttons) | static |
-| Can place (has `min_to_start`) | `building.can_afford()` / `building.can_start()` | `Inventory.changed` + `JobSystem.changed` |
+| Can place (stock covers `min_to_start`) | `building.can_afford()` / `building.can_start()` | `Inventory.changed` |
 | Enter / leave build mode | `build_system.start_build(scene)` / `build_system.end_build()` | — |
 | Build mode events | `BuildSystem` signals (below) | — |
 | Queue-full feedback | `JobSystem.job_rejected` | — |
@@ -96,11 +96,11 @@ func is_building() -> bool
 How it behaves:
 
 - **In build mode** a ghost preview follows the mouse, green when it can be placed and red when it can't.
-- **Left-click** places the building, and placing always **exits build mode**. Placing needs `min_to_start` to be available. Each sprite frame has its own cost (`frames` on the scene). Meeples keep hauling whatever the unbuilt frames still need, and the building advances a frame whenever the resources delivered so far cover the next frame's cost. When the next frame can't be paid for with what's delivered or on the way, the blueprint turns red until more resources show up. `building_completed` fires on the last frame. A hut also spawns a meeple at that point.
-- **A failed click** (blocked cells, can't afford, queue full) makes the preview flash red and shake, emits `placement_failed(reason)`, and stays in build mode.
-- **Farm plots** can only go near a barn. Each barn takes 3 plots within 3 cells of it, and a barn counts as soon as it's placed (it doesn't have to be finished). While placing a farm, the normal cell cursor is off. Only the free cells around barns are shown, and the ghost plot appears only when the mouse is on one of them. A click outside them fails with `OUT_OF_AREA`, which `HUD._on_placement_failed` doesn't handle yet.
+- **Left-click** places the building, and placing always **exits build mode**. Placing only checks that the current stock (`Inventory.count`) covers `min_to_start`. A full job queue never blocks placing: haul jobs wait and post as room opens. Each sprite frame has its own cost (`frames` on the scene). Meeples keep hauling whatever the unbuilt frames still need, and the building advances a frame whenever the resources delivered so far cover the next frame's cost. When the next frame can't be paid for with what's delivered or on the way, the blueprint turns red until more resources show up. `building_completed` fires on the last frame. A hut also spawns a meeple at that point.
+- **A failed click** (blocked cells, can't afford) makes the preview flash red and shake, emits `placement_failed(reason)`, and stays in build mode.
+- **Farm plots** can only go near a barn. Each barn takes 3 plots in its `farm_offsets` area (2x2 in front and behind, 1x3 on each side), and a barn counts as soon as it's placed (it doesn't have to be finished). While placing a farm, the normal cell cursor is off. Only the free cells around barns are shown, and the ghost plot appears only when the mouse is on one of them. A click outside them fails with `OUT_OF_AREA`, which `HUD._on_placement_failed` doesn't handle yet.
 - **Esc** calls `end_build()` and marks the event handled, so your HUD's `_unhandled_input` never sees that Esc. Outside build mode, Esc passes through to the HUD normally.
-- **Playtest hotkeys** (the `HOTKEYS` dict at the top of the file): `2` small hut, `3` stone hut, `4` barn, `5` farm, `6` stone pile, `7` wood pile, `8` lumberjack, `9` miner.
+- **Playtest hotkeys** (the `HOTKEYS` dict at the top of the file): `1` erection, `2` small hut, `3` stone hut, `4` barn, `5` farm, `6` stone pile, `7` wood pile, `8` lumberjack, `9` miner.
 - **The town hall is not buildable.** It's the starting building (`grid.tscn` → `start_building`), so leave it out of the build menu.
 - `BuildSystem` is `PAUSABLE`. Start placement from a menu, then **unpause**, or the preview won't follow the mouse.
 
@@ -134,7 +134,7 @@ func _ready() -> void:
 func _refresh() -> void:
 	for button in building_list.get_children():
 		var b: Building = _templates[button.get_meta("scene")]
-		button.disabled = not b.can_start()          # afford + queue room for the hauls
+		button.disabled = not b.can_start()          # stock covers min_to_start
 		button.text = "Hut  %s" % _cost_text(b.costs)
 
 func _on_building_pressed(scene: PackedScene) -> void:
@@ -184,7 +184,6 @@ JobSystem.job_rejected.connect(func(_job): GameState.toast("Too many jobs queued
 func _on_placement_failed(reason: BuildSystem.PlacementError) -> void:
 	match reason:
 		BuildSystem.PlacementError.CANT_AFFORD: GameState.toast("Not enough resources")
-		BuildSystem.PlacementError.QUEUE_FULL: GameState.toast("Too many jobs queued")
 		BuildSystem.PlacementError.BLOCKED: GameState.toast("Can't build there")
 ```
 
@@ -251,9 +250,9 @@ assets/Scripts/
   Resources/resource_drop.gd  Physical wood/stone on the ground
   Buildings/building.gd       Costs, haul jobs, construction frames, completed signal
   Buildings/hut.gd            Spawns a meeple when completed (town hall, small hut, stone hut)
-  Buildings/storage.gd        Stone / wood piles: idle job hauls loose drops in
+  Buildings/storage.gd        Stone / wood piles: meeples with nothing else to do each claim a loose drop and bring it in. Hauls from a pile take 2 when the site needs both
   Buildings/lumberjack.gd     Idle job: one meeple at a time chops the free tree closest to the building. miner.tscn reuses it with chops = the rock drop, so it mines rocks
-  Buildings/barn.gd           Allows up to 3 farm plots within farm_radius cells
+  Buildings/barn.gd           Allows up to 3 farm plots on the cells listed in farm_offsets (relative to the barn's first cell)
   Buildings/farm.gd           1 build frame, then grows through the rest of the sheet. Ripe = idle job harvests 1 food and resets
   Buildings/build_system.gd   class BuildSystem: build mode, preview, placement
   Jobs/job_system.gd          autoload JobSystem

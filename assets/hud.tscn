@@ -54,6 +54,14 @@ region = Rect2(265, 26, 54, 22)
 atlas = ExtResource("2_gudfk")
 region = Rect2(381, 27, 54, 20)
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_0ped1"]
+atlas = ExtResource("2_gudfk")
+region = Rect2(1214, 29, 41, 22)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_4anfs"]
+atlas = ExtResource("2_gudfk")
+region = Rect2(1322, 31, 41, 20)
+
 [sub_resource type="AtlasTexture" id="AtlasTexture_p6bmp"]
 atlas = ExtResource("2_gudfk")
 region = Rect2(506, 25, 40, 22)
@@ -62,7 +70,7 @@ region = Rect2(506, 25, 40, 22)
 atlas = ExtResource("2_gudfk")
 region = Rect2(628, 25, 40, 20)
 
-[node name="HUD" type="CanvasLayer" unique_id=1588467611 node_paths=PackedStringArray("counters", "stone_label", "wood_label", "meeple_label", "hunger_bar", "build_button", "build_menu", "pause_menu")]
+[node name="HUD" type="CanvasLayer" unique_id=1588467611 node_paths=PackedStringArray("counters", "stone_label", "wood_label", "meeple_label", "hunger_bar", "build_button", "build_menu", "pause_menu", "speed_button")]
 script = ExtResource("1_uj4j1")
 counters = NodePath("Counters")
 stone_label = NodePath("Counters/Stone/StoneLabel")
@@ -72,6 +80,7 @@ hunger_bar = NodePath("Hunger/HungerBar")
 build_button = NodePath("BuildButton")
 build_menu = NodePath("BuildMenu")
 pause_menu = NodePath("PauseMenu")
+speed_button = NodePath("SpeedButton")
 
 [node name="Counters" type="HBoxContainer" parent="." unique_id=279582234]
 anchors_preset = 5
@@ -214,7 +223,7 @@ layout_mode = 2
 texture_normal = SubResource("AtlasTexture_gudfk")
 texture_pressed = SubResource("AtlasTexture_1m68m")
 
-[node name="PauseMenu" type="Control" parent="." unique_id=424902096 node_paths=PackedStringArray("resume_button", "quit_button")]
+[node name="PauseMenu" type="Control" parent="." unique_id=424902096 node_paths=PackedStringArray("resume_button", "menu_button", "quit_button")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -223,6 +232,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("5_1m68m")
 resume_button = NodePath("Buttons/ResumeButton")
+menu_button = NodePath("Buttons/MenuButton")
 quit_button = NodePath("Buttons/QuitButton")
 
 [node name="Dim2" type="ColorRect" parent="PauseMenu" unique_id=1733256938]
@@ -257,6 +267,14 @@ texture_pressed = SubResource("AtlasTexture_g8g67")
 ignore_texture_size = true
 stretch_mode = 5
 
+[node name="MenuButton" type="TextureButton" parent="PauseMenu/Buttons" unique_id=1249841101]
+custom_minimum_size = Vector2(164, 88)
+layout_mode = 2
+texture_normal = SubResource("AtlasTexture_0ped1")
+texture_pressed = SubResource("AtlasTexture_4anfs")
+ignore_texture_size = true
+stretch_mode = 5
+
 [node name="QuitButton" type="TextureButton" parent="PauseMenu/Buttons" unique_id=1438633594]
 custom_minimum_size = Vector2(160, 88)
 layout_mode = 2
@@ -264,6 +282,16 @@ texture_normal = SubResource("AtlasTexture_p6bmp")
 texture_pressed = SubResource("AtlasTexture_3ongb")
 ignore_texture_size = true
 stretch_mode = 5
+
+[node name="SpeedButton" type="Button" parent="." unique_id=315601972]
+custom_minimum_size = Vector2(96, 64)
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -8.0
+offset_bottom = 8.0
+grow_horizontal = 0
+theme_override_font_sizes/font_size = 20
 
 [node name="ToastFeed" type="VBoxContainer" parent="." unique_id=133880500]
 anchors_preset = 2

@@ -4,8 +4,9 @@ class_name StoreJob
 var _drop : ResourceDrop
 var _carrying := false
 
-func _init(target_drop : ResourceDrop) -> void:
+func _init(target_drop : ResourceDrop, target_site : Storage) -> void:
 	_drop = target_drop
+	site = target_site
 	Inventory.set_claimed(_drop, true)
 
 func start(worker : Meeple) -> void:

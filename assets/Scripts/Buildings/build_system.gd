@@ -15,6 +15,7 @@ const AREA_HOVER_COLOR := Color(1.0, 1.0, 1.0)
 const AREA_HOVER_ALPHA := 1.0
 
 const HOTKEYS := {
+	"1": preload("res://assets/Scenes/Buildings/erection.tscn"),
 	"2": preload("res://assets/Scenes/Buildings/small_hut.tscn"),
 	"3": preload("res://assets/Scenes/Buildings/stone_hut.tscn"),
 	"4": preload("res://assets/Scenes/Buildings/barn.tscn"),
@@ -76,7 +77,7 @@ func _process(_delta : float) -> void:
 		return
 	var mouse := get_global_mouse_position()
 	var anchor := grid.cell_at(mouse)
-	var cells := grid.free_cells_at(mouse, _preview.footprint)
+	var cells := grid.free_cells_at(mouse, _preview.footprint, _preview.footprint_depth)
 	if _preview.restricts_placement():
 		var area := _preview.placement_area(grid)
 		var on_area := not cells.is_empty() and cells.all(func(c): return area.has(c))
@@ -111,12 +112,10 @@ func _placement_error(cells : Array[Cell]) -> PlacementError:
 		return PlacementError.OUT_OF_AREA
 	if not _preview.can_afford():
 		return PlacementError.CANT_AFFORD
-	if not JobSystem.has_room(_preview.jobs_needed()):
-		return PlacementError.QUEUE_FULL
 	return PlacementError.NONE
 
 func _try_place() -> void:
-	var cells := grid.free_cells_at(get_global_mouse_position(), _preview.footprint)
+	var cells := grid.free_cells_at(get_global_mouse_position(), _preview.footprint, _preview.footprint_depth)
 	var error := _placement_error(cells)
 	if error != PlacementError.NONE:
 		_preview.reject()

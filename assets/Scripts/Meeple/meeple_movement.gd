@@ -4,6 +4,8 @@ class_name Meeple
 const WANDER_ATTEMPTS := 8
 const CARRY_FRAMES := { "wood": 2, "stone": 4 }
 const CARRY_HEAD_OFFSET := -0.5
+const DOUBLE_CARRY_FRAMES := { "wood": 3, "stone": 5 }
+const DOUBLE_CARRY_HEAD_OFFSET := -1.0
 const SORT_BIAS := Vector2(0, 3)
 const IDLE_CHECK_INTERVAL := 0.5
 const WANDER_JITTER := Vector2(12, 6)
@@ -94,7 +96,11 @@ func _lean(angle : float, feet : Vector2, arm : Vector2) -> void:
 	rotation = angle
 	position = feet - arm.rotated(angle)
 
-func carry(kind := "") -> void:
+func carry(kind := "", amount := 1) -> void:
+	if amount >= 2 and DOUBLE_CARRY_FRAMES.has(kind):
+		_head.frame = DOUBLE_CARRY_FRAMES[kind]
+		_head.offset.y = DOUBLE_CARRY_HEAD_OFFSET
+		return
 	_head.frame = CARRY_FRAMES.get(kind, 0)
 	_head.offset.y = CARRY_HEAD_OFFSET if CARRY_FRAMES.has(kind) else 0.0
 
