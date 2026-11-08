@@ -6,6 +6,8 @@
 [ext_resource type="Script" uid="uid://bs3wgvy4ufnu8" path="res://Build_Menu.gd" id="3_gudfk"]
 [ext_resource type="Texture2D" uid="uid://bpbs7o2vmrwxi" path="res://ART/build_button_thesequal.png" id="3_quk1y"]
 [ext_resource type="Script" uid="uid://co4meqn1plgk2" path="res://Pause_Menu.gd" id="5_1m68m"]
+[ext_resource type="Texture2D" uid="uid://7l08pat0qs54" path="res://ART/retry_button_thesequal.png" id="7_ghiih"]
+[ext_resource type="Texture2D" uid="uid://compi3rxl56bi" path="res://ART/GAMEOVER_text.png" id="8_mv3me"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_backplate"]
 content_margin_left = 12.0
@@ -76,13 +78,21 @@ corner_radius_top_right = 6
 corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_gudfk"]
+atlas = ExtResource("2_gudfk")
+region = Rect2(1444, 25, 38, 22)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_1m68m"]
+atlas = ExtResource("2_gudfk")
+region = Rect2(1563, 28, 38, 20)
+
 [sub_resource type="AtlasTexture" id="AtlasTexture_ymf4s"]
 atlas = ExtResource("2_gudfk")
 region = Rect2(265, 26, 54, 22)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_g8g67"]
 atlas = ExtResource("2_gudfk")
-region = Rect2(381, 27, 54, 20)
+region = Rect2(381, 25, 54, 22)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_0ped1"]
 atlas = ExtResource("2_gudfk")
@@ -90,7 +100,7 @@ region = Rect2(1214, 29, 41, 22)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_4anfs"]
 atlas = ExtResource("2_gudfk")
-region = Rect2(1322, 31, 41, 20)
+region = Rect2(1322, 29, 41, 22)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_p6bmp"]
 atlas = ExtResource("2_gudfk")
@@ -98,7 +108,7 @@ region = Rect2(506, 25, 40, 22)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_3ongb"]
 atlas = ExtResource("2_gudfk")
-region = Rect2(628, 25, 40, 20)
+region = Rect2(628, 23, 40, 22)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_toast"]
 content_margin_left = 16.0
@@ -110,6 +120,14 @@ corner_radius_top_left = 3
 corner_radius_top_right = 3
 corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_xs3tv"]
+atlas = ExtResource("7_ghiih")
+region = Rect2(79, 1, 45, 22)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_6ew2f"]
+atlas = ExtResource("7_ghiih")
+region = Rect2(128, 1, 45, 22)
 
 [node name="HUD" type="CanvasLayer" unique_id=1588467611 node_paths=PackedStringArray("counters", "stone_label", "wood_label", "food_label", "meeple_label", "job_label", "hunger_bar", "build_button", "build_menu", "pause_menu", "speed_button")]
 script = ExtResource("1_uj4j1")
@@ -275,7 +293,7 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("3_gudfk")
 building_list = NodePath("Panel/VBoxContainer/BuildingList")
-back_button = NodePath("")
+back_button = NodePath("Panel/VBoxContainer/BackButton")
 tooltip_style = SubResource("StyleBoxFlat_tooltip")
 
 [node name="Panel" type="PanelContainer" parent="BuildMenu" unique_id=1922507713]
@@ -306,6 +324,15 @@ layout_mode = 2
 theme_override_constants/h_separation = 12
 theme_override_constants/v_separation = 12
 columns = 2
+
+[node name="BackButton" type="TextureButton" parent="BuildMenu/Panel/VBoxContainer" unique_id=1236127176]
+custom_minimum_size = Vector2(152, 88)
+layout_mode = 2
+size_flags_horizontal = 4
+texture_normal = SubResource("AtlasTexture_gudfk")
+texture_pressed = SubResource("AtlasTexture_1m68m")
+ignore_texture_size = true
+stretch_mode = 5
 
 [node name="PauseMenu" type="Control" parent="." unique_id=424902096 node_paths=PackedStringArray("resume_button", "menu_button", "quit_button")]
 layout_mode = 3
@@ -393,3 +420,72 @@ theme_override_constants/separation = 8
 script = ExtResource("1_knk3d")
 font_size = 30
 backplate = SubResource("StyleBoxFlat_toast")
+
+[node name="DeathScreen" type="Control" parent="." unique_id=168213261 node_paths=PackedStringArray("resume_button", "menu_button", "quit_button")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("5_1m68m")
+resume_button = NodePath("Buttons/RetryButton")
+menu_button = NodePath("Buttons/MenuButtonDeath")
+quit_button = NodePath("Buttons/QuitButtonDeath")
+
+[node name="Dim2" type="ColorRect" parent="DeathScreen" unique_id=814414624]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.5)
+
+[node name="Buttons" type="VBoxContainer" parent="DeathScreen" unique_id=1139068718]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -108.0
+offset_top = 10.0
+offset_right = 108.0
+offset_bottom = 306.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 16
+
+[node name="RetryButton" type="TextureButton" parent="DeathScreen/Buttons" unique_id=761934418]
+custom_minimum_size = Vector2(216, 88)
+layout_mode = 2
+texture_normal = SubResource("AtlasTexture_xs3tv")
+texture_pressed = SubResource("AtlasTexture_6ew2f")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="MenuButtonDeath" type="TextureButton" parent="DeathScreen/Buttons" unique_id=1376316655]
+custom_minimum_size = Vector2(164, 88)
+layout_mode = 2
+texture_normal = SubResource("AtlasTexture_0ped1")
+texture_pressed = SubResource("AtlasTexture_4anfs")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="QuitButtonDeath" type="TextureButton" parent="DeathScreen/Buttons" unique_id=1001256494]
+custom_minimum_size = Vector2(160, 88)
+layout_mode = 2
+texture_normal = SubResource("AtlasTexture_p6bmp")
+texture_pressed = SubResource("AtlasTexture_3ongb")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="TextureRect" type="TextureRect" parent="DeathScreen" unique_id=1033598789]
+layout_mode = 0
+offset_left = 128.0
+offset_top = 66.0
+offset_right = 545.0
+offset_bottom = 172.0
+scale = Vector2(4, 4)
+texture = ExtResource("8_mv3me")
