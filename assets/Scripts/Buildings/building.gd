@@ -6,6 +6,7 @@ signal completed
 const BUILD_EFFECT := preload("res://assets/Scenes/Effects/cloud.tscn")
 const EMPTY_STAGE := -1
 const BLUEPRINT_SHADER := preload("res://assets/Shaders/blueprint.gdshader")
+const PREVIEW_OPACITY := 0.5
 
 ## Tick on if the sheet runs finished -> empty (left to right) instead of empty -> finished.
 @export var reverse_frames := false
@@ -31,8 +32,15 @@ func _ready() -> void:
 	if not phases.is_empty() and total_cost() != last_stage() + 1:
 		push_warning("%s costs %d but has %d build frames" % [display_name(), total_cost(), last_stage() + 1])
 
+## Call after the preview is in the tree (GridObject._ready sets the outline material).
 func show_as_preview() -> void:
 	_set_stage(last_stage())
+	material = ShaderMaterial.new()
+	material.shader = BLUEPRINT_SHADER
+	material.set_shader_parameter("opacity", PREVIEW_OPACITY)
+
+func set_preview_blocked(blocked : bool) -> void:
+	material.set_shader_parameter("blocked", blocked)
 
 func last_stage() -> int:
 	return (build_frames if build_frames > 0 else hframes) - 1

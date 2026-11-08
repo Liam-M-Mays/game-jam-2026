@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://bpyyl7vub5wtg"]
 
 [ext_resource type="Texture2D" uid="uid://drxvj2eeilswi" path="res://ART/lumberjack_build.png" id="1_q1yg8"]
-[ext_resource type="Script" path="res://assets/Scripts/Buildings/lumberjack.gd" id="2_q1yg8"]
+[ext_resource type="Script" uid="uid://b1fk0276mp2up" path="res://assets/Scripts/Buildings/lumberjack.gd" id="2_q1yg8"]
 [ext_resource type="Script" uid="uid://cyj5e8cr4hrge" path="res://assets/Scripts/Buildings/build_phase.gd" id="3_oqh0i"]
 
 [sub_resource type="Resource" id="Resource_oqh0i"]
