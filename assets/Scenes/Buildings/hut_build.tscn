@@ -13,10 +13,13 @@ texture = ExtResource("1_hh3au")
 offset = Vector2(3.5, -3)
 hframes = 5
 script = ExtResource("2_4xtmb")
-costs = Dictionary[String, int]({"wood": 1, "stone": 1})
+costs = Dictionary[String, int]({
+"stone": 0,
+"wood": 4
+})
+area = NodePath("Area2D")
 footprint = 2
 hoverable = false
-area = NodePath("Area2D")
 
 [node name="Area2D" type="Area2D" parent="." unique_id=725244253]
 

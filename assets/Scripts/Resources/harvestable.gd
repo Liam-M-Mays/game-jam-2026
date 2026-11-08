@@ -1,7 +1,7 @@
 extends GridObject
 class_name Harvestable
 
-const BREAK_EFFECT := preload("res://assets/Scenes/Resources/break.tscn")
+const BREAK_EFFECT := preload("res://assets/Scenes/Effects/break.tscn")
 const BREAK_HOLD := 0.06
 const WOBBLE_DURATION := 0.25
 const SQUASH_DURATION := 0.2
@@ -11,6 +11,7 @@ const SQUASH_DURATION := 0.2
 @export var wobble_angle := 3.0
 @export var squash_amount := 0.15
 @export var drops : Dictionary[PackedScene, int] = {}
+@export var food_cost := 0
 
 @export_group("Spawning")
 @export_range(0.0, 1.0, 0.001) var spawn_chance := 0.0

@@ -1,8 +1,18 @@
-[gd_scene format=3 uid="uid://djvh1y4i7yuyv"]
+[gd_scene format=3 uid="uid://ikcvt7q7gjvs"]
 
 [ext_resource type="Script" uid="uid://bnfevnynx58fv" path="res://Toast_Feed.gd" id="1_knk3d"]
 
 [node name="HUD" type="CanvasLayer" unique_id=1588467611]
+
+[node name="Counters" type="HBoxContainer" parent="." unique_id=279582234]
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="Stone" type="HBoxContainer" parent="Counters" unique_id=1220213737]
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="Counters/Stone" unique_id=715279436]
+layout_mode = 2
 
 [node name="ToastFeed" type="VBoxContainer" parent="." unique_id=133880500]
 anchors_preset = -1

@@ -1,8 +1,8 @@
 [gd_scene format=3 uid="uid://0522u2xktags"]
 
 [ext_resource type="Script" uid="uid://cmwljon6ih0lq" path="res://assets/Scripts/Cam/camera_controls.gd" id="1_w34p4"]
-[ext_resource type="PackedScene" uid="uid://bsc4cgo2yjjdw" path="res://assets/Scenes/meeple.tscn" id="2_xomjc"]
-[ext_resource type="PackedScene" uid="uid://mcu65uoclrgs" path="res://assets/Scenes/grid.tscn" id="3_xomjc"]
+[ext_resource type="PackedScene" uid="uid://bsc4cgo2yjjdw" path="res://assets/Scenes/Meeple/meeple.tscn" id="2_xomjc"]
+[ext_resource type="PackedScene" uid="uid://mcu65uoclrgs" path="res://assets/Scenes/Env/grid.tscn" id="3_xomjc"]
 [ext_resource type="Script" uid="uid://d13jmgqp0eyq8" path="res://assets/Scripts/Cam/mouse.gd" id="5_ci4bg"]
 [ext_resource type="Script" uid="uid://dhxeaalsqdoin" path="res://assets/Scripts/Jobs/job_system.gd" id="6_rbwhl"]
 [ext_resource type="Script" uid="uid://clnxifq5klc7h" path="res://assets/Scripts/Buildings/build_system.gd" id="7_xomjc"]

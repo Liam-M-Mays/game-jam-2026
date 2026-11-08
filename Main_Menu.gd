@@ -1,7 +1,6 @@
 extends Control
-## Attach to the root of main_menu.tscn.
 
-const GAME_SCENE := "res://game.tscn"  # <- change to your game scene's path
+const GAME_SCENE := "res://assets/Scenes/Levels/game.tscn"
 
 @export var start_button: TextureButton
 @export var credits_button: TextureButton
@@ -19,5 +18,5 @@ func _ready() -> void:
 
 
 func _on_start_pressed() -> void:
-	GameState.reset()
+	GameState.new_game()
 	get_tree().change_scene_to_file(GAME_SCENE)

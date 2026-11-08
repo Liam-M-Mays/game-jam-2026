@@ -2,7 +2,7 @@
 
 [ext_resource type="Texture2D" uid="uid://y5jfdu2a276h" path="res://assets/Res/big-tree.tres" id="1_u20gi"]
 [ext_resource type="Script" uid="uid://c3elx78jjhpbp" path="res://assets/Scripts/Resources/harvestable.gd" id="2_4sa4q"]
-[ext_resource type="PackedScene" uid="uid://gpbn4xm54dyl" path="res://assets/Scenes/Env/wood.tscn" id="3_drop"]
+[ext_resource type="PackedScene" uid="uid://gpbn4xm54dyl" path="res://assets/Scenes/Resources/Drops/wood.tscn" id="3_drop"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_nafr4"]
 size = Vector2(10.000002, 11.8)
@@ -20,6 +20,7 @@ offset = Vector2(3, -5)
 script = ExtResource("2_4sa4q")
 area = NodePath("Area2D")
 drops = Dictionary[PackedScene, int]({ExtResource("3_drop"): 2})
+food_cost = 1
 spawn_chance = 0.01
 footprint = 2
 edge_distance_curve = SubResource("Curve_edge")

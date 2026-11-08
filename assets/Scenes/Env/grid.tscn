@@ -4,9 +4,9 @@
 [ext_resource type="PackedScene" uid="uid://cciqa8ee7m64y" path="res://assets/Scenes/Resources/tree.tscn" id="2_tree"]
 [ext_resource type="PackedScene" uid="uid://cpgyjj1hugx5n" path="res://assets/Scenes/Resources/rock.tscn" id="3_rock"]
 [ext_resource type="PackedScene" uid="uid://bq8msd5k43k42" path="res://assets/Scenes/Resources/big-tree.tscn" id="4_bigtree"]
-[ext_resource type="PackedScene" uid="uid://fdmon1owxpbq" path="res://assets/Scenes/george_bush.tscn" id="5_bush"]
+[ext_resource type="PackedScene" uid="uid://fdmon1owxpbq" path="res://assets/Scenes/Resources/george_bush.tscn" id="5_bush"]
 [ext_resource type="PackedScene" uid="uid://bs6xoi7v5b3bc" path="res://assets/Scenes/Resources/big-rock.tscn" id="6_bigrock"]
-[ext_resource type="PackedScene" uid="uid://dimtm1kumkrks" path="res://assets/Scenes/hut_build.tscn" id="7_hut"]
+[ext_resource type="PackedScene" uid="uid://dimtm1kumkrks" path="res://assets/Scenes/Buildings/hut_build.tscn" id="7_hut"]
 
 [node name="Grid" type="Node2D" unique_id=1279537889]
 y_sort_enabled = true

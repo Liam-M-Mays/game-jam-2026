@@ -1,6 +1,11 @@
 extends Node2D
 class_name GiantPart
 
+# Every part samples its pose from one accumulated clock (same as walk.gd),
+# instead of chaining awaited tweens/timers. Awaits drop the leftover frame
+# time at each phase boundary, which made the parts slowly drift behind the
+# walk shift. Sampling from elapsed time keeps everything locked together.
+
 @export var lift_time := 1.4
 @export var hang_time := 0.6
 @export var slam_time := 0.5
@@ -9,26 +14,43 @@ class_name GiantPart
 @export var start_delay := 0.0
 
 var base_pos : Vector2
+var _elapsed := 0.0
 
 func _ready() -> void:
 	base_pos = position
 	_setup()
-	await _wait(start_delay)
-	while is_inside_tree():
-		await _step()
+	_elapsed = -start_delay
+
+func _process(delta : float) -> void:
+	_elapsed += delta
+	if _elapsed < 0.0:
+		return
+	var cycle := lift_time + hang_time + slam_time + settle_time + pause_time
+	if cycle <= 0.0:
+		return
+	var index := int(floor(_elapsed / cycle))
+	position = _pose(index, _elapsed - index * cycle)
 
 func _setup() -> void:
 	pass
 
-func _step() -> void:
-	await _wait(lift_time + hang_time + slam_time + settle_time + pause_time)
+# Override: return the position at time t (seconds) into cycle number `index`.
+func _pose(_index : int, _t : float) -> Vector2:
+	return base_pos
 
-func _wait(seconds : float) -> void:
-	if seconds > 0.0:
-		await get_tree().create_timer(seconds).timeout
+# A keyframe: move to `to` over `duration` with the given easing.
+func _key(to : Vector2, duration : float, easing := Tween.EASE_IN_OUT, trans_y := Tween.TRANS_LINEAR, trans_x := trans_y) -> Dictionary:
+	return {to = to, d = duration, ease = easing, ty = trans_y, tx = trans_x}
 
-func _move(to : Vector2, duration : float, easing : Tween.EaseType, trans_y : Tween.TransitionType, trans_x := trans_y) -> void:
-	var tween := create_tween().set_parallel(true)
-	tween.tween_property(self, "position:y", to.y, duration).set_trans(trans_y).set_ease(easing)
-	tween.tween_property(self, "position:x", to.x, duration).set_trans(trans_x).set_ease(easing)
-	await tween.finished
+# Samples a chain of keyframes starting from `from` at time t.
+func _sample(from : Vector2, keys : Array, t : float) -> Vector2:
+	for k in keys:
+		var to : Vector2 = k.to
+		var d : float = k.d
+		if t < d:
+			return Vector2(
+				Tween.interpolate_value(from.x, to.x - from.x, t, d, k.tx, k.ease),
+				Tween.interpolate_value(from.y, to.y - from.y, t, d, k.ty, k.ease))
+		t -= d
+		from = to
+	return from

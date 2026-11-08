@@ -52,6 +52,14 @@ func has_arrived() -> bool:
 		stop()
 	return _target.distance_to(position) <= 1
 
+func die() -> void:
+	set_process(false)
+	if job != null:
+		JobSystem.requeue(job, self)
+		job = null
+	JobSystem.remove_worker(self)
+	queue_free()
+
 func carry(kind := "") -> void:
 	_head.frame = CARRY_FRAMES.get(kind, 0)
 	_head.offset.y = CARRY_HEAD_OFFSET if CARRY_FRAMES.has(kind) else 0.0
