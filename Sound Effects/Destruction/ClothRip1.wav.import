@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://bl6hso63hbkuq"
+path="res://.godot/imported/ClothRip1.wav-e4f423dca891b2c1f2ebb0416077c277.sample"
+
+[deps]
+
+source_file="res://Sound Effects/Destruction/ClothRip1.wav"
+dest_files=["res://.godot/imported/ClothRip1.wav-e4f423dca891b2c1f2ebb0416077c277.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2

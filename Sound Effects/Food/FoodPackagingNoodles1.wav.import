@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://ikvo324ojeoy"
+path="res://.godot/imported/FoodPackagingNoodles1.wav-ed81fd0d5b195745344163c6624203b9.sample"
+
+[deps]
+
+source_file="res://Sound Effects/Food/FoodPackagingNoodles1.wav"
+dest_files=["res://.godot/imported/FoodPackagingNoodles1.wav-ed81fd0d5b195745344163c6624203b9.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2

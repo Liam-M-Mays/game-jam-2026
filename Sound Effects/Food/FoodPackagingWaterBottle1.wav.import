@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://c4b5cqy3aqvct"
+path="res://.godot/imported/FoodPackagingWaterBottle1.wav-95c6661d80b6f1c0c16830d87b321935.sample"
+
+[deps]
+
+source_file="res://Sound Effects/Food/FoodPackagingWaterBottle1.wav"
+dest_files=["res://.godot/imported/FoodPackagingWaterBottle1.wav-95c6661d80b6f1c0c16830d87b321935.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2

@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://kocbsxq373qv"
+path="res://.godot/imported/OldDoorOpen.wav-f873e382cbf18aa8b8802a5989c98745.sample"
+
+[deps]
+
+source_file="res://Sound Effects/Environment/OldDoorOpen.wav"
+dest_files=["res://.godot/imported/OldDoorOpen.wav-f873e382cbf18aa8b8802a5989c98745.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2

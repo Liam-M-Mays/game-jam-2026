@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://cgqftw1i3nio8"
+path="res://.godot/imported/HumanInjured5.wav-4f0f52407532d1c8d1a63430795d85c4.sample"
+
+[deps]
+
+source_file="res://Sound Effects/Human/HumanInjured5.wav"
+dest_files=["res://.godot/imported/HumanInjured5.wav-4f0f52407532d1c8d1a63430795d85c4.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2

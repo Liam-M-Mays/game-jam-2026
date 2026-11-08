@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://bf2uieh6t3msj"
+path="res://.godot/imported/ClothesSyntheticfabric3.wav-b358b87769a271f4ce0741f8a99a724f.sample"
+
+[deps]
+
+source_file="res://Sound Effects/Clothing/ClothesSyntheticfabric3.wav"
+dest_files=["res://.godot/imported/ClothesSyntheticfabric3.wav-b358b87769a271f4ce0741f8a99a724f.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2

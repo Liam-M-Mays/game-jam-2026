@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://catamrjsmke48"
+path="res://.godot/imported/CoastalWavesOnRocksLoop.wav-e766baa9a213cb39675fdf6b5b781a3d.sample"
+
+[deps]
+
+source_file="res://Sound Effects/Environment/CoastalWavesOnRocksLoop.wav"
+dest_files=["res://.godot/imported/CoastalWavesOnRocksLoop.wav-e766baa9a213cb39675fdf6b5b781a3d.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2

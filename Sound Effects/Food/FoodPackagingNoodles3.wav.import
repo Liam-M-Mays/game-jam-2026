@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://dnywamd0sfar3"
+path="res://.godot/imported/FoodPackagingNoodles3.wav-4f426ca498ad74bd5e4c0239ed70857b.sample"
+
+[deps]
+
+source_file="res://Sound Effects/Food/FoodPackagingNoodles3.wav"
+dest_files=["res://.godot/imported/FoodPackagingNoodles3.wav-4f426ca498ad74bd5e4c0239ed70857b.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2

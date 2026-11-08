@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://0nc2txm4qn3x"
+path="res://.godot/imported/DesignedGunSoundReload4.wav-f6c92e696d7bf826615483b67b5c6b4d.sample"
+
+[deps]
+
+source_file="res://Sound Effects/Equipment/DesignedGunSoundReload4.wav"
+dest_files=["res://.godot/imported/DesignedGunSoundReload4.wav-f6c92e696d7bf826615483b67b5c6b4d.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2

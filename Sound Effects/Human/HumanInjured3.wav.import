@@ -1,0 +1,24 @@
+[remap]
+
+importer="wav"
+type="AudioStreamWAV"
+uid="uid://cmdijoabl8wt6"
+path="res://.godot/imported/HumanInjured3.wav-5cf557baffb372825fa18578e20ffdf8.sample"
+
+[deps]
+
+source_file="res://Sound Effects/Human/HumanInjured3.wav"
+dest_files=["res://.godot/imported/HumanInjured3.wav-5cf557baffb372825fa18578e20ffdf8.sample"]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
+compress/mode=2
