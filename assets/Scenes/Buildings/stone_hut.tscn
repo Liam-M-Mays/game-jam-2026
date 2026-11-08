@@ -14,8 +14,8 @@ offset = Vector2(7, -4)
 hframes = 9
 script = ExtResource("2_7tv1p")
 costs = Dictionary[String, int]({
-"stone": 1,
-"wood": 1
+"stone": 4,
+"wood": 3
 })
 reverse_frames = true
 area = NodePath("Area2D")

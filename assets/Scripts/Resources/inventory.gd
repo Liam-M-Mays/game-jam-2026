@@ -1,6 +1,7 @@
 extends Node
 
 signal changed
+signal shortage(kind : String, missing : int)
 
 const START_STOCK := { "food": 10 }
 
@@ -23,8 +24,11 @@ func add(kind : String, amount : int) -> void:
 func spend(kind : String, amount : int) -> void:
 	if amount <= 0:
 		return
-	_stored[kind] = maxi(_stored.get(kind, 0) - amount, 0)
+	var have : int = _stored.get(kind, 0)
+	_stored[kind] = maxi(have - amount, 0)
 	changed.emit()
+	if amount > have:
+		shortage.emit(kind, amount - have)
 
 func register(drop : ResourceDrop) -> void:
 	_drops_of(drop.kind).append(drop)

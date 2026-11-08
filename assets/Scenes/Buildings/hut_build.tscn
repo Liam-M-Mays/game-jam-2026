@@ -14,8 +14,8 @@ offset = Vector2(3.5, -3)
 hframes = 5
 script = ExtResource("2_4xtmb")
 costs = Dictionary[String, int]({
-"stone": 1,
-"wood": 1
+"stone": 0,
+"wood": 4
 })
 area = NodePath("Area2D")
 footprint = 2
