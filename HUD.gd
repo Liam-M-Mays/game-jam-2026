@@ -13,7 +13,7 @@ const OPENING_TIP_GAP := 15.0
 const PAUSE_BUILDING_TIP := "Right-click a building under construction to pause it, and right-click again to resume"
 const OPENING_TIPS := [
 	"Tap on trees and stones to begin harvesting resources",
-	"Use WASD to pan the camera around",
+	"Use WASD or the mouse wheel to pan the camera around",
 	"Picking berries will help feed your meeple",
 	"Click the build button to start expanding your meeple village",
 	PAUSE_BUILDING_TIP,
