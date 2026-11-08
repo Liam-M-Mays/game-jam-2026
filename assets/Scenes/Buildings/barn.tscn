@@ -44,6 +44,7 @@ texture = ExtResource("1_tex")
 offset = Vector2(3.5, -3)
 hframes = 5
 script = ExtResource("2_scr")
+description = "Lets you build farms and silos in the area around it."
 frames = Array[ExtResource("3_phase")]([SubResource("Frame_0"), SubResource("Frame_1"), SubResource("Frame_2"), SubResource("Frame_3"), SubResource("Frame_4")])
 min_to_start = Dictionary[String, int]({
 "stone": 2

@@ -25,19 +25,6 @@ const TOOLTIP_OFFSET := Vector2(24, 24)
 const TOOLTIP_WIDTH := 440.0
 const TOOLTIP_TITLE_COLOR := "ffe08a"
 const TOOLTIP_LOCKED_COLOR := "ff6b5b"
-const DESCRIPTIONS := {
-	"Small Hut": "A home for one meeple, who moves in as soon as it's finished.",
-	"Wood Pile": "Meeples stack loose wood here so it doesn't go to waste.",
-	"Stone Pile": "Meeples stack loose stone here so it doesn't go to waste.",
-	"Lumberjack": "An idle meeple works here, chopping the nearest tree. Chopping uses food.",
-	"Miner": "An idle meeple works here, mining the nearest rock. Mining uses food.",
-	"Barn": "Lets you build farms and silos in the area around it.",
-	"Farm": "Grows crops that idle meeples harvest for food. Has to go next to a barn.",
-	"Stone Hut": "A bigger home. One meeple moves in when it's finished, and more join while they're well fed.",
-	"Silo": "Raises your food limit. Has to go next to a barn.",
-	"Windmill": "Gives every barn room for more farms and silos.",
-	"Statue": "A towering monument to your village.",
-}
 
 @export var building_list: Container
 @export var back_button: TextureButton
@@ -164,7 +151,7 @@ func _tooltip_text(button: Button) -> String:
 	var scene: PackedScene = button.get_meta("scene")
 	var building: Building = _templates[scene]
 	var building_name := display_name(scene)
-	var lines := [_tooltip_title(building_name), DESCRIPTIONS.get(building_name, ""), "Total cost: %s" % _cost_text(building.costs)]
+	var lines := [_tooltip_title(building_name), building.description, "Total cost: %s" % _cost_text(building.costs)]
 	if _is_locked(building):
 		lines.append("[color=#%s]Needs Town Hall level %d[/color]" % [TOOLTIP_LOCKED_COLOR, building.required_town_hall_level])
 	return "\n".join(lines)

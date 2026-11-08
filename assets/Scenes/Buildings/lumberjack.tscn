@@ -62,6 +62,7 @@ texture = ExtResource("1_q1yg8")
 offset = Vector2(3.5, -3)
 hframes = 8
 script = ExtResource("2_q1yg8")
+description = "An idle meeple works here, chopping the nearest tree. Chopping uses food."
 required_town_hall_level = 2
 frames = Array[ExtResource("3_oqh0i")]([SubResource("Frame_0"), SubResource("Frame_1"), SubResource("Frame_2"), SubResource("Frame_3"), SubResource("Frame_4"), SubResource("Frame_5"), SubResource("Frame_6"), SubResource("Frame_7")])
 min_to_start = Dictionary[String, int]({

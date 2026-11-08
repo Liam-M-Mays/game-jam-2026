@@ -50,6 +50,7 @@ texture = ExtResource("1_dcq31")
 offset = Vector2(5, -3)
 hframes = 6
 script = ExtResource("2_7tv1p")
+description = "A bigger home. One meeple moves in when it's finished, and more join while they're well fed."
 meeple_capacity = 3
 reverse_frames = true
 frames = Array[ExtResource("3_phase")]([SubResource("Frame_0"), SubResource("Frame_1"), SubResource("Frame_2"), SubResource("Frame_3"), SubResource("Frame_4"), SubResource("Frame_5")])

@@ -22,6 +22,7 @@ texture = ExtResource("1_tex")
 offset = Vector2(10, -18)
 hframes = 48
 script = ExtResource("2_scr")
+description = "A towering monument to your village."
 frames = Array[ExtResource("3_phase")]([SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0"), SubResource("Frame_0")])
 min_to_start = Dictionary[String, int]({
 "stone": 10,

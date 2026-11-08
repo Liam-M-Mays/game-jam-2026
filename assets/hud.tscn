@@ -45,6 +45,17 @@ region = Rect2(2041, 1, 7, 65)
 atlas = ExtResource("2_gudfk")
 region = Rect2(1928, 2, 7, 65)
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tooltip"]
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+bg_color = Color(0.1, 0.1, 0.1, 0.92)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
 [sub_resource type="AtlasTexture" id="AtlasTexture_ghiih"]
 atlas = ExtResource("3_quk1y")
 region = Rect2(34, 0, 47, 24)
@@ -56,17 +67,6 @@ region = Rect2(34, 47, 47, 24)
 [sub_resource type="AtlasTexture" id="AtlasTexture_brm57"]
 atlas = ExtResource("3_quk1y")
 region = Rect2(34, 24, 47, 23)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tooltip"]
-content_margin_left = 12.0
-content_margin_top = 8.0
-content_margin_right = 12.0
-content_margin_bottom = 8.0
-bg_color = Color(0.1, 0.1, 0.1, 0.92)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_menu"]
 content_margin_left = 12.0

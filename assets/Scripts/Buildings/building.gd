@@ -22,6 +22,7 @@ const PAUSED_OUTLINE := Color(1.0, 0.85, 0.1)
 @export var required_town_hall_level := 1
 @export var show_blueprint := true
 @export var icon_texture : Texture2D
+@export_multiline var description := ""
 
 var costs : Dictionary[String, int]:
 	get:

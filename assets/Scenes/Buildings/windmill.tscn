@@ -104,6 +104,7 @@ texture = ExtResource("1_tex")
 offset = Vector2(3.5, -8.5)
 hframes = 16
 script = ExtResource("2_scr")
+description = "Gives every barn room for more farms and silos."
 required_town_hall_level = 4
 wheel = NodePath("Wheel")
 reverse_frames = true
