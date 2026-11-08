@@ -8,8 +8,8 @@ const OPENING_TIP_GAP := 15.0
 const OPENING_TIPS := [
 	"Tap on trees and stones to begin harvesting resources",
 	"Use WASD to pan the camera around",
-	"Click the build botton to start expanding your meeple village",
 	"Picking berries will help feed your meeple",
+	"Click the build button to start expanding your meeple village",
 ]
 
 const TIPS := [
@@ -18,6 +18,7 @@ const TIPS := [
 	"Keep your hunger bar up to keep your meeples happy (and alive)",
 	"You can upgrade your Town Hall level by increasing your Meeple population",
 	"Hover over build sites to see what materials it still needs",
+	"Use the number keys to place new buildings without opening the build menu"
 ]
 
 const FUN_FACTS := [

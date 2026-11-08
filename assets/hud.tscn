@@ -4,6 +4,7 @@
 [ext_resource type="Script" uid="uid://dfon0pqexq34a" path="res://HUD.gd" id="1_uj4j1"]
 [ext_resource type="Texture2D" uid="uid://b30hablfkuedq" path="res://ART/shi.png" id="2_gudfk"]
 [ext_resource type="Script" uid="uid://bs3wgvy4ufnu8" path="res://Build_Menu.gd" id="3_gudfk"]
+[ext_resource type="Texture2D" uid="uid://bpbs7o2vmrwxi" path="res://ART/build_button_thesequal.png" id="3_quk1y"]
 [ext_resource type="Script" uid="uid://co4meqn1plgk2" path="res://Pause_Menu.gd" id="5_1m68m"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_backplate"]
@@ -41,13 +42,17 @@ region = Rect2(2041, 1, 7, 65)
 atlas = ExtResource("2_gudfk")
 region = Rect2(1928, 2, 7, 65)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_f8ot1"]
-atlas = ExtResource("2_gudfk")
-region = Rect2(1678, 17, 37, 37)
+[sub_resource type="AtlasTexture" id="AtlasTexture_ghiih"]
+atlas = ExtResource("3_quk1y")
+region = Rect2(34, 0, 47, 24)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_0o3b6"]
-atlas = ExtResource("2_gudfk")
-region = Rect2(1796, 18, 36, 36)
+[sub_resource type="AtlasTexture" id="AtlasTexture_mv3me"]
+atlas = ExtResource("3_quk1y")
+region = Rect2(34, 47, 47, 24)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_brm57"]
+atlas = ExtResource("3_quk1y")
+region = Rect2(34, 24, 47, 23)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tooltip"]
 content_margin_left = 12.0
@@ -70,14 +75,6 @@ corner_radius_top_left = 6
 corner_radius_top_right = 6
 corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_gudfk"]
-atlas = ExtResource("2_gudfk")
-region = Rect2(1444, 25, 38, 22)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_1m68m"]
-atlas = ExtResource("2_gudfk")
-region = Rect2(1563, 28, 38, 20)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_ymf4s"]
 atlas = ExtResource("2_gudfk")
@@ -262,8 +259,9 @@ offset_right = 20.0
 offset_bottom = -24.0
 grow_horizontal = 2
 grow_vertical = 0
-texture_normal = SubResource("AtlasTexture_f8ot1")
-texture_pressed = SubResource("AtlasTexture_0o3b6")
+texture_normal = SubResource("AtlasTexture_ghiih")
+texture_pressed = SubResource("AtlasTexture_mv3me")
+texture_hover = SubResource("AtlasTexture_brm57")
 ignore_texture_size = true
 stretch_mode = 5
 
@@ -277,7 +275,7 @@ grow_vertical = 2
 mouse_filter = 2
 script = ExtResource("3_gudfk")
 building_list = NodePath("Panel/VBoxContainer/BuildingList")
-back_button = NodePath("Panel/VBoxContainer/BackButton")
+back_button = NodePath("")
 tooltip_style = SubResource("StyleBoxFlat_tooltip")
 
 [node name="Panel" type="PanelContainer" parent="BuildMenu" unique_id=1922507713]
@@ -308,15 +306,6 @@ layout_mode = 2
 theme_override_constants/h_separation = 12
 theme_override_constants/v_separation = 12
 columns = 2
-
-[node name="BackButton" type="TextureButton" parent="BuildMenu/Panel/VBoxContainer" unique_id=1236127176]
-custom_minimum_size = Vector2(152, 88)
-layout_mode = 2
-size_flags_horizontal = 4
-texture_normal = SubResource("AtlasTexture_gudfk")
-texture_pressed = SubResource("AtlasTexture_1m68m")
-ignore_texture_size = true
-stretch_mode = 5
 
 [node name="PauseMenu" type="Control" parent="." unique_id=424902096 node_paths=PackedStringArray("resume_button", "menu_button", "quit_button")]
 layout_mode = 3
