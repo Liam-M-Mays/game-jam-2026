@@ -19,4 +19,3 @@ func layer_loop() -> void:
 		z_index = base_z - layers_back
 		await get_tree().create_timer(back_duration).timeout
 		z_index = base_z
-
