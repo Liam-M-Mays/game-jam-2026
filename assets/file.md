@@ -12,8 +12,9 @@ A quick map of the gameplay code, written for hooking up UI: what to read, which
 | What can still be spent on new builds | `Inventory.available("wood")` | `Inventory.changed` |
 | Meeple count | `JobSystem.workers.size()` | `JobSystem.changed` |
 | Job queue (`3 / 4`) | `JobSystem.job_count()` / `JobSystem.capacity()` | `JobSystem.changed` |
-| Building costs | `building.costs` (`Dictionary[String, int]` on the scene) | static |
-| Can afford / can start | `building.can_afford()` / `building.can_start()` | `Inventory.changed` + `JobSystem.changed` |
+| Building costs | `building.costs` (total of every frame) / `building.min_to_start` (needed to place) | static |
+| What a site under construction is stuck on | `site.missing()` → `{"wood": 1}`, empty when not stuck | `site.missing_changed` |
+| Can place (has `min_to_start`) | `building.can_afford()` / `building.can_start()` | `Inventory.changed` + `JobSystem.changed` |
 | Enter / leave build mode | `build_system.start_build(scene)` / `build_system.end_build()` | — |
 | Build mode events | `BuildSystem` signals (below) | — |
 | Queue-full feedback | `JobSystem.job_rejected` | — |
@@ -93,7 +94,7 @@ func is_building() -> bool
 How it behaves:
 
 - **In build mode** a ghost preview follows the mouse, green when it can be placed and red when it can't.
-- **Left-click** places the building, and placing always **exits build mode**. Costs are reserved and one haul job per item is queued. Meeples deliver, the sprite advances a frame per delivery, and then `building_completed` fires. A hut also spawns a meeple at that point.
+- **Left-click** places the building, and placing always **exits build mode**. Placing needs `min_to_start` to be available. Each sprite frame has its own cost (`frames` on the scene). Meeples keep hauling whatever the unbuilt frames still need, and the building advances a frame whenever the resources delivered so far cover the next frame's cost. When the next frame can't be paid for with what's delivered or on the way, the blueprint turns red until more resources show up. `building_completed` fires on the last frame. A hut also spawns a meeple at that point.
 - **A failed click** (blocked cells, can't afford, queue full) makes the preview flash red and shake, emits `placement_failed(reason)`, and stays in build mode.
 - **Esc** calls `end_build()` and marks the event handled, so your HUD's `_unhandled_input` never sees that Esc. Outside build mode, Esc passes through to the HUD normally.
 - **Playtest hotkeys** (the `HOTKEYS` dict at the top of the file): `2` small hut, `3` stone hut, `4` barn, `5` farm, `6` stone pile, `7` wood pile, `8` lumberjack.
@@ -144,7 +145,7 @@ func _cost_text(costs: Dictionary) -> String:
 	return " / ".join(parts)
 ```
 
-Free the templates in `_exit_tree` (`for b in _templates.values(): b.free()`). Costs live on each building scene (`costs` in the inspector), so the menu stays correct whenever they're retuned.
+Free the templates in `_exit_tree` (`for b in _templates.values(): b.free()`). Costs live on each building scene (`frames` and `min_to_start` in the inspector), so the menu stays correct whenever they're retuned.
 
 ---
 
