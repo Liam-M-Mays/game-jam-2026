@@ -1,12 +1,9 @@
 class_name BuildMenu
 extends Control
 
-const BUILDINGS: Array[PackedScene] = [
-	preload("res://assets/Scenes/Buildings/hut_build.tscn"),
-]
-
 @export var building_list: Container
 @export var back_button: TextureButton
+@export var button_size := Vector2(200, 220)
 @export var unavailable_tint := Color(1, 1, 1, 0.5)
 
 var build_system: BuildSystem
@@ -17,17 +14,24 @@ static func display_name(scene: PackedScene) -> String:
 	return scene.resource_path.get_file().get_basename().trim_suffix("_build").capitalize()
 
 
+static func building_scenes() -> Array[PackedScene]:
+	var keys := BuildSystem.HOTKEYS.keys()
+	keys.sort()
+	var scenes: Array[PackedScene] = []
+	for key in keys:
+		scenes.append(BuildSystem.HOTKEYS[key])
+	return scenes
+
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	hide()
 	if back_button:
 		back_button.pressed.connect(close)
-	for scene in BUILDINGS:
-		_templates[scene] = scene.instantiate()
-		var button := Button.new()
-		button.set_meta("scene", scene)
-		button.pressed.connect(_on_building_pressed.bind(scene))
-		building_list.add_child(button)
+	for scene in building_scenes():
+		var template: Building = scene.instantiate()
+		_templates[scene] = template
+		building_list.add_child(_make_button(scene, template))
 	Inventory.changed.connect(_refresh)
 	JobSystem.changed.connect(_refresh)
 	_refresh()
@@ -54,13 +58,41 @@ func close() -> void:
 	get_tree().paused = false
 
 
+func _make_button(scene: PackedScene, template: Building) -> Button:
+	var button := Button.new()
+	button.set_meta("scene", scene)
+	button.custom_minimum_size = button_size
+	button.icon = _finished_look(template)
+	button.expand_icon = true
+	button.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	button.vertical_icon_alignment = VERTICAL_ALIGNMENT_TOP
+	button.alignment = HORIZONTAL_ALIGNMENT_CENTER
+	button.pressed.connect(_on_building_pressed.bind(scene))
+	return button
+
+
+func _finished_look(building: Building) -> Texture2D:
+	var texture := building.texture
+	if texture == null:
+		return null
+	var sheet := building.region_rect if building.region_enabled else Rect2(Vector2.ZERO, texture.get_size())
+	var cell := sheet.size / Vector2(building.hframes, building.vframes)
+	var index := 0 if building.reverse_frames else building.last_stage()
+	var column := index % building.hframes
+	var row := index / building.hframes
+	var atlas := AtlasTexture.new()
+	atlas.atlas = texture
+	atlas.region = Rect2(sheet.position + cell * Vector2(column, row), cell)
+	return atlas
+
+
 func _refresh() -> void:
 	for button in building_list.get_children():
 		var scene: PackedScene = button.get_meta("scene")
 		if not _templates.has(scene):
 			continue
 		var building: Building = _templates[scene]
-		button.text = "%s   %s" % [display_name(scene), _cost_text(building.costs)]
+		button.text = "%s\n%s" % [display_name(scene), _cost_text(building.min_to_start)]
 		button.modulate = Color.WHITE if building.can_start() else unavailable_tint
 
 
@@ -80,6 +112,8 @@ func _on_building_pressed(scene: PackedScene) -> void:
 
 
 func _cost_text(costs: Dictionary) -> String:
+	if costs.is_empty():
+		return "Free"
 	var parts := []
 	for kind in costs:
 		parts.append("%d %s" % [costs[kind], kind])
