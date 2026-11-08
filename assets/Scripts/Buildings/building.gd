@@ -63,9 +63,11 @@ func _stage_frame(stage : int) -> int:
 func _update_blueprint(stage : int) -> void:
 	var next := stage + 1
 	if next > last_stage():
+		_outline_also_around(frame)
 		if _blueprint != null:
 			_blueprint.visible = false
 		return
+	_outline_also_around(_stage_frame(next))
 	if _blueprint == null:
 		_blueprint = Sprite2D.new()
 		_blueprint.show_behind_parent = true
