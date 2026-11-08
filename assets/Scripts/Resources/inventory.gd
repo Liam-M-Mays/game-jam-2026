@@ -1,6 +1,7 @@
 extends Node
 
 signal changed
+signal shortage(kind : String, missing : int)
 
 const START_STOCK := { "food": 10 }
 
@@ -23,8 +24,11 @@ func add(kind : String, amount : int) -> void:
 func spend(kind : String, amount : int) -> void:
 	if amount <= 0:
 		return
-	_stored[kind] = maxi(_stored.get(kind, 0) - amount, 0)
+	var have : int = _stored.get(kind, 0)
+	_stored[kind] = maxi(have - amount, 0)
 	changed.emit()
+	if amount > have:
+		shortage.emit(kind, amount - have)
 
 func register(drop : ResourceDrop) -> void:
 	_drops_of(drop.kind).append(drop)
@@ -51,6 +55,19 @@ func claim_closest(kind : String, world_pos : Vector2) -> ResourceDrop:
 	closest.claimed = true
 	_reserved[kind] -= 1
 	return closest
+
+func closest_loose(kind : String, world_pos : Vector2) -> ResourceDrop:
+	var closest : ResourceDrop = null
+	for drop in _drops_of(kind):
+		if drop.claimed or drop.storage != null:
+			continue
+		if closest == null or world_pos.distance_squared_to(drop.global_position) < world_pos.distance_squared_to(closest.global_position):
+			closest = drop
+	return closest
+
+func set_claimed(drop : ResourceDrop, on : bool) -> void:
+	drop.claimed = on
+	changed.emit()
 
 func release(drop : ResourceDrop) -> void:
 	drop.claimed = false

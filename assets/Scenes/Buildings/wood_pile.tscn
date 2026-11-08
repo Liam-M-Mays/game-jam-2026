@@ -1,0 +1,33 @@
+[gd_scene format=3 uid="uid://di6o41uf0d2fo"]
+
+[ext_resource type="Texture2D" uid="uid://dv6u8vxfs8b8p" path="res://ART/fuh_u_n_yo_big_ass_dih_liam.png" id="1_tex"]
+[ext_resource type="Script" uid="uid://n3jjbjcel18r" path="res://assets/Scripts/Buildings/storage.gd" id="2_scr"]
+[ext_resource type="Script" uid="uid://cyj5e8cr4hrge" path="res://assets/Scripts/Buildings/build_phase.gd" id="3_phase"]
+
+[sub_resource type="Resource" id="Phase_1"]
+script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"wood": 1
+})
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
+size = Vector2(9, 9)
+
+[node name="wood_pile" type="Sprite2D" unique_id=1105677294 node_paths=PackedStringArray("area")]
+z_index = 1
+scale = Vector2(10, 10)
+texture = ExtResource("1_tex")
+offset = Vector2(-0.5, -2.5)
+hframes = 41
+script = ExtResource("2_scr")
+kind = "wood"
+build_frames = 1
+phases = Array[ExtResource("3_phase")]([SubResource("Phase_1")])
+area = NodePath("Area2D")
+hoverable = false
+
+[node name="Area2D" type="Area2D" parent="." unique_id=1383702269]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=1114214740]
+position = Vector2(-0.5999999, -2.5)
+shape = SubResource("RectangleShape2D_1")

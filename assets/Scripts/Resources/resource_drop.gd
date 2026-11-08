@@ -9,11 +9,14 @@ const LAND_ATTEMPTS := 8
 @export var launch_duration := 0.35
 
 var claimed := false
+var storage : Storage = null
 
 func _enter_tree() -> void:
 	Inventory.register(self)
 
 func _exit_tree() -> void:
+	if storage != null:
+		storage.take(self)
 	Inventory.unregister(self)
 
 func launch(grid : Grid) -> void:

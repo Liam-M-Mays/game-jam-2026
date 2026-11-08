@@ -15,10 +15,15 @@ func start(worker : Meeple) -> void:
 
 func update(worker : Meeple, _delta : float) -> bool:
 	if not _carrying:
-		worker.move_to(_drop.global_position)
+		var stop : Array[Cell] = []
+		if _drop.storage != null:
+			stop = _drop.storage.cells
+		worker.move_to(_drop.global_position, stop)
 		if not worker.has_arrived():
 			return false
 		_carrying = true
+		if _drop.storage != null:
+			_drop.storage.take(_drop)
 		_drop.hide()
 		worker.carry(kind)
 		worker.move_to(site.global_position, site.cells)
