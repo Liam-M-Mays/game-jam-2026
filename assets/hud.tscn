@@ -167,6 +167,7 @@ stretch_mode = 5
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "Stone"
+vertical_alignment = 1
 
 [node name="WoodGroup" type="HBoxContainer" parent="CountersPanel/Counters" unique_id=930566024]
 layout_mode = 2
@@ -182,6 +183,7 @@ stretch_mode = 5
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "Wood"
+vertical_alignment = 1
 
 [node name="MeepleGroup" type="HBoxContainer" parent="CountersPanel/Counters" unique_id=105766014]
 layout_mode = 2
@@ -197,6 +199,7 @@ stretch_mode = 5
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "Meeggas"
+vertical_alignment = 1
 
 [node name="JobGroup" type="HBoxContainer" parent="CountersPanel/Counters" unique_id=730114585]
 layout_mode = 2
@@ -205,11 +208,13 @@ layout_mode = 2
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "Jobs"
+vertical_alignment = 1
 
 [node name="JobLabel" type="Label" parent="CountersPanel/Counters/JobGroup" unique_id=730114587]
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "0 / 0"
+vertical_alignment = 1
 
 [node name="Hunger" type="HBoxContainer" parent="." unique_id=644346435]
 custom_minimum_size = Vector2(100, 100)
