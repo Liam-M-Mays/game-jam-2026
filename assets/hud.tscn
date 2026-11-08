@@ -4,6 +4,7 @@
 [ext_resource type="Script" uid="uid://dfon0pqexq34a" path="res://HUD.gd" id="1_uj4j1"]
 [ext_resource type="Texture2D" uid="uid://b30hablfkuedq" path="res://ART/shi.png" id="2_gudfk"]
 [ext_resource type="Script" uid="uid://bs3wgvy4ufnu8" path="res://Build_Menu.gd" id="3_gudfk"]
+[ext_resource type="Script" uid="uid://co4meqn1plgk2" path="res://Pause_Menu.gd" id="5_1m68m"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_3wxnk"]
 atlas = ExtResource("2_gudfk")
@@ -45,7 +46,23 @@ region = Rect2(1444, 25, 38, 22)
 atlas = ExtResource("2_gudfk")
 region = Rect2(1563, 28, 38, 20)
 
-[node name="HUD" type="CanvasLayer" unique_id=1588467611 node_paths=PackedStringArray("counters", "stone_label", "wood_label", "meeple_label", "hunger_bar", "build_button", "build_menu")]
+[sub_resource type="AtlasTexture" id="AtlasTexture_ymf4s"]
+atlas = ExtResource("2_gudfk")
+region = Rect2(265, 26, 54, 22)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_g8g67"]
+atlas = ExtResource("2_gudfk")
+region = Rect2(381, 27, 54, 20)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_p6bmp"]
+atlas = ExtResource("2_gudfk")
+region = Rect2(506, 25, 40, 22)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_3ongb"]
+atlas = ExtResource("2_gudfk")
+region = Rect2(628, 25, 40, 20)
+
+[node name="HUD" type="CanvasLayer" unique_id=1588467611 node_paths=PackedStringArray("counters", "stone_label", "wood_label", "meeple_label", "hunger_bar", "build_button", "build_menu", "pause_menu")]
 script = ExtResource("1_uj4j1")
 counters = NodePath("Counters")
 stone_label = NodePath("Counters/Stone/StoneLabel")
@@ -54,6 +71,7 @@ meeple_label = NodePath("Counters/MeepleGroup/MeepleLabel")
 hunger_bar = NodePath("Hunger/HungerBar")
 build_button = NodePath("BuildButton")
 build_menu = NodePath("BuildMenu")
+pause_menu = NodePath("PauseMenu")
 
 [node name="Counters" type="HBoxContainer" parent="." unique_id=279582234]
 anchors_preset = 5
@@ -205,3 +223,54 @@ grow_vertical = 0
 pivot_offset = Vector2(24, -24)
 theme_override_constants/separation = 8
 script = ExtResource("1_knk3d")
+
+[node name="PauseMenu" type="Control" parent="." unique_id=424902096 node_paths=PackedStringArray("resume_button", "quit_button")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("5_1m68m")
+resume_button = NodePath("Buttons/ResumeButton")
+quit_button = NodePath("Buttons/QuitButton")
+
+[node name="Dim2" type="ColorRect" parent="PauseMenu" unique_id=1733256938]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.5)
+
+[node name="Buttons" type="VBoxContainer" parent="PauseMenu" unique_id=931044947]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 20.0
+offset_bottom = 20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 16
+
+[node name="ResumeButton" type="TextureButton" parent="PauseMenu/Buttons" unique_id=1698750817]
+custom_minimum_size = Vector2(216, 88)
+layout_mode = 2
+texture_normal = SubResource("AtlasTexture_ymf4s")
+texture_pressed = SubResource("AtlasTexture_g8g67")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="QuitButton" type="TextureButton" parent="PauseMenu/Buttons" unique_id=1438633594]
+custom_minimum_size = Vector2(160, 88)
+layout_mode = 2
+texture_normal = SubResource("AtlasTexture_p6bmp")
+texture_pressed = SubResource("AtlasTexture_3ongb")
+ignore_texture_size = true
+stretch_mode = 5
