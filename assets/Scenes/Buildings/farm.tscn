@@ -2,12 +2,42 @@
 
 [ext_resource type="Texture2D" uid="uid://cmsnrw3sxti0j" path="res://ART/Farm_food_growing_ass_bih.png" id="1_tex"]
 [ext_resource type="Script" uid="uid://d0plvjmb1nr0w" path="res://assets/Scripts/Buildings/farm.gd" id="2_scr"]
-[ext_resource type="Script" uid="uid://cyj5e8cr4hrge" path="res://assets/Scripts/Buildings/build_phase.gd" id="3_phase"]
+[ext_resource type="Script" uid="uid://cyj5e8cr4hrge" path="res://assets/Scripts/Buildings/build_frame.gd" id="3_phase"]
 
-[sub_resource type="Resource" id="Phase_1"]
+[sub_resource type="Resource" id="Frame_0"]
 script = ExtResource("3_phase")
 costs = Dictionary[String, int]({
-"wood": 6
+"wood": 1
+})
+
+[sub_resource type="Resource" id="Frame_1"]
+script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"wood": 1
+})
+
+[sub_resource type="Resource" id="Frame_2"]
+script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"wood": 1
+})
+
+[sub_resource type="Resource" id="Frame_3"]
+script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"wood": 1
+})
+
+[sub_resource type="Resource" id="Frame_4"]
+script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"wood": 1
+})
+
+[sub_resource type="Resource" id="Frame_5"]
+script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"wood": 1
 })
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
@@ -20,7 +50,10 @@ texture = ExtResource("1_tex")
 offset = Vector2(-0.5, -1)
 hframes = 6
 script = ExtResource("2_scr")
-phases = Array[ExtResource("3_phase")]([SubResource("Phase_1")])
+frames = Array[ExtResource("3_phase")]([SubResource("Frame_0"), SubResource("Frame_1"), SubResource("Frame_2"), SubResource("Frame_3"), SubResource("Frame_4"), SubResource("Frame_5")])
+min_to_start = Dictionary[String, int]({
+"wood": 6
+})
 area = NodePath("Area2D")
 hoverable = false
 

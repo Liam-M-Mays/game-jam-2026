@@ -7,9 +7,14 @@ const BUILDINGS: Array[PackedScene] = [
 
 @export var building_list: Container
 @export var back_button: TextureButton
+@export var unavailable_tint := Color(1, 1, 1, 0.5)
 
 var build_system: BuildSystem
 var _templates := {}
+
+
+static func display_name(scene: PackedScene) -> String:
+	return scene.resource_path.get_file().get_basename().trim_suffix("_build").capitalize()
 
 
 func _ready() -> void:
@@ -29,6 +34,10 @@ func _ready() -> void:
 
 
 func _exit_tree() -> void:
+	if Inventory.changed.is_connected(_refresh):
+		Inventory.changed.disconnect(_refresh)
+	if JobSystem.changed.is_connected(_refresh):
+		JobSystem.changed.disconnect(_refresh)
 	for template in _templates.values():
 		template.free()
 	_templates.clear()
@@ -48,21 +57,26 @@ func close() -> void:
 func _refresh() -> void:
 	for button in building_list.get_children():
 		var scene: PackedScene = button.get_meta("scene")
+		if not _templates.has(scene):
+			continue
 		var building: Building = _templates[scene]
-		button.text = "%s   %s" % [_display_name(scene), _cost_text(building.costs)]
-		button.disabled = not building.can_start()
+		button.text = "%s   %s" % [display_name(scene), _cost_text(building.costs)]
+		button.modulate = Color.WHITE if building.can_start() else unavailable_tint
 
 
 func _on_building_pressed(scene: PackedScene) -> void:
+	var building: Building = _templates[scene]
+	if not building.can_afford():
+		GameState.warn("You need more materials to build %s" % display_name(scene))
+		return
+	if not building.can_start():
+		GameState.warn("Job queue is full")
+		return
 	if not build_system:
 		push_warning("BuildMenu has no BuildSystem assigned")
 		return
 	close()
 	build_system.start_build(scene)
-
-
-func _display_name(scene: PackedScene) -> String:
-	return scene.resource_path.get_file().get_basename().trim_suffix("_build").capitalize()
 
 
 func _cost_text(costs: Dictionary) -> String:

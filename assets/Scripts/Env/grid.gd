@@ -52,6 +52,13 @@ func place(obj : GridObject, cells : Array[Cell]) -> void:
 	for cell in cells:
 		cell.occupant = obj
 	add_child(obj)
+	_sort_into_row(obj)
+
+func _sort_into_row(obj : GridObject) -> void:
+	for child in get_children():
+		if child != obj and child is GridObject and child.position.y == obj.position.y and child.position.x < obj.position.x:
+			move_child(obj, child.get_index())
+			return
 
 func remove(obj : GridObject) -> void:
 	for cell in obj.cells:

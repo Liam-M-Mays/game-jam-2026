@@ -1,5 +1,9 @@
 extends CanvasLayer
 
+const FIRST_TIP_DELAY := 2.0
+const LOW_FOOD := 5
+const LOW_HUNGER := 50.0
+
 @export var build_system: BuildSystem
 @export var counters: Control
 @export var stone_label: Label
@@ -12,18 +16,27 @@ extends CanvasLayer
 @export var build_menu: BuildMenu
 @export var pause_menu: PauseMenu
 
+var _building_scene: PackedScene
+var _last_meeple_count := 0
+var _tips_shown := {}
+
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	if counters:
 		_ignore_mouse(counters)
 	Inventory.changed.connect(_refresh_counters)
+	Inventory.changed.connect(_check_resource_tips)
 	JobSystem.changed.connect(_refresh_counters)
-	JobSystem.job_rejected.connect(func(_job): GameState.toast("Too many jobs queued"))
-	GameState.starved.connect(func(): GameState.toast("Your people are starving!"))
+	JobSystem.changed.connect(_check_meeple_deaths)
+	JobSystem.job_rejected.connect(func(_job): GameState.warn("Job queue is full"))
+	GameState.hunger_changed.connect(_check_hunger_tip)
+	_last_meeple_count = JobSystem.workers.size()
 	_refresh_counters()
 	_setup_hunger_bar()
 	_setup_building()
+	get_tree().create_timer(FIRST_TIP_DELAY, false).timeout.connect(
+		_show_tip.bind("collect", "Tap on trees and stones to collect resources"))
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -66,7 +79,7 @@ func _setup_hunger_bar() -> void:
 
 func _setup_building() -> void:
 	if build_system:
-		build_system.building_placed.connect(func(_b: Building): GameState.toast("Building placed"))
+		build_system.build_started.connect(func(scene: PackedScene): _building_scene = scene)
 		build_system.building_completed.connect(_on_building_completed)
 		build_system.placement_failed.connect(_on_placement_failed)
 	if build_menu:
@@ -89,18 +102,43 @@ func _on_build_pressed() -> void:
 func _on_building_completed(building: Building) -> void:
 	if building is Hut:
 		GameState.toast("Hut finished! A new meeple arrived")
-	else:
-		GameState.toast("Building finished!")
 
 
 func _on_placement_failed(reason: BuildSystem.PlacementError) -> void:
 	match reason:
 		BuildSystem.PlacementError.CANT_AFFORD:
-			GameState.toast("Not enough resources")
+			var building_name := BuildMenu.display_name(_building_scene) if _building_scene else "that"
+			GameState.warn("You need more materials to build %s" % building_name)
 		BuildSystem.PlacementError.QUEUE_FULL:
-			GameState.toast("Too many jobs queued")
+			GameState.warn("Job queue is full")
 		BuildSystem.PlacementError.BLOCKED:
-			GameState.toast("Can't build there")
+			GameState.warn("Can't build there")
+
+
+func _check_meeple_deaths() -> void:
+	var count := JobSystem.workers.size()
+	if count < _last_meeple_count:
+		GameState.warn("A meeple has died, watch your hunger bar!")
+	_last_meeple_count = count
+
+
+func _check_resource_tips() -> void:
+	if Inventory.count("wood") > 0 or Inventory.count("stone") > 0:
+		_show_tip("build", "Use the tool button to build structures")
+	if Inventory.count("food") <= LOW_FOOD:
+		_show_tip("food", "Tap on bushes to get food")
+
+
+func _check_hunger_tip(value: float) -> void:
+	if value <= LOW_HUNGER:
+		_show_tip("hunger", "Keep your hunger bar up to keep your meeples happy")
+
+
+func _show_tip(id: String, text: String) -> void:
+	if _tips_shown.has(id):
+		return
+	_tips_shown[id] = true
+	GameState.tip(text)
 
 
 func _ignore_mouse(node: Node) -> void:

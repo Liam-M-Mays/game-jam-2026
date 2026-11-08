@@ -1,0 +1,52 @@
+[gd_scene format=3]
+
+[ext_resource type="Texture2D" uid="uid://dfv2bp6ysarbr" path="res://ART/new_hut_build.png" id="1_tex"]
+[ext_resource type="Script" uid="uid://calo5niqysa1e" path="res://assets/Scripts/Buildings/hut.gd" id="2_scr"]
+[ext_resource type="Script" uid="uid://cyj5e8cr4hrge" path="res://assets/Scripts/Buildings/build_frame.gd" id="3_phase"]
+
+[sub_resource type="Resource" id="Frame_0"]
+script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"wood": 1
+})
+
+[sub_resource type="Resource" id="Frame_1"]
+script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"wood": 1
+})
+
+[sub_resource type="Resource" id="Frame_2"]
+script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"wood": 1
+})
+
+[sub_resource type="Resource" id="Frame_3"]
+script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"wood": 1
+})
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
+size = Vector2(8, 8)
+
+[node name="small_hut" type="Sprite2D" node_paths=PackedStringArray("area")]
+z_index = 1
+scale = Vector2(10, 10)
+texture = ExtResource("1_tex")
+offset = Vector2(0, -2)
+hframes = 4
+script = ExtResource("2_scr")
+frames = Array[ExtResource("3_phase")]([SubResource("Frame_0"), SubResource("Frame_1"), SubResource("Frame_2"), SubResource("Frame_3")])
+min_to_start = Dictionary[String, int]({
+"wood": 4
+})
+area = NodePath("Area2D")
+hoverable = false
+
+[node name="Area2D" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D"]
+position = Vector2(0, -2)
+shape = SubResource("RectangleShape2D_1")

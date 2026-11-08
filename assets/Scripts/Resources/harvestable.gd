@@ -2,6 +2,7 @@ extends GridObject
 class_name Harvestable
 
 const BREAK_EFFECT := preload("res://assets/Scenes/Effects/break.tscn")
+const GROUP := &"harvestables"
 const BREAK_HOLD := 0.06
 const WOBBLE_DURATION := 0.25
 const SQUASH_DURATION := 0.2
@@ -19,12 +20,18 @@ const SQUASH_DURATION := 0.2
 @export var cluster_bonus := 0.0
 
 var _wobbles := 0
-var _job : HarvestJob = null
+var _job : Job = null
+
+func _ready() -> void:
+	super()
+	add_to_group(GROUP)
 
 func _on_clicked() -> void:
-	if _job != null:
+	if _job is HarvestJob:
 		JobSystem.cancel(_job)
 		_set_job(null)
+	elif _job != null:
+		reject()
 	elif can_harvest():
 		var job := HarvestJob.new(self)
 		if JobSystem.add(job):
@@ -34,6 +41,16 @@ func _on_clicked() -> void:
 
 func can_harvest() -> bool:
 	return _wobbles < wobbles_to_break
+
+func is_free() -> bool:
+	return _job == null and can_harvest()
+
+func claim(job : Job) -> void:
+	_job = job
+
+func release(job : Job) -> void:
+	if _job == job:
+		_job = null
 
 func harvest() -> bool:
 	var done := _hit()
@@ -66,7 +83,7 @@ func _squash() -> void:
 	var tween := _tween(&"squash").set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tween.tween_property(self, "scale", _base_scale, SQUASH_DURATION)
 
-func _set_job(job : HarvestJob) -> void:
+func _set_job(job : Job) -> void:
 	_job = job
 	set_selected(job != null)
 

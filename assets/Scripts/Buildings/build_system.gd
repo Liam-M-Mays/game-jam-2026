@@ -10,15 +10,14 @@ signal placement_failed(reason : PlacementError)
 enum PlacementError { NONE, BLOCKED, CANT_AFFORD, QUEUE_FULL }
 
 const HOTKEYS := {
-	"2": preload("res://assets/Scenes/Buildings/hut_build.tscn"),
+	"2": preload("res://assets/Scenes/Buildings/small_hut.tscn"),
 	"3": preload("res://assets/Scenes/Buildings/stone_hut.tscn"),
 	"4": preload("res://assets/Scenes/Buildings/barn.tscn"),
 	"5": preload("res://assets/Scenes/Buildings/farm.tscn"),
 	"6": preload("res://assets/Scenes/Buildings/stone_pile.tscn"),
 	"7": preload("res://assets/Scenes/Buildings/wood_pile.tscn"),
+	"8": preload("res://assets/Scenes/Buildings/lumberjack.tscn"),
 }
-const PREVIEW_VALID := Color(0.3, 1, 0.3, 0.6)
-const PREVIEW_BLOCKED := Color(1, 0.3, 0.3, 0.6)
 
 @export var grid : Grid
 @export var cursor : CellCursor
@@ -31,8 +30,8 @@ func start_build(scene : PackedScene) -> void:
 	_scene = scene
 	cursor.enabled = true
 	_preview = scene.instantiate()
-	_preview.show_as_preview()
 	grid.add_child(_preview)
+	_preview.show_as_preview()
 	build_started.emit(scene)
 
 func end_build() -> void:
@@ -69,7 +68,7 @@ func _process(_delta : float) -> void:
 	if anchor != null:
 		_preview.position = anchor.position
 	var valid := _placement_error(grid.free_cells_at(mouse, _preview.footprint)) == PlacementError.NONE
-	_preview.modulate = PREVIEW_VALID if valid else PREVIEW_BLOCKED
+	_preview.set_preview_blocked(not valid)
 
 func _placement_error(cells : Array[Cell]) -> PlacementError:
 	if cells.is_empty():

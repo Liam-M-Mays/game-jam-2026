@@ -1,0 +1,59 @@
+[gd_scene format=3 uid="uid://dimtm1kumkrks"]
+
+[ext_resource type="Texture2D" uid="uid://cm0ww7kvq7un2" path="res://assets/Art/Buildings/House_buildstates.png" id="1_hh3au"]
+[ext_resource type="Script" uid="uid://calo5niqysa1e" path="res://assets/Scripts/Buildings/hut.gd" id="2_4xtmb"]
+[ext_resource type="Script" uid="uid://cyj5e8cr4hrge" path="res://assets/Scripts/Buildings/build_frame.gd" id="3_phase"]
+
+[sub_resource type="Resource" id="Frame_0"]
+script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"wood": 1
+})
+
+[sub_resource type="Resource" id="Frame_1"]
+script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"wood": 1
+})
+
+[sub_resource type="Resource" id="Frame_2"]
+script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"wood": 1
+})
+
+[sub_resource type="Resource" id="Frame_3"]
+script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"wood": 1
+})
+
+[sub_resource type="Resource" id="Frame_4"]
+script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"wood": 1
+})
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_nafr4"]
+size = Vector2(11, 9)
+
+[node name="town_hall" type="Sprite2D" unique_id=534808495 node_paths=PackedStringArray("area")]
+z_index = 1
+scale = Vector2(10, 10)
+texture = ExtResource("1_hh3au")
+offset = Vector2(3.5, -3)
+hframes = 5
+script = ExtResource("2_4xtmb")
+frames = Array[ExtResource("3_phase")]([SubResource("Frame_0"), SubResource("Frame_1"), SubResource("Frame_2"), SubResource("Frame_3"), SubResource("Frame_4")])
+min_to_start = Dictionary[String, int]({
+"wood": 3
+})
+area = NodePath("Area2D")
+footprint = 2
+hoverable = false
+
+[node name="Area2D" type="Area2D" parent="." unique_id=725244253]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=1604481275]
+position = Vector2(3.5, -3.5)
+shape = SubResource("RectangleShape2D_nafr4")

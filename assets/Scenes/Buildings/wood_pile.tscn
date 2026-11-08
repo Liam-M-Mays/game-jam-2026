@@ -2,9 +2,9 @@
 
 [ext_resource type="Texture2D" uid="uid://dv6u8vxfs8b8p" path="res://ART/fuh_u_n_yo_big_ass_dih_liam.png" id="1_tex"]
 [ext_resource type="Script" uid="uid://n3jjbjcel18r" path="res://assets/Scripts/Buildings/storage.gd" id="2_scr"]
-[ext_resource type="Script" uid="uid://cyj5e8cr4hrge" path="res://assets/Scripts/Buildings/build_phase.gd" id="3_phase"]
+[ext_resource type="Script" uid="uid://cyj5e8cr4hrge" path="res://assets/Scripts/Buildings/build_frame.gd" id="3_phase"]
 
-[sub_resource type="Resource" id="Phase_1"]
+[sub_resource type="Resource" id="Frame_0"]
 script = ExtResource("3_phase")
 costs = Dictionary[String, int]({
 "wood": 1
@@ -22,7 +22,10 @@ hframes = 41
 script = ExtResource("2_scr")
 kind = "wood"
 build_frames = 1
-phases = Array[ExtResource("3_phase")]([SubResource("Phase_1")])
+frames = Array[ExtResource("3_phase")]([SubResource("Frame_0")])
+min_to_start = Dictionary[String, int]({
+"wood": 1
+})
 area = NodePath("Area2D")
 hoverable = false
 

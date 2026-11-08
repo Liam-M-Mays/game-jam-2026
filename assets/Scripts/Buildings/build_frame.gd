@@ -1,8 +1,7 @@
 extends Resource
-class_name BuildPhase
+class_name BuildFrame
 
 @export var costs : Dictionary[String, int] = {}
-@export var frame := -1
 
 func total() -> int:
 	var sum := 0

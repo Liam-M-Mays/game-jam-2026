@@ -6,6 +6,11 @@ extends VBoxContainer
 @export var fade_time := 4.0
 @export var font: Font
 @export var font_size := 32
+@export var info_color := Color.WHITE
+@export var tip_color := Color("ffe08a")
+@export var warning_color := Color("ff6b5b")
+@export var tip_prefix := "Tip: "
+@export var warning_prefix := ""
 
 
 func _ready() -> void:
@@ -16,10 +21,19 @@ func _ready() -> void:
 	GameState.toast_requested.connect(push)
 
 
-func push(text: String) -> void:
+func push(text: String, kind: int = 0) -> void:
 	var label := Label.new()
-	label.text = text
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	match kind:
+		GameState.ToastKind.TIP:
+			label.text = tip_prefix + text
+			label.add_theme_color_override("font_color", tip_color)
+		GameState.ToastKind.WARNING:
+			label.text = warning_prefix + text
+			label.add_theme_color_override("font_color", warning_color)
+		_:
+			label.text = text
+			label.add_theme_color_override("font_color", info_color)
 	if font:
 		label.add_theme_font_override("font", font)
 	label.add_theme_font_size_override("font_size", font_size)
