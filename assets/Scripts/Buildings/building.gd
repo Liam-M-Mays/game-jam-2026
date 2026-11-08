@@ -1,60 +1,53 @@
-extends resource
-class_name building
+extends GridObject
+class_name Building
 
-const CLOUD = preload("res://assets/Scenes/cloud.tscn")
+signal completed
 
-const QUEUED_COLOR := Color(0.4, 0.6, 1, 0.6)
+const BUILD_EFFECT := preload("res://assets/Scenes/cloud.tscn")
 
-@export var width := 1
-@export var wood_cost := 0
-@export var stone_cost := 0
+@export var costs : Dictionary[String, int] = {}
 
 var _delivered := 0
 
 func _ready() -> void:
 	super()
-	modulate = QUEUED_COLOR
 	area.input_pickable = false
 
+func show_as_preview() -> void:
+	frame = hframes - 1
+
 func total_cost() -> int:
-	return wood_cost + stone_cost
+	var total := 0
+	for kind in costs:
+		total += costs[kind]
+	return total
 
 func can_afford() -> bool:
-	return Inventory.available("wood") >= wood_cost and Inventory.available("stone") >= stone_cost
+	for kind in costs:
+		if Inventory.available(kind) < costs[kind]:
+			return false
+	return true
 
-func start_build() -> void:
-	modulate = Color.WHITE
+func can_start() -> bool:
+	return can_afford() and JobSystem.has_room(total_cost())
+
+func start_construction() -> void:
 	if total_cost() == 0:
-		frame = hframes - 1
-		finish_build()
+		complete()
 		return
-	_queue_hauls("wood", wood_cost)
-	_queue_hauls("stone", stone_cost)
-
-func _queue_hauls(kind : String, amount : int) -> void:
-	Inventory.reserve(kind, amount)
-	for i in range(amount):
-		JobSystem.add_haul_job(self, kind)
+	for kind in costs:
+		Inventory.reserve(kind, costs[kind])
+		for i in range(costs[kind]):
+			JobSystem.add(HaulJob.new(self, kind))
 
 func deliver() -> void:
 	_delivered += 1
 	frame = floori(float(hframes - 1) * _delivered / total_cost())
 	if _delivered == total_cost():
-		finish_build()
+		complete()
 
-func finish_build() -> void:
-	modulate = Color.WHITE
+func complete() -> void:
+	frame = hframes - 1
 	area.input_pickable = true
-	var cloud = CLOUD.instantiate()
-	cloud.position = position + offset * _base_scale
-	cloud.scale = _base_scale
-	cloud.z_index = z_index+1
-	get_parent().add_child(cloud)
-	cloud.animation_finished.connect(cloud.queue_free)
-	cloud.play("default")
-
-func _on_left_click() -> void:
-	pass
-	
-func _get_preview():
-	pass
+	spawn_effect(BUILD_EFFECT, 1)
+	completed.emit()

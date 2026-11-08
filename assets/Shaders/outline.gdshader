@@ -1,20 +1,12 @@
 shader_type canvas_item;
 
-// --- Hit flash (same as flash.gdshader) ---
 uniform float flash : hint_range(0.0, 1.0) = 0.0;
 uniform vec3 flash_color : source_color = vec3(1.0);
 
-// --- Per-resource state (set from script) ---
 uniform bool selected = false;
 uniform bool hovered = false;
-// Sprite's UV bounds inside its texture (xy = min, zw = max). Set from script
-// so AtlasTextures don't clip or pick up neighbouring sprites in the sheet.
 uniform vec4 region_rect = vec4(0.0, 0.0, 1.0, 1.0);
 
-// --- Styles: global, edit in Project Settings > Globals > Shader Globals ---
-// Each style: color (alpha = transparency), width (solid line, screen px),
-// glow_size (soft falloff past the line, screen px, 0 = off), glow_strength,
-// pulse_speed (pulses/sec, 0 = off), pulse_amount (1 = fades fully out).
 global uniform vec4 select_color;
 global uniform float select_width;
 global uniform float select_glow_size;
@@ -46,7 +38,6 @@ void vertex() {
 	modulate = COLOR;
 	float reach = max(select_reach(), hover_reach());
 	if (reach > 0.0) {
-		// Grow the quad so the effect isn't clipped at the sprite's edges.
 		float px_per_unit = length((CANVAS_MATRIX * MODEL_MATRIX * vec4(1.0, 0.0, 0.0, 0.0)).xy);
 		float margin = reach / max(px_per_unit, 0.0001) + 1.0;
 		vec2 dir = sign(UV - (region_rect.xy + region_rect.zw) * 0.5);
@@ -63,7 +54,6 @@ float alpha_at(sampler2D tex, vec2 uv) {
 	return in_region(uv) ? texture(tex, uv).a : 0.0;
 }
 
-// Strength (0..1) of one style at `dist` screen px from the sprite.
 float style_strength(float dist, vec4 color, float width, float glow_size,
 		float glow_strength, float pulse_speed, float pulse_amount, float time) {
 	float line = 1.0 - smoothstep(width - 0.5, width + 0.5, dist);
@@ -89,7 +79,6 @@ void fragment() {
 	float reach = min(max(select_reach(), hover_reach()), MAX_REACH);
 	vec4 result = base;
 	if (reach > 0.0 && base.a < 1.0) {
-		// Distance (screen px) to the nearest opaque texel.
 		vec2 px = fwidth(UV);
 		float dist = reach + 1.0;
 		for (float r = 1.0; r <= reach; r += 1.0) {
@@ -107,7 +96,6 @@ void fragment() {
 			}
 		}
 
-		// Layer: selected style, then hover style on top.
 		vec4 fx = vec4(0.0);
 		if (selected) {
 			float s = style_strength(dist, select_color, select_width, select_glow_size,
@@ -122,7 +110,6 @@ void fragment() {
 			fx.a = a;
 		}
 
-		// Sprite sits on top of the effect.
 		result.rgb = mix(fx.rgb, base.rgb, base.a);
 		result.a = base.a + fx.a * (1.0 - base.a);
 	}

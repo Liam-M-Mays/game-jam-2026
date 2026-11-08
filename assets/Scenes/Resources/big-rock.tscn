@@ -1,7 +1,8 @@
 [gd_scene format=3 uid="uid://bs6xoi7v5b3bc"]
 
 [ext_resource type="Texture2D" uid="uid://cqlrqu5137jla" path="res://assets/Res/big-rock.tres" id="1_vg1nq"]
-[ext_resource type="Script" uid="uid://c3elx78jjhpbp" path="res://assets/Scripts/Resources/resource.gd" id="2_g77kf"]
+[ext_resource type="Script" uid="uid://c3elx78jjhpbp" path="res://assets/Scripts/Resources/harvestable.gd" id="2_g77kf"]
+[ext_resource type="PackedScene" uid="uid://cxcltn73yu7fw" path="res://assets/Scenes/Env/rock.tscn" id="3_drop"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_nafr4"]
 size = Vector2(9.400002, 6.000001)
@@ -15,7 +16,7 @@ script = ExtResource("2_g77kf")
 area = NodePath("Area2D")
 wobble_interval = 0.7
 wobbles_to_break = 6
-stone_yield = 2
+drops = Dictionary[PackedScene, int]({ExtResource("3_drop"): 2})
 spawn_chance = 0.01
 footprint = 2
 

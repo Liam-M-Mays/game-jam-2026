@@ -63,6 +63,6 @@ texture = ExtResource("1_eo76i")
 script = ExtResource("2_mkppr")
 
 [node name="head" type="AnimatedSprite2D" parent="." unique_id=1950144136]
-self_modulate = Color(1, 1, 0.6745098, 1)
+self_modulate = Color(0.9054981, 0.91442734, 0.909581, 1)
 position = Vector2(0, -1.9999999)
 sprite_frames = SubResource("SpriteFrames_nafr4")

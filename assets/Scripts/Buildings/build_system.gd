@@ -1,65 +1,95 @@
 extends Node2D
+class_name BuildSystem
 
-const BUILDINGS := {
+signal build_started(scene : PackedScene)
+signal build_ended
+signal building_placed(building : Building)
+signal building_completed(building : Building)
+signal placement_failed(reason : PlacementError)
+
+enum PlacementError { NONE, BLOCKED, CANT_AFFORD, QUEUE_FULL }
+
+const HOTKEYS := {
 	"2": preload("res://assets/Scenes/hut_build.tscn"),
 }
-
 const PREVIEW_VALID := Color(0.3, 1, 0.3, 0.6)
 const PREVIEW_BLOCKED := Color(1, 0.3, 0.3, 0.6)
 
-@onready var grid = $"../Grid"
-@onready var mouse_area = $"../Mouse"
+@export var grid : Grid
+@export var cursor : CellCursor
 
-var current : PackedScene = null
-var _preview : building = null
+var _scene : PackedScene = null
+var _preview : Building = null
 
-func _input(event: InputEvent) -> void:
-	for action in BUILDINGS:
+func start_build(scene : PackedScene) -> void:
+	_clear_preview()
+	_scene = scene
+	cursor.enabled = true
+	_preview = scene.instantiate()
+	_preview.show_as_preview()
+	grid.add_child(_preview)
+	build_started.emit(scene)
+
+func end_build() -> void:
+	if not is_building():
+		return
+	_clear_preview()
+	_scene = null
+	cursor.enabled = false
+	build_ended.emit()
+
+func is_building() -> bool:
+	return _preview != null
+
+func _input(event : InputEvent) -> void:
+	for action in HOTKEYS:
 		if event.is_action_pressed(action):
-			_select(BUILDINGS[action])
+			start_build(HOTKEYS[action])
 			return
+	if not is_building():
+		return
 	if event.is_action_pressed("ui_cancel"):
-		current = null
-		mouse_area.enabled = false
-		_clear_preview()
-	elif current != null and event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
-		_place_current()
+		end_build()
+		get_viewport().set_input_as_handled()
+	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+		_try_place()
 		get_viewport().set_input_as_handled()
 
-func _process(_delta: float) -> void:
-	if current == null:
+func _process(_delta : float) -> void:
+	if not is_building():
 		return
 	var mouse := get_global_mouse_position()
-	var anchor = grid.cell_at(mouse)
+	var anchor := grid.cell_at(mouse)
 	_preview.visible = anchor != null
 	if anchor != null:
 		_preview.position = anchor.position
-	var valid : bool = _preview.can_afford() and not grid.free_cells_at(mouse, _preview.width).is_empty()
+	var valid := _placement_error(grid.free_cells_at(mouse, _preview.footprint)) == PlacementError.NONE
 	_preview.modulate = PREVIEW_VALID if valid else PREVIEW_BLOCKED
 
-func _select(scene : PackedScene) -> void:
-	current = scene
-	mouse_area.enabled = true
-	_clear_preview()
-	_preview = scene.instantiate()
-	_preview._get_preview()
-	grid.add_child(_preview)
+func _placement_error(cells : Array[Cell]) -> PlacementError:
+	if cells.is_empty():
+		return PlacementError.BLOCKED
+	if not _preview.can_afford():
+		return PlacementError.CANT_AFFORD
+	if not JobSystem.has_room(_preview.total_cost()):
+		return PlacementError.QUEUE_FULL
+	return PlacementError.NONE
+
+func _try_place() -> void:
+	var cells := grid.free_cells_at(get_global_mouse_position(), _preview.footprint)
+	var error := _placement_error(cells)
+	if error != PlacementError.NONE:
+		_preview.reject()
+		placement_failed.emit(error)
+		return
+	var site : Building = _scene.instantiate()
+	grid.place(site, cells)
+	site.completed.connect(func(): building_completed.emit(site))
+	site.start_construction()
+	building_placed.emit(site)
+	end_build()
 
 func _clear_preview() -> void:
 	if _preview != null:
 		_preview.queue_free()
 		_preview = null
-
-func _place_current() -> void:
-	if not _preview.can_afford():
-		return
-	var cells : Array = grid.free_cells_at(get_global_mouse_position(), _preview.width)
-	if cells.is_empty():
-		return
-	var site : building = current.instantiate()
-	site.position = cells[0].position
-	for cell in cells:
-		cell.resource = site
-		site.cells.append(cell)
-	grid.add_child(site)
-	site.start_build()

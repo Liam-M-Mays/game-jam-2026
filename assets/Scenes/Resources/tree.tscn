@@ -1,7 +1,8 @@
 [gd_scene format=3 uid="uid://cciqa8ee7m64y"]
 
 [ext_resource type="Texture2D" uid="uid://bi6uuppyldmbr" path="res://assets/Res/trees.tres" id="1_brfkd"]
-[ext_resource type="Script" uid="uid://bccn0pwg1r2cc" path="res://assets/Scripts/Resources/tree.gd" id="2_qgaf8"]
+[ext_resource type="Script" uid="uid://c3elx78jjhpbp" path="res://assets/Scripts/Resources/harvestable.gd" id="2_qgaf8"]
+[ext_resource type="PackedScene" uid="uid://gpbn4xm54dyl" path="res://assets/Scenes/Env/wood.tscn" id="3_drop"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_nafr4"]
 size = Vector2(5.000001, 7.0000005)
@@ -14,7 +15,7 @@ offset = Vector2(0, -3)
 script = ExtResource("2_qgaf8")
 area = NodePath("Area2D")
 wobbles_to_break = 2
-wood_yield = 1
+drops = Dictionary[PackedScene, int]({ExtResource("3_drop"): 1})
 spawn_chance = 0.02
 
 [node name="Area2D" type="Area2D" parent="." unique_id=1707068377]

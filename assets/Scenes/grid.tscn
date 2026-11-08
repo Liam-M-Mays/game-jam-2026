@@ -6,8 +6,10 @@
 [ext_resource type="PackedScene" uid="uid://bq8msd5k43k42" path="res://assets/Scenes/Resources/big-tree.tscn" id="4_bigtree"]
 [ext_resource type="PackedScene" uid="uid://fdmon1owxpbq" path="res://assets/Scenes/george_bush.tscn" id="5_bush"]
 [ext_resource type="PackedScene" uid="uid://bs6xoi7v5b3bc" path="res://assets/Scenes/Resources/big-rock.tscn" id="6_bigrock"]
+[ext_resource type="PackedScene" uid="uid://dimtm1kumkrks" path="res://assets/Scenes/hut_build.tscn" id="7_hut"]
 
 [node name="Grid" type="Node2D" unique_id=1279537889]
 y_sort_enabled = true
 script = ExtResource("1_j5gty")
+start_building = ExtResource("7_hut")
 spawnables = Array[PackedScene]([ExtResource("2_tree"), ExtResource("3_rock"), ExtResource("4_bigtree"), ExtResource("5_bush"), ExtResource("6_bigrock")])

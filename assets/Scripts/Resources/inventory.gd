@@ -2,52 +2,40 @@ extends Node
 
 signal changed
 
-var _drops := { "wood": [], "stone": [] }
-var _reserved := { "wood": 0, "stone": 0 }
+var _drops := {}
+var _stored := {}
+var _reserved := {}
 
-var wood : int:
-	get:
-		return _drops["wood"].size()
-var stone : int:
-	get:
-		return _drops["stone"].size()
-
-## Food lives only in the inventory (no ground drops).
-var food := 0
-
-func add_food(amount : int) -> void:
-	food += amount
+func reset() -> void:
+	_stored.clear()
+	_reserved.clear()
 	changed.emit()
 
-## Returns false (and spends nothing) if there isn't enough food.
-func spend_food(amount : int) -> bool:
-	if food < amount:
-		return false
-	food -= amount
+func count(kind : String) -> int:
+	return _drops_of(kind).size() + _stored.get(kind, 0)
+
+func add(kind : String, amount : int) -> void:
+	_stored[kind] = _stored.get(kind, 0) + amount
 	changed.emit()
-	return true
 
 func register(drop : ResourceDrop) -> void:
-	_drops[drop.kind].append(drop)
+	_drops_of(drop.kind).append(drop)
 	changed.emit()
 
 func unregister(drop : ResourceDrop) -> void:
-	_drops[drop.kind].erase(drop)
+	_drops_of(drop.kind).erase(drop)
 	changed.emit()
 
 func available(kind : String) -> int:
-	var unclaimed := 0
-	for drop in _drops[kind]:
-		if not drop.claimed:
-			unclaimed += 1
-	return unclaimed - _reserved[kind]
+	var unclaimed := _drops_of(kind).filter(func(drop): return not drop.claimed).size()
+	return unclaimed - _reserved.get(kind, 0)
 
 func reserve(kind : String, amount : int) -> void:
-	_reserved[kind] += amount
+	_reserved[kind] = _reserved.get(kind, 0) + amount
 
 func claim_closest(kind : String, world_pos : Vector2) -> ResourceDrop:
 	var closest : ResourceDrop = null
-	for drop in _drops[kind]:
+	for drop in _drops_of(kind):
 		if drop.claimed:
 			continue
 		if closest == null or world_pos.distance_squared_to(drop.global_position) < world_pos.distance_squared_to(closest.global_position):
@@ -55,3 +43,6 @@ func claim_closest(kind : String, world_pos : Vector2) -> ResourceDrop:
 	closest.claimed = true
 	_reserved[kind] -= 1
 	return closest
+
+func _drops_of(kind : String) -> Array:
+	return _drops.get_or_add(kind, [])
