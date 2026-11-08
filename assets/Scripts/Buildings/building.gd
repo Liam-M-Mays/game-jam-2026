@@ -4,45 +4,37 @@ class_name Building
 signal completed
 
 const BUILD_EFFECT := preload("res://assets/Scenes/Effects/cloud.tscn")
-## Stage shown right after placing: nothing drawn until the first delivery.
 const EMPTY_STAGE := -1
 
-## Total cost. When phases are set this is filled in from them automatically.
-@export var costs : Dictionary[String, int] = {}
 ## Tick on if the sheet runs finished -> empty (left to right) instead of empty -> finished.
 @export var reverse_frames := false
-## How many frames at the start of the sheet are construction. 0 = the whole sheet.
-## Frames after these belong to the finished building (e.g. storage fill levels).
 @export var build_frames := 0
-## Build steps in order. Each phase's resources are hauled before the next phase
-## starts, and the sprite climbs to that phase's frame as they arrive.
-## Only the first phase has to be affordable to place the building; later phases
-## wait until their resources exist.
-## Empty = one phase that uses costs and climbs to the finished frame.
-@export var phases : Array[BuildPhase] = []:
-	set(value):
-		phases = value
-		if not phases.is_empty():
-			costs = _sum_phase_costs()
+## Each phase is paid and hauled in order. No phases = the building is free.
+@export var phases : Array[BuildPhase] = []
+
+## Total cost of all phases (read-only; edit the phases instead).
+var costs : Dictionary[String, int]:
+	get:
+		return _sum_phase_costs()
 
 var _steps : Array[BuildPhase] = []
 var _phase := 0
 var _phase_delivered := 0
 var _unposted : Array[HaulJob] = []
+var _idle_job : IdleJob = null
 
 func _ready() -> void:
 	super()
 	area.input_pickable = false
+	if not phases.is_empty() and total_cost() != last_stage() + 1:
+		push_warning("%s costs %d but has %d build frames" % [display_name(), total_cost(), last_stage() + 1])
 
 func show_as_preview() -> void:
 	_set_stage(last_stage())
 
-## Stage of the finished building.
 func last_stage() -> int:
 	return (build_frames if build_frames > 0 else hframes) - 1
 
-## EMPTY_STAGE = nothing drawn, 0 = first sheet frame, last_stage() = finished,
-## regardless of sheet direction.
 func _set_stage(stage : int) -> void:
 	visible = stage > EMPTY_STAGE
 	if not visible:
@@ -59,12 +51,9 @@ func total_cost() -> int:
 		total += costs[kind]
 	return total
 
-## Only the first phase has to be affordable to start building.
 func can_afford() -> bool:
 	return _has_resources(_phase_list()[0].costs)
 
-## Queue slots needed to start: the first phase, capped at the queue's size so an
-## oversized phase is still placeable (its extra jobs trickle in).
 func jobs_needed() -> int:
 	return mini(_phase_list()[0].total(), JobSystem.capacity())
 
@@ -82,7 +71,7 @@ func deliver() -> void:
 	_set_stage(_delivery_stage(phase))
 	if _phase_delivered < phase.total():
 		return
-	if _phase + 1 < _steps.size():
+	if _phase + 1 == _steps.size():
 		spawn_effect(BUILD_EFFECT, 1)
 	_start_phase(_phase + 1)
 
@@ -90,7 +79,29 @@ func complete() -> void:
 	_set_stage(last_stage())
 	area.input_pickable = true
 	spawn_effect(BUILD_EFFECT, 1)
+	JobSystem.worker_idle.connect(_on_worker_idle)
 	completed.emit()
+
+func has_idle_work(_worker : Meeple) -> bool:
+	return false
+
+func _make_idle_job(_worker : Meeple) -> IdleJob:
+	return null
+
+func claim_idle_job(worker : Meeple) -> IdleJob:
+	if _idle_job != null:
+		return null
+	_idle_job = _make_idle_job(worker)
+	if _idle_job != null:
+		_idle_job.site = self
+	return _idle_job
+
+func idle_job_ended() -> void:
+	_idle_job = null
+
+func _on_worker_idle(worker : Meeple, offers : Array) -> void:
+	if _idle_job == null and has_idle_work(worker):
+		offers.append(self)
 
 func _start_phase(index : int) -> void:
 	_phase = index
@@ -109,7 +120,6 @@ func _start_phase(index : int) -> void:
 		return
 	_begin_phase(phase)
 
-## Called on every inventory change while a phase is waiting for resources.
 func _resume_phase() -> void:
 	var phase := _steps[_phase]
 	if not _has_resources(phase.costs):
@@ -126,15 +136,12 @@ func _begin_phase(phase : BuildPhase) -> void:
 	if not _unposted.is_empty() and not JobSystem.changed.is_connected(_post_jobs):
 		JobSystem.changed.connect(_post_jobs)
 
-## Posts as many waiting haul jobs as the queue has room for.
 func _post_jobs() -> void:
 	while not _unposted.is_empty() and JobSystem.has_room():
 		JobSystem.add(_unposted.pop_front())
 	if _unposted.is_empty() and JobSystem.changed.is_connected(_post_jobs):
 		JobSystem.changed.disconnect(_post_jobs)
 
-## First delivery of a phase shows the next frame, the last one lands exactly on
-## the phase's frame, and the ones between are spread evenly.
 func _delivery_stage(phase : BuildPhase) -> int:
 	var from := _phase_start_stage()
 	var to := _phase_end_stage(phase)
@@ -171,9 +178,7 @@ func _phase_list() -> Array[BuildPhase]:
 		if phase != null:
 			list.append(phase)
 	if list.is_empty():
-		var only := BuildPhase.new()
-		only.costs = costs
-		list.append(only)
+		list.append(BuildPhase.new())
 	return list
 
 func _sum_phase_costs() -> Dictionary[String, int]:

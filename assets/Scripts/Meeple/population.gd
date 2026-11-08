@@ -11,7 +11,10 @@ func _ready() -> void:
 	Inventory.shortage.connect(_on_shortage)
 
 func capacity() -> int:
-	return huts.size()
+	var total := 0
+	for hut in huts:
+		total += hut.meeple_capacity
+	return total
 
 func add_hut(hut : Hut) -> void:
 	huts.append(hut)

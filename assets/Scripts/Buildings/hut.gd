@@ -4,6 +4,8 @@ class_name Hut
 const MEEPLE := preload("res://assets/Scenes/Meeple/meeple.tscn")
 const DOOR_OFFSET := Vector2(40, 35)
 
+@export var meeple_capacity := 1
+
 func _exit_tree() -> void:
 	Population.remove_hut(self)
 
