@@ -5,6 +5,7 @@ const WANDER_ATTEMPTS := 8
 const CARRY_FRAMES := { "wood": 2, "stone": 4 }
 const CARRY_HEAD_OFFSET := -0.5
 const SORT_BIAS := Vector2(0, 3)
+const IDLE_CHECK_INTERVAL := 0.5
 
 @export var speed := 100
 @export var y_stretch := 0.1
@@ -25,6 +26,7 @@ var _stop_cells : Array[Cell] = []
 var _wandering := false
 var _wander_home : Vector2
 var _wander_pause := 0.0
+var _idle_check := 0.0
 
 @onready var _base_scale_y := scale.y
 @onready var _head : AnimatedSprite2D = $head
@@ -68,13 +70,18 @@ func _physics_process(delta : float) -> void:
 	var t := Time.get_ticks_msec() * delta
 	var moving := not has_arrived()
 	if moving:
-		position += (_target - position).normalized() * delta * (wander_speed if _wandering else speed)
+		position = position.move_toward(_target, delta * (wander_speed if _wandering else speed))
 	scale.y = _base_scale_y * (1 + sin(t * stretch_speed) * y_stretch * (1.0 if moving else 0.5))
 	rotation_degrees = sin(t * wobble_speed) * wobble if moving else 0.0
 
 func _process(delta : float) -> void:
+	if job is IdleJob and JobSystem.has_pending():
+		JobSystem.requeue(job, self) #This is making main queue absolute priority. 
+		job = null
 	if job == null:
 		job = JobSystem.take()
+		if job == null:
+			job = _ask_for_idle_job(delta)
 		if job == null:
 			_wander(delta)
 			return
@@ -83,6 +90,13 @@ func _process(delta : float) -> void:
 	if job.update(self, delta):
 		JobSystem.finish(job)
 		job = null
+
+func _ask_for_idle_job(delta : float) -> IdleJob:
+	_idle_check -= delta
+	if _idle_check > 0.0:
+		return null
+	_idle_check = IDLE_CHECK_INTERVAL
+	return JobSystem.find_idle_job(self)
 
 func _wander(delta : float) -> void:
 	if not has_arrived():

@@ -1,0 +1,40 @@
+[gd_scene format=3 uid="uid://bpyyl7vub5wtg"]
+
+[ext_resource type="Texture2D" uid="uid://drxvj2eeilswi" path="res://ART/lumberjack_build.png" id="1_q1yg8"]
+[ext_resource type="Script" uid="uid://c5be5uborrvaj" path="res://assets/Scripts/Buildings/barn.gd" id="2_q1yg8"]
+[ext_resource type="Script" uid="uid://cyj5e8cr4hrge" path="res://assets/Scripts/Buildings/build_phase.gd" id="3_oqh0i"]
+
+[sub_resource type="Resource" id="Resource_oqh0i"]
+script = ExtResource("3_oqh0i")
+costs = Dictionary[String, int]({
+"wood": 4
+})
+frame = 3
+metadata/_custom_type_script = "uid://cyj5e8cr4hrge"
+
+[sub_resource type="Resource" id="Resource_h0l61"]
+script = ExtResource("3_oqh0i")
+costs = Dictionary[String, int]({
+"wood": 4
+})
+metadata/_custom_type_script = "uid://cyj5e8cr4hrge"
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
+size = Vector2(9, 8)
+
+[node name="barn" type="Sprite2D" unique_id=1866275440 node_paths=PackedStringArray("area")]
+z_index = 1
+scale = Vector2(10, 10)
+texture = ExtResource("1_q1yg8")
+offset = Vector2(3.5, -3)
+hframes = 8
+script = ExtResource("2_q1yg8")
+phases = Array[ExtResource("3_oqh0i")]([SubResource("Resource_oqh0i"), SubResource("Resource_h0l61")])
+area = NodePath("Area2D")
+hoverable = false
+
+[node name="Area2D" type="Area2D" parent="." unique_id=1209724057]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=1663955678]
+position = Vector2(-0.49999997, -3)
+shape = SubResource("RectangleShape2D_1")

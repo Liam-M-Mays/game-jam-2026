@@ -2,6 +2,20 @@
 
 [ext_resource type="Texture2D" uid="uid://bycvjokbbgjy4" path="res://ART/barn_build.png" id="1_tex"]
 [ext_resource type="Script" uid="uid://c5be5uborrvaj" path="res://assets/Scripts/Buildings/barn.gd" id="2_scr"]
+[ext_resource type="Script" uid="uid://cyj5e8cr4hrge" path="res://assets/Scripts/Buildings/build_phase.gd" id="3_phase"]
+
+[sub_resource type="Resource" id="Phase_1"]
+script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"stone": 2
+})
+frame = 1
+
+[sub_resource type="Resource" id="Phase_2"]
+script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"wood": 3
+})
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
 size = Vector2(9, 8)
@@ -13,10 +27,7 @@ texture = ExtResource("1_tex")
 offset = Vector2(3.5, -3)
 hframes = 5
 script = ExtResource("2_scr")
-costs = Dictionary[String, int]({
-"stone": 1,
-"wood": 1
-})
+phases = Array[ExtResource("3_phase")]([SubResource("Phase_1"), SubResource("Phase_2")])
 area = NodePath("Area2D")
 hoverable = false
 

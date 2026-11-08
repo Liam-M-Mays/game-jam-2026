@@ -2,6 +2,7 @@ extends Node
 
 signal changed
 signal job_rejected(job : Job)
+signal worker_idle(worker : Meeple, offers : Array)
 
 const EXTRA_JOBS := 3
 
@@ -39,12 +40,31 @@ func take() -> Job:
 		_active.append(job)
 	return job
 
+func has_pending() -> bool:
+	return not _pending.is_empty()
+
+func find_idle_job(worker : Meeple) -> IdleJob:
+	var offers : Array = []
+	worker_idle.emit(worker, offers)
+	var from := worker.global_position
+	offers.sort_custom(func(a, b): return from.distance_squared_to(a.global_position) < from.distance_squared_to(b.global_position))
+	for building in offers:
+		var job : IdleJob = building.claim_idle_job(worker)
+		if job != null:
+			return job
+	return null
+
 func finish(job : Job) -> void:
+	if job is IdleJob:
+		job.end()
 	_active.erase(job)
 	changed.emit()
 
 func requeue(job : Job, worker : Meeple) -> void:
 	job.abort(worker)
+	if job is IdleJob:
+		job.end()
+		return
 	_active.erase(job)
 	if not job.cancelled:
 		_pending.push_front(job)

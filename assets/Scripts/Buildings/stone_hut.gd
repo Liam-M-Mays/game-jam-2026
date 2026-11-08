@@ -1,2 +1,2 @@
-extends Building
+extends Hut
 class_name StoneHut
