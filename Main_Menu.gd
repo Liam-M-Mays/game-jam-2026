@@ -1,6 +1,6 @@
 extends Control
 
-const GAME_SCENE := "res://assets/Scenes/Levels/game.tscn"
+const GAME_SCENE := preload("res://assets/Scenes/Levels/game.tscn")
 
 @export var start_button: TextureButton
 @export var credits_button: TextureButton
@@ -19,4 +19,4 @@ func _ready() -> void:
 
 func _on_start_pressed() -> void:
 	GameState.new_game()
-	get_tree().change_scene_to_file(GAME_SCENE)
+	get_tree().change_scene_to_packed(GAME_SCENE)

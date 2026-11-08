@@ -34,6 +34,7 @@ const TOOLTIP_LOCKED_COLOR := "ff6b5b"
 
 var build_system: BuildSystem
 var _templates := {}
+var _ordered_buildings: Array[PackedScene] = []
 var _upgrade_button: Button
 var _upgrade_icon_level := 0
 var _tooltip: PanelContainer
@@ -53,11 +54,12 @@ func _ready() -> void:
 	_upgrade_button.pressed.connect(_on_upgrade_pressed)
 	building_list.add_child(_upgrade_button)
 	for scene in BUILDINGS:
-		var template: Building = scene.instantiate()
-		_templates[scene] = template
+		_templates[scene] = scene.instantiate()
+	_ordered_buildings = _sorted_buildings()
+	for scene in _ordered_buildings:
 		var button := _make_button()
 		button.set_meta("scene", scene)
-		button.icon = template.icon()
+		button.icon = _templates[scene].icon()
 		button.pressed.connect(_on_building_pressed.bind(scene))
 		building_list.add_child(button)
 	_make_tooltip()
@@ -83,9 +85,9 @@ func _process(_delta: float) -> void:
 func _input(event: InputEvent) -> void:
 	if get_tree().paused:
 		return
-	for index in mini(HOTKEYS.size(), BUILDINGS.size()):
+	for index in mini(HOTKEYS.size(), _ordered_buildings.size()):
 		if event.is_action_pressed(HOTKEYS[index]):
-			_on_building_pressed(BUILDINGS[index])
+			_on_building_pressed(_ordered_buildings[index])
 			return
 
 
@@ -114,6 +116,27 @@ func unlocked_names(level: int) -> PackedStringArray:
 
 func close() -> void:
 	hide()
+
+
+func _sorted_buildings() -> Array[PackedScene]:
+	var sorted: Array[PackedScene] = BUILDINGS.duplicate()
+	sorted.sort_custom(_comes_before)
+	return sorted
+
+
+func _comes_before(a: PackedScene, b: PackedScene) -> bool:
+	var level_a: int = _templates[a].required_town_hall_level
+	var level_b: int = _templates[b].required_town_hall_level
+	if level_a != level_b:
+		return level_a < level_b
+	return BUILDINGS.find(a) < BUILDINGS.find(b)
+
+
+func _hotkey_label(scene: PackedScene) -> String:
+	var index := _ordered_buildings.find(scene)
+	if index < 0 or index >= HOTKEYS.size():
+		return ""
+	return "-" if HOTKEYS[index] == "minus" else HOTKEYS[index]
 
 
 func _make_button() -> Button:
@@ -152,6 +175,9 @@ func _tooltip_text(button: Button) -> String:
 	var building: Building = _templates[scene]
 	var building_name := display_name(scene)
 	var lines := [_tooltip_title(building_name), building.description, "Total cost: %s" % _cost_text(building.costs)]
+	var hotkey := _hotkey_label(scene)
+	if not hotkey.is_empty():
+		lines.append("Hotkey: %s" % hotkey)
 	if _is_locked(building):
 		lines.append("[color=#%s]Needs Town Hall level %d[/color]" % [TOOLTIP_LOCKED_COLOR, building.required_town_hall_level])
 	return "\n".join(lines)
