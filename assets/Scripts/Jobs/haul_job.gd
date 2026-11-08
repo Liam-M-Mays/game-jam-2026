@@ -34,7 +34,7 @@ func update(worker : Meeple, _delta : float) -> bool:
 	_drop = null
 	_carrying = false
 	worker.carry()
-	site.deliver()
+	site.deliver(kind)
 	return true
 
 func abort(worker : Meeple) -> void:
