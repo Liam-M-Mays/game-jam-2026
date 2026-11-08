@@ -25,6 +25,10 @@ func _process(delta : float) -> void:
 func _on_clicked() -> void:
 	if _job == null and _stage >= _last_stage():
 		_clearing = true
+	if _job == null and not _clearing and Inventory.food_full():
+		reject()
+		print("Food is full. Build a silo to store more")
+		return
 	super()
 	if _job == null:
 		_clearing = false
@@ -32,11 +36,13 @@ func _on_clicked() -> void:
 func can_harvest() -> bool:
 	if _clearing:
 		return super()
-	return _stage < _last_stage()
+	return _stage < _last_stage() and not Inventory.food_full()
 
 func _hit() -> bool:
 	if _clearing:
 		return super()
+	if Inventory.food_full():
+		return true
 	_react()
 	_set_stage(_stage + 1)
 	_regrow_timer = 0.0

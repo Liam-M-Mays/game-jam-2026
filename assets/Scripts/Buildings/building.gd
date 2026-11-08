@@ -19,6 +19,7 @@ const POP_FALL := 0.13
 @export var frames : Array[BuildFrame] = []
 @export var min_to_start : Dictionary[String, int] = {}
 @export var required_town_hall_level := 1
+@export var show_blueprint := true
 
 var costs : Dictionary[String, int]:
 	get:
@@ -63,7 +64,7 @@ func _stage_frame(stage : int) -> int:
 
 func _update_blueprint(stage : int) -> void:
 	var next := stage + 1
-	if next > last_stage():
+	if next > last_stage() or not show_blueprint:
 		_outline_also_around(frame)
 		if _blueprint != null:
 			_blueprint.visible = false

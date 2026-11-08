@@ -7,6 +7,10 @@
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_nafr4"]
 size = Vector2(9.400002, 6.000001)
 
+[sub_resource type="Curve" id="Curve_spawn"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(0.3, 1), 0.0, 0.0, 0, 0, Vector2(0.55, 0), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 4
+
 [node name="BigRock" type="Sprite2D" unique_id=1800998 node_paths=PackedStringArray("area")]
 z_index = 1
 scale = Vector2(10, 10)
@@ -19,9 +23,7 @@ wobbles_to_break = 6
 drops = Dictionary[PackedScene, int]({ExtResource("3_drop"): 2})
 food_cost = 1
 target_count = 36
-dark_weight = 1
-mid_weight = 0.5
-light_weight = 0
+edge_distance_curve = SubResource("Curve_spawn")
 footprint = 2
 
 [node name="Area2D" type="Area2D" parent="." unique_id=389299539]

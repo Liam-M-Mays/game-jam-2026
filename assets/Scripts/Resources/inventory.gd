@@ -4,6 +4,7 @@ signal changed
 signal shortage(kind : String, missing : int)
 
 const START_STOCK := { "food": 10 }
+const BASE_FOOD_CAP := 20
 
 var _drops := {}
 var _stored := START_STOCK.duplicate()
@@ -17,8 +18,18 @@ func reset() -> void:
 func count(kind : String) -> int:
 	return _drops_of(kind).size() + _stored.get(kind, 0)
 
+func food_cap() -> int:
+	var cap := BASE_FOOD_CAP
+	for silo in get_tree().get_nodes_in_group(Silo.GROUP):
+		cap += silo.food_capacity
+	return cap
+
+func food_full() -> bool:
+	return count("food") >= food_cap()
+
 func add(kind : String, amount : int) -> void:
-	_stored[kind] = _stored.get(kind, 0) + amount
+	var total : int = _stored.get(kind, 0) + amount
+	_stored[kind] = mini(total, food_cap()) if kind == "food" else total
 	changed.emit()
 
 func spend(kind : String, amount : int) -> void:
