@@ -5,6 +5,7 @@ signal completed
 
 const BUILD_EFFECT := preload("res://assets/Scenes/Effects/cloud.tscn")
 const EMPTY_STAGE := -1
+const BLUEPRINT_SHADER := preload("res://assets/Shaders/blueprint.gdshader")
 
 ## Tick on if the sheet runs finished -> empty (left to right) instead of empty -> finished.
 @export var reverse_frames := false
@@ -22,6 +23,7 @@ var _phase := 0
 var _phase_delivered := 0
 var _unposted : Array[HaulJob] = []
 var _idle_job : IdleJob = null
+var _blueprint : Sprite2D = null
 
 func _ready() -> void:
 	super()
@@ -36,11 +38,41 @@ func last_stage() -> int:
 	return (build_frames if build_frames > 0 else hframes) - 1
 
 func _set_stage(stage : int) -> void:
-	visible = stage > EMPTY_STAGE
-	if not visible:
-		return
 	stage = mini(stage, last_stage())
-	frame = last_stage() - stage if reverse_frames else stage
+	# Hide only our own pixels when empty, so the blueprint child still shows.
+	self_modulate.a = 1.0 if stage > EMPTY_STAGE else 0.0
+	if stage > EMPTY_STAGE:
+		frame = _stage_frame(stage)
+	_update_blueprint(stage)
+
+func _stage_frame(stage : int) -> int:
+	return last_stage() - stage if reverse_frames else stage
+
+## Blue ghost of the next frame, drawn behind the sprite so it only fills in
+## the parts that aren't built yet. Hidden once the building is finished.
+func _update_blueprint(stage : int) -> void:
+	var next := stage + 1
+	if next > last_stage():
+		if _blueprint != null:
+			_blueprint.visible = false
+		return
+	if _blueprint == null:
+		_blueprint = Sprite2D.new()
+		_blueprint.show_behind_parent = true
+		_blueprint.material = ShaderMaterial.new()
+		_blueprint.material.shader = BLUEPRINT_SHADER
+		add_child(_blueprint)
+	_blueprint.texture = texture
+	_blueprint.hframes = hframes
+	_blueprint.vframes = vframes
+	_blueprint.centered = centered
+	_blueprint.offset = _base_offset
+	_blueprint.flip_h = flip_h
+	_blueprint.flip_v = flip_v
+	_blueprint.region_enabled = region_enabled
+	_blueprint.region_rect = region_rect
+	_blueprint.frame = _stage_frame(next)
+	_blueprint.visible = true
 
 func display_name() -> String:
 	return scene_file_path.get_file().get_basename().trim_suffix("_build").capitalize()

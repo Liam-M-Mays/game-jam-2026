@@ -29,6 +29,7 @@ hframes = 5
 script = ExtResource("2_scr")
 phases = Array[ExtResource("3_phase")]([SubResource("Phase_1"), SubResource("Phase_2")])
 area = NodePath("Area2D")
+footprint = 2
 hoverable = false
 
 [node name="Area2D" type="Area2D" parent="." unique_id=1209724057]

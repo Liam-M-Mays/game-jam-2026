@@ -34,11 +34,11 @@ texture = ExtResource("1_dcq31")
 offset = Vector2(7, -4)
 hframes = 9
 script = ExtResource("2_7tv1p")
-meeple_capacity = 3
+meeple_capacity = 4
 reverse_frames = true
 phases = Array[ExtResource("3_phase")]([SubResource("Resource_found"), SubResource("Resource_frame"), SubResource("Resource_walls")])
 area = NodePath("Area2D")
-footprint = 2
+footprint = 3
 hoverable = false
 
 [node name="Area2D" type="Area2D" parent="." unique_id=725244253]

@@ -96,7 +96,8 @@ How it behaves:
 - **Left-click** places the building, and placing always **exits build mode**. Costs are reserved and one haul job per item is queued. Meeples deliver, the sprite advances a frame per delivery, and then `building_completed` fires. A hut also spawns a meeple at that point.
 - **A failed click** (blocked cells, can't afford, queue full) makes the preview flash red and shake, emits `placement_failed(reason)`, and stays in build mode.
 - **Esc** calls `end_build()` and marks the event handled, so your HUD's `_unhandled_input` never sees that Esc. Outside build mode, Esc passes through to the HUD normally.
-- **Playtest hotkey:** `2` still calls `start_build()` with the hut (the `HOTKEYS` dict at the top of the file).
+- **Playtest hotkeys** (the `HOTKEYS` dict at the top of the file): `2` small hut, `3` stone hut, `4` barn, `5` farm, `6` stone pile, `7` wood pile, `8` lumberjack.
+- **The town hall is not buildable.** It's the starting building (`grid.tscn` → `start_building`), so leave it out of the build menu.
 - `BuildSystem` is `PAUSABLE`. Start placement from a menu, then **unpause**, or the preview won't follow the mouse.
 
 ### Getting a reference
@@ -113,7 +114,8 @@ Then set it in the inspector on the `HUD` node of `Brady_Scene` / `game.tscn`, p
 
 ```gdscript
 const BUILDINGS: Array[PackedScene] = [
-	preload("res://assets/Scenes/Buildings/hut_build.tscn"),
+	preload("res://assets/Scenes/Buildings/small_hut.tscn"),
+	preload("res://assets/Scenes/Buildings/lumberjack.tscn"),
 ]
 
 var build_system: BuildSystem
@@ -228,6 +230,7 @@ None of these were edited. They're listed so they can be changed when convenient
 11. **`Brady_Scene` has two counters:** the old `UI` node (`resource_ui.gd`) plus the HUD. Delete the `UI` node once the HUD shows the same info.
 12. **`Brady_Scene`'s `Back` node is missing `y_sort_enabled = true`** (it's on in `game.tscn`). Without it, meeples, trees and buildings layer in creation order instead of by height.
 13. **Project convention:** no comments in code except `TODO`s.
+14. **`Build_Menu.BUILDINGS` preloads `hut_build.tscn`, which no longer exists.** That hut became the town hall (`town_hall.tscn`, start building only, not buildable). Swap it for `small_hut.tscn` (and add `lumberjack.tscn` etc.).
 
 ---
 
@@ -235,7 +238,7 @@ None of these were edited. They're listed so they can be changed when convenient
 
 ```
 assets/Scripts/
-  Env/grid.gd                 Grid: cells, map generation, place()/remove(), starting hut
+  Env/grid.gd                 Grid: cells, map generation, place()/remove(), starting town hall
   Env/grid_object.gd          Base for anything on cells: outline, hover, flash, reject()
   Env/cell.gd
   Resources/harvestable.gd    Trees / rocks: click to queue, hit, break into drops
@@ -243,10 +246,13 @@ assets/Scripts/
   Resources/inventory.gd      autoload Inventory
   Resources/resource_drop.gd  Physical wood/stone on the ground
   Buildings/building.gd       Costs, haul jobs, construction frames, completed signal
-  Buildings/hut.gd            Spawns a meeple when completed
+  Buildings/hut.gd            Spawns a meeple when completed (town hall, small hut, stone hut)
+  Buildings/storage.gd        Stone / wood piles: idle job hauls loose drops in
+  Buildings/lumberjack.gd     Idle job: one meeple at a time chops the free tree closest to the building
   Buildings/build_system.gd   class BuildSystem: build mode, preview, placement
   Jobs/job_system.gd          autoload JobSystem
   Jobs/job.gd, harvest_job.gd, haul_job.gd
+  Jobs/idle_job.gd, store_job.gd, chop_job.gd   Building-owned idle work (runs only when the queue is empty)
   Meeple/meeple_movement.gd   class Meeple
   UI/resource_ui.gd           Old placeholder counter (the "UI" node). Safe to delete once HUD covers it
 ```
