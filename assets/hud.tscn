@@ -165,6 +165,7 @@ stretch_mode = 5
 
 [node name="StoneLabel" type="Label" parent="CountersPanel/Counters/Stone" unique_id=102389963]
 layout_mode = 2
+theme_override_font_sizes/font_size = 32
 text = "Stone"
 
 [node name="WoodGroup" type="HBoxContainer" parent="CountersPanel/Counters" unique_id=930566024]
@@ -179,6 +180,7 @@ stretch_mode = 5
 
 [node name="WoodLabel" type="Label" parent="CountersPanel/Counters/WoodGroup" unique_id=1553479649]
 layout_mode = 2
+theme_override_font_sizes/font_size = 32
 text = "Wood"
 
 [node name="MeepleGroup" type="HBoxContainer" parent="CountersPanel/Counters" unique_id=105766014]
@@ -193,6 +195,7 @@ stretch_mode = 5
 
 [node name="MeepleLabel" type="Label" parent="CountersPanel/Counters/MeepleGroup" unique_id=1979268744]
 layout_mode = 2
+theme_override_font_sizes/font_size = 32
 text = "Meeggas"
 
 [node name="JobGroup" type="HBoxContainer" parent="CountersPanel/Counters" unique_id=730114585]
@@ -200,10 +203,12 @@ layout_mode = 2
 
 [node name="JobTitle" type="Label" parent="CountersPanel/Counters/JobGroup" unique_id=730114586]
 layout_mode = 2
+theme_override_font_sizes/font_size = 32
 text = "Jobs"
 
 [node name="JobLabel" type="Label" parent="CountersPanel/Counters/JobGroup" unique_id=730114587]
 layout_mode = 2
+theme_override_font_sizes/font_size = 32
 text = "0 / 0"
 
 [node name="Hunger" type="HBoxContainer" parent="." unique_id=644346435]
