@@ -6,6 +6,11 @@ var _drops := {}
 var _stored := {}
 var _reserved := {}
 
+func reset() -> void:
+	_stored.clear()
+	_reserved.clear()
+	changed.emit()
+
 func count(kind : String) -> int:
 	return _drops_of(kind).size() + _stored.get(kind, 0)
 
