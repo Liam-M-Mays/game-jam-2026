@@ -5,6 +5,7 @@
 [ext_resource type="Texture2D" uid="uid://c8g4e1jhi7wup" path="res://ART/Mighty_meeple_logo_andbutons.png" id="3_dnfjo"]
 [ext_resource type="Script" uid="uid://fmylrcu361v3" path="res://assets/Scripts/Meeple/menu_meeple_spawner.gd" id="4_spawner"]
 [ext_resource type="Texture2D" uid="uid://4fiwuumegt1s" path="res://ART/sky_sprites_trees2.tres" id="5_domf7"]
+[ext_resource type="AudioStream" uid="uid://bxwfokxlw2d3e" path="res://assets/Audio/UI/click.wav" id="5_es6ti"]
 [ext_resource type="Texture2D" uid="uid://x200khdp0ig0" path="res://ART/sky_sprites_trees1.tres" id="6_es6ti"]
 [ext_resource type="Texture2D" uid="uid://bmpxugd4jadpy" path="res://ART/sky_sprites_mountains2.tres" id="7_t301m"]
 [ext_resource type="Texture2D" uid="uid://b1rkpw2ub3gk0" path="res://ART/sky_sprites_mountains1.tres" id="8_wrfco"]
@@ -162,10 +163,10 @@ texture_pressed = SubResource("AtlasTexture_36vlq")
 
 [node name="TextureRect" type="TextureRect" parent="." unique_id=239408209]
 layout_mode = 0
-offset_left = -54.0
-offset_top = 11.0
-offset_right = 456.0
-offset_bottom = 145.0
+offset_left = -50.0
+offset_top = 55.0
+offset_right = 460.0
+offset_bottom = 189.0
 scale = Vector2(4, 4)
 texture = SubResource("AtlasTexture_spy7q")
 
@@ -182,6 +183,10 @@ texture_normal = SubResource("AtlasTexture_dnfjo")
 texture_pressed = SubResource("AtlasTexture_257up")
 texture_hover = SubResource("AtlasTexture_5cvai")
 
+[node name="AudioStreamPlayer2D" type="AudioStreamPlayer2D" parent="StartButton" unique_id=1023271633]
+stream = ExtResource("5_es6ti")
+volume_db = 1.0
+
 [node name="CreditsButton" type="TextureButton" parent="." unique_id=657891541]
 layout_mode = 0
 offset_left = 824.0
@@ -194,17 +199,24 @@ texture_normal = SubResource("AtlasTexture_es6ti")
 texture_pressed = SubResource("AtlasTexture_wrfco")
 texture_hover = SubResource("AtlasTexture_domf7")
 
+[node name="AudioStreamPlayer2D" type="AudioStreamPlayer2D" parent="CreditsButton" unique_id=119947314]
+stream = ExtResource("5_es6ti")
+
 [node name="QuitButton" type="TextureButton" parent="." unique_id=2017726884]
 layout_mode = 0
-offset_left = 862.0
+offset_left = 861.0
 offset_top = 923.0
-offset_right = 902.0
+offset_right = 901.0
 offset_bottom = 945.0
 scale = Vector2(4, 4)
 size_flags_horizontal = 0
 texture_normal = SubResource("AtlasTexture_gtid3")
 texture_pressed = SubResource("AtlasTexture_3mro0")
 texture_hover = SubResource("AtlasTexture_tu7k8")
+
+[node name="AudioStreamPlayer2D" type="AudioStreamPlayer2D" parent="QuitButton" unique_id=363202413]
+stream = ExtResource("5_es6ti")
+volume_db = 1.0
 
 [node name="MeeplesFront" type="Node2D" parent="." unique_id=1760392418]
 

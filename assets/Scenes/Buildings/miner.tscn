@@ -59,13 +59,13 @@ hframes = 7
 region_enabled = true
 region_rect = Rect2(120, 0, 105, 14)
 script = ExtResource("2_scr")
-description = "An idle meeple works here, mining the nearest rock. Mining uses food."
-required_town_hall_level = 2
 chops = ExtResource("4_drop")
 frames = Array[ExtResource("3_phase")]([SubResource("Frame_0"), SubResource("Frame_1"), SubResource("Frame_2"), SubResource("Frame_3"), SubResource("Frame_4"), SubResource("Frame_5"), SubResource("Frame_6")])
 min_to_start = Dictionary[String, int]({
 "wood": 4
 })
+required_town_hall_level = 3
+description = "An idle meeple works here, mining the nearest rock. Mining uses food."
 area = NodePath("Area2D")
 footprint = 2
 

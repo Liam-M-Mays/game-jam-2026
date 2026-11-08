@@ -32,13 +32,13 @@ texture = ExtResource("1_tex")
 offset = Vector2(-0.5, -2)
 hframes = 14
 script = ExtResource("2_scr")
-description = "Meeples stack loose stone here so it doesn't go to waste."
-kind = "stone"
 build_frames = 3
 frames = Array[ExtResource("3_phase")]([SubResource("Frame_0"), SubResource("Frame_1"), SubResource("Frame_2")])
 min_to_start = Dictionary[String, int]({
 "stone": 1
 })
+required_town_hall_level = 4
+description = "Meeples stack loose stone here so it doesn't go to waste."
 area = NodePath("Area2D")
 
 [node name="Area2D" type="Area2D" parent="." unique_id=1725772822]
