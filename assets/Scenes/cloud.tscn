@@ -1,0 +1,35 @@
+[gd_scene format=3 uid="uid://b8jk2xsftvqcu"]
+
+[ext_resource type="Texture2D" uid="uid://o6pf25y0njwj" path="res://assets/Art/Environment/Cloud_Spritesheet.png" id="1_3rg3p"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_kkl7i"]
+atlas = ExtResource("1_3rg3p")
+region = Rect2(0, 0, 18, 14)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_a85hh"]
+atlas = ExtResource("1_3rg3p")
+region = Rect2(18, 0, 18, 14)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_aqivy"]
+atlas = ExtResource("1_3rg3p")
+region = Rect2(36, 0, 18, 14)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_nafr4"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_kkl7i")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_a85hh")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_aqivy")
+}],
+"loop": 0,
+"name": &"default",
+"speed": 10.0
+}]
+
+[node name="Cloud" type="AnimatedSprite2D" unique_id=1827861690]
+sprite_frames = SubResource("SpriteFrames_nafr4")
