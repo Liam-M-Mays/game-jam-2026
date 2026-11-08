@@ -5,7 +5,6 @@
 [ext_resource type="Texture2D" uid="uid://c8g4e1jhi7wup" path="res://ART/Mighty_meeple_logo_andbutons.png" id="3_dnfjo"]
 [ext_resource type="Script" uid="uid://fmylrcu361v3" path="res://assets/Scripts/Meeple/menu_meeple_spawner.gd" id="4_spawner"]
 [ext_resource type="Texture2D" uid="uid://4fiwuumegt1s" path="res://ART/sky_sprites_trees2.tres" id="5_domf7"]
-[ext_resource type="AudioStream" uid="uid://bxwfokxlw2d3e" path="res://assets/Audio/UI/click.wav" id="5_es6ti"]
 [ext_resource type="Texture2D" uid="uid://x200khdp0ig0" path="res://ART/sky_sprites_trees1.tres" id="6_es6ti"]
 [ext_resource type="Texture2D" uid="uid://bmpxugd4jadpy" path="res://ART/sky_sprites_mountains2.tres" id="7_t301m"]
 [ext_resource type="Texture2D" uid="uid://b1rkpw2ub3gk0" path="res://ART/sky_sprites_mountains1.tres" id="8_wrfco"]
@@ -129,6 +128,7 @@ scale = Vector2(4, 4)
 theme_override_constants/separation = 8
 
 [node name="CreditsPanel" type="PanelContainer" parent="." unique_id=1470094694]
+visible = false
 modulate = Color(0.9451546, 0.87888217, 0.79453504, 1)
 z_index = 5
 layout_mode = 1
@@ -183,10 +183,6 @@ texture_normal = SubResource("AtlasTexture_dnfjo")
 texture_pressed = SubResource("AtlasTexture_257up")
 texture_hover = SubResource("AtlasTexture_5cvai")
 
-[node name="AudioStreamPlayer2D" type="AudioStreamPlayer2D" parent="StartButton" unique_id=1023271633]
-stream = ExtResource("5_es6ti")
-volume_db = 1.0
-
 [node name="CreditsButton" type="TextureButton" parent="." unique_id=657891541]
 layout_mode = 0
 offset_left = 824.0
@@ -198,9 +194,6 @@ size_flags_horizontal = 0
 texture_normal = SubResource("AtlasTexture_es6ti")
 texture_pressed = SubResource("AtlasTexture_wrfco")
 texture_hover = SubResource("AtlasTexture_domf7")
-
-[node name="AudioStreamPlayer2D" type="AudioStreamPlayer2D" parent="CreditsButton" unique_id=119947314]
-stream = ExtResource("5_es6ti")
 
 [node name="QuitButton" type="TextureButton" parent="." unique_id=2017726884]
 layout_mode = 0
@@ -214,15 +207,11 @@ texture_normal = SubResource("AtlasTexture_gtid3")
 texture_pressed = SubResource("AtlasTexture_3mro0")
 texture_hover = SubResource("AtlasTexture_tu7k8")
 
-[node name="AudioStreamPlayer2D" type="AudioStreamPlayer2D" parent="QuitButton" unique_id=363202413]
-stream = ExtResource("5_es6ti")
-volume_db = 1.0
-
 [node name="MeeplesFront" type="Node2D" parent="." unique_id=1760392418]
 
 [node name="Trees1" type="Parallax2D" parent="." unique_id=767882199]
 scroll_scale = Vector2(1.18, 1.18)
-scroll_offset = Vector2(0, 62)
+scroll_offset = Vector2(0, 1)
 repeat_size = Vector2(1580, 0)
 autoscroll = Vector2(2.79, 0)
 repeat_times = 4
@@ -235,7 +224,7 @@ texture = ExtResource("5_domf7")
 
 [node name="Trees2" type="Parallax2D" parent="." unique_id=1177479965]
 scroll_scale = Vector2(1.18, 1.18)
-scroll_offset = Vector2(-1532, 17)
+scroll_offset = Vector2(-1532, -26)
 repeat_size = Vector2(1580, 0)
 autoscroll = Vector2(2.23, 0)
 repeat_times = 4
@@ -248,6 +237,7 @@ texture = ExtResource("6_es6ti")
 
 [node name="Mountains1" type="Parallax2D" parent="." unique_id=1256668120]
 scroll_scale = Vector2(1.18, 1.18)
+scroll_offset = Vector2(0, -34)
 repeat_size = Vector2(1580, 0)
 autoscroll = Vector2(1.67, 0)
 repeat_times = 4
@@ -260,6 +250,7 @@ texture = ExtResource("7_t301m")
 
 [node name="Mountains2" type="Parallax2D" parent="." unique_id=830921935]
 scroll_scale = Vector2(1.18, 1.18)
+scroll_offset = Vector2(0, -135)
 repeat_size = Vector2(1580, 0)
 autoscroll = Vector2(1.12, 0)
 repeat_times = 4
@@ -282,3 +273,29 @@ z_index = -5
 texture_filter = 2
 position = Vector2(0, 608)
 texture = ExtResource("9_teegn")
+
+[node name="Sky" type="Parallax2D" parent="Sky" unique_id=348662202]
+scroll_scale = Vector2(1.18, 1.18)
+scroll_offset = Vector2(48, -459)
+repeat_size = Vector2(1580, 0)
+autoscroll = Vector2(0.28, 0)
+repeat_times = 4
+
+[node name="Sprite2D" type="Sprite2D" parent="Sky/Sky" unique_id=473511298]
+z_index = -5
+texture_filter = 2
+position = Vector2(0, 608)
+texture = ExtResource("9_teegn")
+
+[node name="Trees3" type="Parallax2D" parent="." unique_id=668296581]
+scroll_scale = Vector2(1.18, 1.18)
+scroll_offset = Vector2(-18, 338)
+repeat_size = Vector2(1580, 0)
+autoscroll = Vector2(2.79, 0)
+repeat_times = 4
+
+[node name="Sprite2D" type="Sprite2D" parent="Trees3" unique_id=1151968577]
+z_index = -1
+texture_filter = 2
+position = Vector2(0, 783)
+texture = ExtResource("5_domf7")
