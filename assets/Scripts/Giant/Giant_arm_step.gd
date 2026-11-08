@@ -12,6 +12,9 @@ func _setup() -> void:
 func _is_left(index : int) -> bool:
 	return (index % 2 == 0) != starts_shifted
 
+func lands_on(index : int) -> bool:
+	return _is_left(index)
+
 func _pose(index : int, t : float) -> Vector2:
 	var at_left := _is_left(index)
 	var left_x := base_pos.x - shift_distance

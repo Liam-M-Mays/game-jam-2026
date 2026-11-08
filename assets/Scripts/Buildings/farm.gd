@@ -35,6 +35,7 @@ func harvest_crop() -> void:
 	if not can_harvest_now():
 		return
 	Inventory.add("food", food_per_harvest)
+	VillageAudio.play(&"grass", global_position)
 	flash()
 	_set_growth(0)
 

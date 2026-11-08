@@ -68,6 +68,7 @@ func has_arrived() -> bool:
 	return _target.distance_to(position) <= 1
 
 func die() -> void:
+	VillageAudio.play(&"hurt", global_position)
 	set_process(false)
 	set_physics_process(false)
 	if job != null:

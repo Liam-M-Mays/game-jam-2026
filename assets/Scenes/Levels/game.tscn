@@ -22,6 +22,7 @@
 [ext_resource type="Material" uid="uid://bvwf5d3484eng" path="res://assets/Res/yard_ground.tres" id="17_yard"]
 [ext_resource type="Script" uid="uid://cw0qdpuqfhjiu" path="res://assets/Scripts/Env/yard_ground.gd" id="18_yardscript"]
 [ext_resource type="PackedScene" uid="uid://ikcvt7q7gjvs" path="res://assets/hud.tscn" id="19_hud"]
+[ext_resource type="Script" uid="uid://d1qj3vsl06ast" path="res://assets/Scripts/Giant/giant_audio.gd" id="20_giantaudio"]
 
 [sub_resource type="Gradient" id="Gradient_8ptjo"]
 
@@ -72,6 +73,12 @@ position = Vector2(0.1954023, -0.040540546)
 scale = Vector2(0.0057471264, 0.013513513)
 texture = ExtResource("4_aah2l")
 script = ExtResource("5_8ptjo")
+
+[node name="Crumble Top" type="Marker2D" parent="Node2D2/Node2D/Head" unique_id=1610034483]
+position = Vector2(0, -190)
+
+[node name="Crumble Cheek" type="Marker2D" parent="Node2D2/Node2D/Head" unique_id=1610034484]
+position = Vector2(-160, 0)
 
 [node name="Torso" type="Sprite2D" parent="Node2D2/Node2D" unique_id=713009821]
 z_index = -3
@@ -127,6 +134,24 @@ script = ExtResource("7_xomjc")
 grid = NodePath("../Grid")
 cursor = NodePath("../Mouse")
 
+[node name="Crumble Shoulder" type="Marker2D" parent="Node2D2/Node2D/Torso" unique_id=1610034477]
+position = Vector2(-350, -24)
+
+[node name="Crumble Boulder" type="Marker2D" parent="Node2D2/Node2D/Torso" unique_id=1610034478]
+position = Vector2(360, 46)
+
+[node name="Crumble Low Rocks" type="Marker2D" parent="Node2D2/Node2D/Torso" unique_id=1610034479]
+position = Vector2(250, 256)
+
+[node name="Crumble Bottom" type="Marker2D" parent="Node2D2/Node2D/Torso" unique_id=1610034480]
+position = Vector2(110, 376)
+
+[node name="Crumble Rim Left" type="Marker2D" parent="Node2D2/Node2D/Torso" unique_id=1610034481]
+position = Vector2(-280, -254)
+
+[node name="Crumble Rim Right" type="Marker2D" parent="Node2D2/Node2D/Torso" unique_id=1610034482]
+position = Vector2(290, -254)
+
 [node name="Arm Foreground" type="Sprite2D" parent="Node2D2" unique_id=575907648]
 z_index = 12
 position = Vector2(312, 154)
@@ -134,17 +159,35 @@ texture = ExtResource("7_ux80a")
 script = ExtResource("7_1g62p")
 starts_shifted = true
 
+[node name="Crumble Knuckles" type="Marker2D" parent="Node2D2/Arm Foreground" unique_id=1610034471]
+position = Vector2(-20, -240)
+
+[node name="Crumble Side" type="Marker2D" parent="Node2D2/Arm Foreground" unique_id=1610034472]
+position = Vector2(140, -70)
+
+[node name="Crumble Wrist" type="Marker2D" parent="Node2D2/Arm Foreground" unique_id=1610034473]
+position = Vector2(-30, 230)
+
 [node name="Arm Background" type="Sprite2D" parent="Node2D2" unique_id=883886422]
 z_index = 6
 position = Vector2(-78, 28)
 texture = ExtResource("9_rni5u")
 script = ExtResource("7_1g62p")
 
+[node name="Crumble Knuckles" type="Marker2D" parent="Node2D2/Arm Background" unique_id=1610034474]
+position = Vector2(-20, -240)
+
+[node name="Crumble Side" type="Marker2D" parent="Node2D2/Arm Background" unique_id=1610034475]
+position = Vector2(-140, -80)
+
+[node name="Crumble Wrist" type="Marker2D" parent="Node2D2/Arm Background" unique_id=1610034476]
+position = Vector2(30, 230)
+
 [node name="Trees1" type="Parallax2D" parent="." unique_id=814784282]
 scroll_scale = Vector2(1.18, 1.18)
 scroll_offset = Vector2(0, 61)
 repeat_size = Vector2(1580, 0)
-autoscroll = Vector2(10, 0)
+autoscroll = Vector2(2.79, 0)
 repeat_times = 4
 
 [node name="Sprite2D" type="Sprite2D" parent="Trees1" unique_id=1565589403]
@@ -156,7 +199,7 @@ texture = ExtResource("11_j14hh")
 scroll_scale = Vector2(1.18, 1.18)
 scroll_offset = Vector2(-1532, 16)
 repeat_size = Vector2(1580, 0)
-autoscroll = Vector2(8, 0)
+autoscroll = Vector2(2.23, 0)
 repeat_times = 4
 
 [node name="Sprite2D" type="Sprite2D" parent="Trees2" unique_id=553807855]
@@ -167,7 +210,7 @@ texture = ExtResource("11_aah2l")
 [node name="Mountains1" type="Parallax2D" parent="." unique_id=682149022]
 scroll_scale = Vector2(1.18, 1.18)
 repeat_size = Vector2(1580, 0)
-autoscroll = Vector2(6, 0)
+autoscroll = Vector2(1.67, 0)
 repeat_times = 4
 
 [node name="Sprite2D" type="Sprite2D" parent="Mountains1" unique_id=138066238]
@@ -178,7 +221,7 @@ texture = ExtResource("13_ki0cw")
 [node name="Mountains2" type="Parallax2D" parent="." unique_id=93932752]
 scroll_scale = Vector2(1.18, 1.18)
 repeat_size = Vector2(1580, 0)
-autoscroll = Vector2(4, 0)
+autoscroll = Vector2(1.12, 0)
 repeat_times = 4
 
 [node name="Sprite2D" type="Sprite2D" parent="Mountains2" unique_id=2093709016]
@@ -190,7 +233,7 @@ texture = ExtResource("14_uyqwq")
 scroll_scale = Vector2(1.18, 1.18)
 scroll_offset = Vector2(0, -372)
 repeat_size = Vector2(1580, 0)
-autoscroll = Vector2(1, 0)
+autoscroll = Vector2(0.28, 0)
 repeat_times = 4
 
 [node name="Sprite2D" type="Sprite2D" parent="Sky" unique_id=699937425]
@@ -199,3 +242,15 @@ texture = ExtResource("15_vq7lj")
 [node name="HUD" parent="." unique_id=1588467611 node_paths=PackedStringArray("build_system", "camera") instance=ExtResource("19_hud")]
 build_system = NodePath("../Node2D2/Node2D/Torso/Back/BuildSystem")
 camera = NodePath("../Node2D2/Node2D/Torso/Camera2D")
+
+[node name="GiantAudio" type="Node" parent="." unique_id=1427703958 node_paths=PackedStringArray("camera", "feet", "crumble_points")]
+script = ExtResource("20_giantaudio")
+camera = NodePath("../Node2D2/Node2D/Torso/Camera2D")
+feet = [NodePath("../Node2D2/Arm Foreground"), NodePath("../Node2D2/Arm Background")]
+crumble_points = [NodePath("../Node2D2/Arm Foreground/Crumble Knuckles"), NodePath("../Node2D2/Arm Foreground/Crumble Side"), NodePath("../Node2D2/Arm Foreground/Crumble Wrist"), NodePath("../Node2D2/Arm Background/Crumble Knuckles"), NodePath("../Node2D2/Arm Background/Crumble Side"), NodePath("../Node2D2/Arm Background/Crumble Wrist"), NodePath("../Node2D2/Node2D/Torso/Crumble Shoulder"), NodePath("../Node2D2/Node2D/Torso/Crumble Boulder"), NodePath("../Node2D2/Node2D/Torso/Crumble Low Rocks"), NodePath("../Node2D2/Node2D/Torso/Crumble Bottom"), NodePath("../Node2D2/Node2D/Torso/Crumble Rim Left"), NodePath("../Node2D2/Node2D/Torso/Crumble Rim Right"), NodePath("../Node2D2/Node2D/Head/Crumble Top"), NodePath("../Node2D2/Node2D/Head/Crumble Cheek")]
+crumble_speed = 0.25
+village_zoom = 3.0
+stomp_village_db = -40.0
+crumble_village_db = -100.0
+crumble_far_db = -18.0
+crumble_offscreen_db = -10.0

@@ -20,6 +20,7 @@ const POP_FALL := 0.13
 @export var min_to_start : Dictionary[String, int] = {}
 @export var required_town_hall_level := 1
 @export var show_blueprint := true
+@export var icon_texture : Texture2D
 
 var costs : Dictionary[String, int]:
 	get:
@@ -116,18 +117,22 @@ func is_under_construction() -> bool:
 	return _constructing
 
 func icon() -> Texture2D:
+	if icon_texture != null:
+		return _cropped_icon(icon_texture, Rect2(Vector2.ZERO, icon_texture.get_size()))
 	var sheet := region_rect if region_enabled else Rect2(Vector2.ZERO, texture.get_size())
 	var size := sheet.size / Vector2(hframes, vframes)
 	var index := _stage_frame(last_stage())
 	var cell := Vector2(index % hframes, floori(float(index) / hframes))
-	var region := Rect2(sheet.position + cell * size, size)
-	var image := texture.get_image()
+	return _cropped_icon(texture, Rect2(sheet.position + cell * size, size))
+
+func _cropped_icon(source : Texture2D, region : Rect2) -> Texture2D:
+	var image := source.get_image()
 	if image != null and not image.is_compressed():
 		var used := image.get_region(Rect2i(region)).get_used_rect()
 		if used.has_area():
 			region = Rect2(region.position + Vector2(used.position), Vector2(used.size))
 	var atlas := AtlasTexture.new()
-	atlas.atlas = texture
+	atlas.atlas = source
 	atlas.region = region
 	return atlas
 
@@ -170,6 +175,7 @@ func start_construction() -> void:
 func deliver(kind : String) -> void:
 	_incoming[kind] = _incoming.get(kind, 0) - 1
 	_banked[kind] = _banked.get(kind, 0) + 1
+	VillageAudio.play(&"hammer", global_position)
 	_pop()
 	_advance()
 	_refresh_missing()

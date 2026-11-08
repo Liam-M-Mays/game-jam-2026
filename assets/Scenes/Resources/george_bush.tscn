@@ -59,6 +59,7 @@ scale = Vector2(10, 10)
 texture = SubResource("AtlasTexture_wms0r")
 offset = Vector2(3, -1)
 script = ExtResource("2_bush")
+hit_sound = &"grass"
 frames = SubResource("SpriteFrames_g0qf3")
 target_count = 15
 edge_distance_curve = SubResource("Curve_spawn")

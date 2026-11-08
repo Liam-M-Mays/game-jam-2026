@@ -28,6 +28,7 @@ func store(drop : ResourceDrop) -> void:
 	drop.global_position = global_position
 	drop.hide()
 	_held.append(drop)
+	VillageAudio.play(&"log", global_position)
 	_pop()
 	_refresh()
 	Inventory.set_claimed(drop, false)

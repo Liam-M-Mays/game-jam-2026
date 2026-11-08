@@ -14,6 +14,7 @@ const GROW_DURATION := 0.5
 @export var squash_amount := 0.15
 @export var drops : Dictionary[PackedScene, int] = {}
 @export var food_cost := 0
+@export var hit_sound := &""
 
 @export_group("Spawning")
 @export var target_count := 0
@@ -75,12 +76,14 @@ func _hit() -> bool:
 
 func _shatter() -> void:
 	_wobbles = wobbles_to_break
+	VillageAudio.play(hit_sound, global_position)
 	_squash()
 	var tween := _start_flash(Color.WHITE)
 	tween.tween_interval(BREAK_HOLD)
 	tween.tween_callback(_break)
 
 func _react() -> void:
+	VillageAudio.play(hit_sound, global_position)
 	_squash()
 	flash()
 	var tween := _tween(&"wobble")

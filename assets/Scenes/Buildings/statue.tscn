@@ -3,6 +3,7 @@
 [ext_resource type="Texture2D" uid="uid://ca82qatjxyrk5" path="res://ART/erection_sheet.png" id="1_tex"]
 [ext_resource type="Script" uid="uid://dmfxbb6f2f1x3" path="res://assets/Scripts/Buildings/building.gd" id="2_scr"]
 [ext_resource type="Script" uid="uid://cyj5e8cr4hrge" path="res://assets/Scripts/Buildings/build_frame.gd" id="3_phase"]
+[ext_resource type="Texture2D" uid="uid://dfdo22jjvu0eu" path="res://ART/questionmark.png" id="4_icon"]
 
 [sub_resource type="Resource" id="Frame_0"]
 script = ExtResource("3_phase")
@@ -28,6 +29,7 @@ min_to_start = Dictionary[String, int]({
 })
 required_town_hall_level = 5
 show_blueprint = false
+icon_texture = ExtResource("4_icon")
 area = NodePath("Area2D")
 footprint = 4
 footprint_depth = 3

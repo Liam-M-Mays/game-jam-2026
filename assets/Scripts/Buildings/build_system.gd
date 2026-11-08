@@ -14,20 +14,6 @@ const AREA_ALPHA := 0.7
 const AREA_HOVER_COLOR := Color(1.0, 1.0, 1.0)
 const AREA_HOVER_ALPHA := 1.0
 
-const HOTKEYS := {
-	"1": preload("res://assets/Scenes/Buildings/statue.tscn"),
-	"2": preload("res://assets/Scenes/Buildings/small_hut.tscn"),
-	"3": preload("res://assets/Scenes/Buildings/stone_hut.tscn"),
-	"4": preload("res://assets/Scenes/Buildings/barn.tscn"),
-	"5": preload("res://assets/Scenes/Buildings/farm.tscn"),
-	"6": preload("res://assets/Scenes/Buildings/stone_pile.tscn"),
-	"7": preload("res://assets/Scenes/Buildings/wood_pile.tscn"),
-	"8": preload("res://assets/Scenes/Buildings/lumberjack.tscn"),
-	"9": preload("res://assets/Scenes/Buildings/miner.tscn"),
-	"0": preload("res://assets/Scenes/Buildings/silo.tscn"),
-	"minus": preload("res://assets/Scenes/Buildings/windmill.tscn"),
-}
-
 @export var grid : Grid
 @export var cursor : CellCursor
 
@@ -61,10 +47,6 @@ func is_building() -> bool:
 	return _preview != null
 
 func _input(event : InputEvent) -> void:
-	for action in HOTKEYS:
-		if event.is_action_pressed(action):
-			start_build(HOTKEYS[action])
-			return
 	if is_building() and event.is_action_pressed("ui_cancel"):
 		end_build()
 		get_viewport().set_input_as_handled()
@@ -130,7 +112,6 @@ func _try_place() -> void:
 	site.completed.connect(func(): building_completed.emit(site))
 	site.start_construction()
 	building_placed.emit(site)
-	end_build()
 
 func _clear_preview() -> void:
 	_show_area([])

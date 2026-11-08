@@ -6,6 +6,7 @@ extends VBoxContainer
 @export var fade_time := 4.0
 @export var font: Font
 @export var font_size := 32
+@export var backplate: StyleBox
 @export var info_color := Color.WHITE
 @export var tip_color := Color("ffe08a")
 @export var warning_color := Color("ff6b5b")
@@ -43,9 +44,10 @@ func push(text: String, kind: int = 0) -> void:
 	if font:
 		label.add_theme_font_override("font", font)
 	label.add_theme_font_size_override("font_size", font_size)
-	label.add_theme_constant_override("outline_size", 4)
-	label.add_theme_color_override("font_outline_color", Color.BLACK)
 	add_child(label)
+	if backplate:
+		label.add_theme_stylebox_override("normal", backplate)
+		_shrink_to_text(label)
 
 	while get_child_count() > max_toasts:
 		var oldest := get_child(0)
@@ -57,3 +59,10 @@ func push(text: String, kind: int = 0) -> void:
 	tween.tween_interval(maxf(lifetime - fade_time, 0.0))
 	tween.tween_property(label, "modulate:a", 0.0, fade_time)
 	tween.tween_callback(label.queue_free)
+
+
+func _shrink_to_text(label: Label) -> void:
+	var text_width := label.get_theme_font("font").get_string_size(label.text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+	var plate_width := ceilf(text_width) + 1.0 + backplate.get_margin(SIDE_LEFT) + backplate.get_margin(SIDE_RIGHT)
+	label.custom_minimum_size.x = minf(plate_width, size.x)
+	label.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN

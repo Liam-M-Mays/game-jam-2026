@@ -17,6 +17,7 @@ scale = Vector2(10, 10)
 texture = ExtResource("1_5xsbf")
 offset = Vector2(0, -1)
 script = ExtResource("2_ebimj")
+hit_sound = &"pickaxe"
 area = NodePath("Area2D")
 wobbles_to_break = 3
 drops = Dictionary[PackedScene, int]({ExtResource("3_drop"): 1})

@@ -17,6 +17,7 @@ scale = Vector2(10, 10)
 texture = ExtResource("1_u20gi")
 offset = Vector2(3, -5)
 script = ExtResource("2_4sa4q")
+hit_sound = &"axe"
 area = NodePath("Area2D")
 drops = Dictionary[PackedScene, int]({ExtResource("3_drop"): 2})
 food_cost = 1

@@ -1,6 +1,8 @@
 extends Node2D
 class_name GiantPart
 
+signal lifted(index : int)
+signal landed(index : int)
 
 @export var lift_time := 1.4
 @export var hang_time := 0.6
@@ -11,6 +13,8 @@ class_name GiantPart
 
 var base_pos : Vector2
 var _elapsed := 0.0
+var _next_lift := 0
+var _next_land := 0
 
 func _ready() -> void:
 	base_pos = position
@@ -26,9 +30,22 @@ func _process(delta : float) -> void:
 		return
 	var index := int(floor(_elapsed / cycle))
 	position = _pose(index, _elapsed - index * cycle)
+	_emit_steps(index, cycle)
+
+func _emit_steps(index : int, cycle : float) -> void:
+	if index >= _next_lift:
+		_next_lift = index + 1
+		lifted.emit(index)
+	var land_index := int(floor((_elapsed - lift_time - hang_time - slam_time) / cycle))
+	if land_index >= _next_land:
+		_next_land = land_index + 1
+		landed.emit(land_index)
 
 func _setup() -> void:
 	pass
+
+func lands_on(_index : int) -> bool:
+	return true
 
 func _pose(_index : int, _t : float) -> Vector2:
 	return base_pos
