@@ -1,3 +1,8 @@
 [gd_resource type="AtlasTexture" format=3 uid="uid://c4lbc043schph"]
 
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_3kq1t"]
+load_path = "res://.godot/imported/Mighty_meeple_logo_andbutons.png-c37c5cdf2e332fb5e3531340492bc104.ctex"
+
 [resource]
+atlas = SubResource("CompressedTexture2D_3kq1t")
+region = Rect2(267, 201, 60, 22)

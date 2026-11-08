@@ -2,32 +2,10 @@
 
 [ext_resource type="Script" uid="uid://w0xs4pt03wem" path="res://Main_Menu.gd" id="1_wugcc"]
 [ext_resource type="Texture2D" uid="uid://b30hablfkuedq" path="res://ART/shi.png" id="2_gtid3"]
+[ext_resource type="Texture2D" uid="uid://c8g4e1jhi7wup" path="res://ART/Mighty_meeple_logo_andbutons.png" id="3_dnfjo"]
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_3wxnk"]
-atlas = ExtResource("2_gtid3")
-region = Rect2(958, 26, 72, 22)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_r8d1o"]
-atlas = ExtResource("2_gtid3")
-region = Rect2(1073, 29, 72, 20)
-
-[sub_resource type="ViewportTexture" id="ViewportTexture_dnfjo"]
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_bvyw0"]
-atlas = ExtResource("2_gtid3")
-region = Rect2(20, 21, 72, 22)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_xb3ck"]
-atlas = ExtResource("2_gtid3")
-region = Rect2(139, 23, 72, 22)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_0ped1"]
-atlas = ExtResource("2_gtid3")
-region = Rect2(490, 25, 72, 22)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_gilah"]
-atlas = ExtResource("2_gtid3")
-region = Rect2(612, 23, 72, 22)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_t7ae5"]
+bg_color = Color(0.32156864, 0.46666667, 0.45490196, 1)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_4anfs"]
 atlas = ExtResource("2_gtid3")
@@ -37,8 +15,57 @@ region = Rect2(1444, 25, 38, 22)
 atlas = ExtResource("2_gtid3")
 region = Rect2(1563, 28, 38, 20)
 
-[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_wugcc"]
-load_path = "res://.godot/imported/Mighty_meeple_logo.png-6311f4c9dd980dc8c22ce78a6b6c03bc.ctex"
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_3kq1t"]
+load_path = "res://.godot/imported/Mighty_meeple_logo_andbutons.png-c37c5cdf2e332fb5e3531340492bc104.ctex"
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_spy7q"]
+atlas = SubResource("CompressedTexture2D_3kq1t")
+region = Rect2(-19, 22, 510, 134)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_dnfjo"]
+atlas = ExtResource("3_dnfjo")
+region = Rect2(142, 169, 45, 22)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_257up"]
+atlas = ExtResource("3_dnfjo")
+region = Rect2(275, 169, 45, 22)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_5cvai"]
+atlas = ExtResource("3_dnfjo")
+region = Rect2(208, 169, 45, 22)
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_domf7"]
+load_path = "res://.godot/imported/Mighty_meeple_logo_andbutons.png-c37c5cdf2e332fb5e3531340492bc104.ctex"
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_es6ti"]
+atlas = SubResource("CompressedTexture2D_domf7")
+region = Rect2(135, 233, 60, 22)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wrfco"]
+atlas = ExtResource("3_dnfjo")
+region = Rect2(267, 233, 60, 22)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_domf7"]
+atlas = ExtResource("3_dnfjo")
+region = Rect2(200, 233, 60, 22)
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_wrfco"]
+load_path = "res://.godot/imported/Mighty_meeple_logo_andbutons.png-c37c5cdf2e332fb5e3531340492bc104.ctex"
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_gtid3"]
+atlas = SubResource("CompressedTexture2D_wrfco")
+region = Rect2(144, 201, 40, 22)
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_teegn"]
+load_path = "res://.godot/imported/Mighty_meeple_logo_andbutons.png-c37c5cdf2e332fb5e3531340492bc104.ctex"
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_3mro0"]
+atlas = SubResource("CompressedTexture2D_teegn")
+region = Rect2(277, 201, 40, 22)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_tu7k8"]
+atlas = SubResource("CompressedTexture2D_3kq1t")
+region = Rect2(210, 201, 40, 22)
 
 [node name="MainMenu" type="Control" unique_id=952734818 node_paths=PackedStringArray("start_button", "credits_button", "quit_button", "credits_panel", "credits_back_button")]
 layout_mode = 3
@@ -48,9 +75,9 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_wugcc")
-start_button = NodePath("Buttons/StartButton")
-credits_button = NodePath("Buttons/CreditsButton")
-quit_button = NodePath("Buttons/QuitButton")
+start_button = NodePath("StartButton")
+credits_button = NodePath("CreditsButton")
+quit_button = NodePath("QuitButton")
 credits_panel = NodePath("CreditsPanel")
 credits_back_button = NodePath("CreditsPanel/VBoxContainer/BackButton")
 
@@ -76,46 +103,26 @@ offset_right = 120.0
 offset_bottom = -152.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_constants/separation = 36
-
-[node name="StartButton" type="TextureButton" parent="Buttons" unique_id=1702508182]
-custom_minimum_size = Vector2(180, 88)
-layout_mode = 2
-texture_normal = SubResource("AtlasTexture_3wxnk")
-texture_pressed = SubResource("AtlasTexture_r8d1o")
-texture_hover = SubResource("ViewportTexture_dnfjo")
-ignore_texture_size = true
-stretch_mode = 5
-
-[node name="CreditsButton" type="TextureButton" parent="Buttons" unique_id=731801215]
-custom_minimum_size = Vector2(240, 80)
-layout_mode = 2
-texture_normal = SubResource("AtlasTexture_bvyw0")
-texture_pressed = SubResource("AtlasTexture_xb3ck")
-ignore_texture_size = true
-stretch_mode = 5
-
-[node name="QuitButton" type="TextureButton" parent="Buttons" unique_id=1371619369]
-custom_minimum_size = Vector2(160, 88)
-layout_mode = 2
-texture_normal = SubResource("AtlasTexture_0ped1")
-texture_pressed = SubResource("AtlasTexture_gilah")
-ignore_texture_size = true
-stretch_mode = 5
+scale = Vector2(4, 4)
+theme_override_constants/separation = 8
 
 [node name="CreditsPanel" type="PanelContainer" parent="." unique_id=1470094694]
+modulate = Color(0.9451546, 0.87888217, 0.79453504, 1)
+z_index = 5
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -20.0
-offset_top = -20.0
-offset_right = 20.0
-offset_bottom = 20.0
+offset_left = -739.0
+offset_top = -264.0
+offset_right = -400.0
+offset_bottom = -93.99997
 grow_horizontal = 2
 grow_vertical = 2
+scale = Vector2(4, 4)
+theme_override_styles/panel = SubResource("StyleBoxFlat_t7ae5")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="CreditsPanel" unique_id=1229696164]
 layout_mode = 2
@@ -125,19 +132,55 @@ layout_mode = 2
 text = "Mason Paccadolmi - Artwork and Animation
 Liam Mays - Lead Programmer
 Brady Stewart -UI designer, programmer
-Aidan Alegado - Muisc"
+Aidan Alegado - Music"
 
 [node name="BackButton" type="TextureButton" parent="CreditsPanel/VBoxContainer" unique_id=550752611]
 layout_mode = 2
 texture_normal = SubResource("AtlasTexture_4anfs")
 texture_pressed = SubResource("AtlasTexture_36vlq")
 
-[node name="TextureRect" type="TextureRect" parent="." unique_id=1304016722]
-z_index = -10
+[node name="TextureRect" type="TextureRect" parent="." unique_id=239408209]
 layout_mode = 0
-offset_left = 26.0
-offset_top = -37.0
-offset_right = 496.0
-offset_bottom = 143.0
+offset_left = -54.0
+offset_top = 62.0
+offset_right = 456.0
+offset_bottom = 196.0
 scale = Vector2(4, 4)
-texture = SubResource("CompressedTexture2D_wugcc")
+texture = SubResource("AtlasTexture_spy7q")
+
+[node name="StartButton" type="TextureButton" parent="." unique_id=701129200]
+layout_mode = 0
+offset_left = 852.0
+offset_top = 600.0
+offset_right = 897.0
+offset_bottom = 622.0
+scale = Vector2(4, 4)
+size_flags_horizontal = 0
+size_flags_stretch_ratio = 0.0
+texture_normal = SubResource("AtlasTexture_dnfjo")
+texture_pressed = SubResource("AtlasTexture_257up")
+texture_hover = SubResource("AtlasTexture_5cvai")
+
+[node name="CreditsButton" type="TextureButton" parent="." unique_id=657891541]
+layout_mode = 0
+offset_left = 824.0
+offset_top = 712.0
+offset_right = 884.0
+offset_bottom = 734.0
+scale = Vector2(4, 4)
+size_flags_horizontal = 0
+texture_normal = SubResource("AtlasTexture_es6ti")
+texture_pressed = SubResource("AtlasTexture_wrfco")
+texture_hover = SubResource("AtlasTexture_domf7")
+
+[node name="QuitButton" type="TextureButton" parent="." unique_id=2017726884]
+layout_mode = 0
+offset_left = 862.0
+offset_top = 826.0
+offset_right = 902.0
+offset_bottom = 848.0
+scale = Vector2(4, 4)
+size_flags_horizontal = 0
+texture_normal = SubResource("AtlasTexture_gtid3")
+texture_pressed = SubResource("AtlasTexture_3mro0")
+texture_hover = SubResource("AtlasTexture_tu7k8")

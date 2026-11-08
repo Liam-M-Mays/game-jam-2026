@@ -2,33 +2,30 @@ extends CanvasLayer
 
 const SPEED_KEY := KEY_F
 const FIRST_TIP_DELAY := 2.0
-const ROTATION_DELAY_MIN := 45.0
+const ROTATION_DELAY_MIN := 60.0
 const ROTATION_DELAY_MAX := 90.0
-const OPENING_TIP_GAP := 5.0
+const OPENING_TIP_GAP := 15.0
 const OPENING_TIPS := [
-	"Tap on trees and stones to collect resources",
-	"Tap on bushes to get food",
-	"Use the tool button to build structures",
-	"Keep your hunger bar up to keep your meeples happy (and alive)",
+	"Tap on trees and stones to begin harvesting resources",
+	"Use WASD to pan the camera around",
+	"Click the build botton to start expanding your meeple village",
+	"Picking berries will help feed your meeple",
 ]
 
 const TIPS := [
-	"Tap on trees and stones to collect resources",
-	"Tap on bushes to get food",
-	"Use the tool button to build structures",
+	"Press 'F' to toggle game speed",
+	"Berry bushes dissapear after collecting from them 3 times",
 	"Keep your hunger bar up to keep your meeples happy (and alive)",
 	"You can upgrade your Town Hall level by increasing your Meeple population",
-	"Meeples carry materials to construction sites. Hover over a site to see what it still needs",
-	"Press F or use the speed button to speed up time",
-	"Build more huts to grow your population",
+	"Hover over build sites to see what materials it still needs",
 ]
 
 const FUN_FACTS := [
-	"This game was created for The 2026 UNCC Fall Game Jam",
+	"This game was created for The 2026 UNCC Fall 49er Game Jam!",
 	"Each Meeple has a real human soul trapped inside of them",
 	"Bananas are berries, but strawberries aren't",
 	"Oxford University is older than the Aztec Empire",
-	"Have you zoomed out all the way yet? If not, give it a try and see what you find!",
+	"Have you zoomed out all the way yet?",
 	"Antarctica is technically a desert",
 	"Sharks are older than trees",
 	"Did you know that cashews came from a fruit?",
