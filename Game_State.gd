@@ -1,6 +1,6 @@
 extends Node
 
-enum ToastKind { INFO, TIP, WARNING }
+enum ToastKind { INFO, TIP, WARNING, FACT }
 
 signal hunger_changed(value: float)
 signal starved
@@ -13,6 +13,7 @@ const TOAST_REPEAT_COOLDOWN := 3.0
 const SPEEDS: Array[float] = [1.0, 1.5, 2.0, 3.0]
 
 var _last_toast_time := {}
+var _tips_shown := {}
 var _speed_index := 0
 
 var speed: float:
@@ -52,6 +53,7 @@ func new_game() -> void:
 	Inventory.reset()
 	JobSystem.reset()
 	_last_toast_time.clear()
+	_tips_shown.clear()
 	set_speed_index(0)
 	_update_hunger()
 
@@ -76,6 +78,17 @@ func toast(text: String, kind: int = ToastKind.INFO) -> void:
 
 func tip(text: String) -> void:
 	toast(text, ToastKind.TIP)
+
+
+func tip_once(id: String, text: String) -> void:
+	if _tips_shown.has(id):
+		return
+	_tips_shown[id] = true
+	tip(text)
+
+
+func fact(text: String) -> void:
+	toast(text, ToastKind.FACT)
 
 
 func warn(text: String) -> void:

@@ -9,8 +9,10 @@ extends VBoxContainer
 @export var info_color := Color.WHITE
 @export var tip_color := Color("ffe08a")
 @export var warning_color := Color("ff6b5b")
+@export var fact_color := Color("9fd8ff")
 @export var tip_prefix := "Tip: "
 @export var warning_prefix := ""
+@export var fact_prefix := "Fun fact: "
 
 
 func _ready() -> void:
@@ -28,6 +30,9 @@ func push(text: String, kind: int = 0) -> void:
 		GameState.ToastKind.TIP:
 			label.text = tip_prefix + text
 			label.add_theme_color_override("font_color", tip_color)
+		GameState.ToastKind.FACT:
+			label.text = fact_prefix + text
+			label.add_theme_color_override("font_color", fact_color)
 		GameState.ToastKind.WARNING:
 			label.text = warning_prefix + text
 			label.add_theme_color_override("font_color", warning_color)
