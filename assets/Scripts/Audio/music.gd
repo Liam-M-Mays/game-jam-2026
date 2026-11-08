@@ -9,11 +9,17 @@ const UI_SOUNDS := preload("res://assets/Scripts/Audio/ui_sounds.gd")
 const SUCCESS_RIFF_DB := -6.0
 const MENU_DB := -12.0
 const GAMEPLAY_DB := -20.0
-const GAME_OVER_SECONDS := 4.0
-const GAME_OVER_PITCH := 0.35
+const MUSIC_BUS := &"Music"
+const GAME_OVER_SECONDS := 8.0
+const GAME_OVER_PITCH := 0.03
+const GAME_OVER_DRIVE := 0.8
+const GAME_OVER_WOBBLE_CYCLES := 10.0
+const GAME_OVER_WOBBLE_DEPTH := 0.12
+const GAME_OVER_SILENCE_FROM := 0.8
 
 var _player := AudioStreamPlayer.new()
 var _riff := AudioStreamPlayer.new()
+var _distortion := AudioEffectDistortion.new()
 var _scene : Node = null
 var _level_db := 0.0
 var _fade := 1.0
@@ -21,11 +27,21 @@ var _fade_tween : Tween = null
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_setup_bus()
 	add_child(_player)
 	_riff.stream = SUCCESS_RIFF
 	_riff.volume_db = SUCCESS_RIFF_DB
 	add_child(_riff)
 	add_child(UI_SOUNDS.new())
+
+func _setup_bus() -> void:
+	var index := AudioServer.bus_count
+	AudioServer.add_bus(index)
+	AudioServer.set_bus_name(index, MUSIC_BUS)
+	AudioServer.set_bus_send(index, &"Master")
+	_distortion.mode = AudioEffectDistortion.MODE_LOFI
+	AudioServer.add_bus_effect(index, _distortion)
+	_player.bus = MUSIC_BUS
 
 func _process(_delta : float) -> void:
 	var scene := get_tree().current_scene
@@ -45,8 +61,10 @@ func fade_out_game_over(seconds := GAME_OVER_SECONDS) -> void:
 	_fade_tween.tween_callback(_player.stop)
 
 func _apply_game_over(amount : float) -> void:
-	_fade = 1.0 - amount
-	_player.pitch_scale = lerpf(1.0, GAME_OVER_PITCH, amount)
+	var wobble := 1.0 + sin(amount * TAU * GAME_OVER_WOBBLE_CYCLES) * GAME_OVER_WOBBLE_DEPTH * amount
+	_player.pitch_scale = lerpf(1.0, GAME_OVER_PITCH, amount) * wobble
+	_distortion.drive = GAME_OVER_DRIVE * amount
+	_fade = 1.0 - smoothstep(GAME_OVER_SILENCE_FROM, 1.0, amount)
 
 func _start_for_scene(path : String) -> void:
 	if _fade_tween != null:
@@ -54,6 +72,7 @@ func _start_for_scene(path : String) -> void:
 		_fade_tween = null
 	_fade = 1.0
 	_player.pitch_scale = 1.0
+	_distortion.drive = 0.0
 	match path:
 		MENU_SCENE:
 			_start_track(MENU_MUSIC, MENU_DB)

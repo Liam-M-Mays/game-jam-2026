@@ -122,7 +122,7 @@ region = Rect2(79, 1, 45, 22)
 atlas = ExtResource("7_ghiih")
 region = Rect2(128, 1, 45, 22)
 
-[node name="HUD" type="CanvasLayer" unique_id=1588467611 node_paths=PackedStringArray("counters", "stone_label", "wood_label", "food_label", "meeple_label", "job_label", "build_button", "build_menu", "pause_menu", "speed_button")]
+[node name="HUD" type="CanvasLayer" unique_id=1588467611 node_paths=PackedStringArray("counters", "stone_label", "wood_label", "food_label", "meeple_label", "job_label", "build_button", "build_menu", "pause_menu", "death_screen", "speed_button")]
 script = ExtResource("1_uj4j1")
 counters = NodePath("CountersPanel")
 stone_label = NodePath("CountersPanel/Counters/Stone/StoneLabel")
@@ -133,6 +133,7 @@ job_label = NodePath("CountersPanel/Counters/JobGroup/JobLabel")
 build_button = NodePath("BuildButton")
 build_menu = NodePath("BuildMenu")
 pause_menu = NodePath("PauseMenu")
+death_screen = NodePath("DeathScreen")
 speed_button = NodePath("SpeedButton")
 
 [node name="CountersPanel" type="PanelContainer" parent="." unique_id=279582240]
@@ -406,7 +407,7 @@ script = ExtResource("1_knk3d")
 font_size = 30
 backplate = SubResource("StyleBoxFlat_toast")
 
-[node name="DeathScreen" type="Control" parent="." unique_id=168213261 node_paths=PackedStringArray("resume_button", "menu_button", "quit_button")]
+[node name="DeathScreen" type="Control" parent="." unique_id=168213261 node_paths=PackedStringArray("resume_button", "menu_button", "quit_button", "dim")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -417,6 +418,8 @@ script = ExtResource("5_1m68m")
 resume_button = NodePath("Buttons/RetryButton")
 menu_button = NodePath("Buttons/MenuButtonDeath")
 quit_button = NodePath("Buttons/QuitButtonDeath")
+restart_on_resume = true
+dim = NodePath("Dim2")
 
 [node name="Dim2" type="ColorRect" parent="DeathScreen" unique_id=814414624]
 layout_mode = 1

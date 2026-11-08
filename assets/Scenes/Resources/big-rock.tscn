@@ -24,6 +24,7 @@ wobbles_to_break = 6
 drops = Dictionary[PackedScene, int]({ExtResource("3_drop"): 2})
 food_cost = 1
 target_count = 36
+respawn_chance = 1.0
 edge_distance_curve = SubResource("Curve_spawn")
 footprint = 2
 

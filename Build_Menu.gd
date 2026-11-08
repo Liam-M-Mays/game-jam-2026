@@ -158,6 +158,9 @@ func _tooltip_text(button: Button) -> String:
 
 
 func _upgrade_tooltip_text() -> String:
+	var hall := TownHall.find_town_hall()
+	if hall != null and hall.is_max_level():
+		return "\n".join([_tooltip_title("Town Hall"), "Fully upgraded."])
 	var next_level := TownHall.current_level() + 1
 	var lines := [_tooltip_title("Upgrade Town Hall"), "Raises your Town Hall to level %d." % next_level]
 	var names := unlocked_names(next_level)
@@ -172,21 +175,25 @@ func _tooltip_title(title: String) -> String:
 
 func _refresh_upgrade() -> void:
 	var hall := TownHall.find_town_hall()
-	if hall == null or hall.is_max_level():
+	if hall == null:
 		_upgrade_button.hide()
 		return
 	_upgrade_button.show()
-	var next_level := hall.level() + 1
+	var next_level := mini(hall.level() + 1, hall.max_level())
 	if _upgrade_icon_level != next_level:
 		_upgrade_button.icon = hall.level_icon(next_level)
 		_upgrade_icon_level = next_level
+	if hall.is_max_level():
+		_upgrade_button.text = "Fully upgraded"
+		_upgrade_button.modulate = Color.WHITE
+		return
 	_upgrade_button.text = "Upgrade lv %d   %d meeples" % [next_level, hall.meeples_for_next_level()]
 	_upgrade_button.modulate = Color.WHITE if hall.can_upgrade() else unavailable_tint
 
 
 func _on_upgrade_pressed() -> void:
 	var hall := TownHall.find_town_hall()
-	if hall == null:
+	if hall == null or hall.is_max_level():
 		return
 	if not hall.can_upgrade():
 		GameState.warn("You need %d meeples to upgrade your Town Hall (you have %d)" % [hall.meeples_for_next_level(), JobSystem.workers.size()])
@@ -198,6 +205,7 @@ func _on_upgrade_pressed() -> void:
 func _refresh() -> void:
 	if _upgrade_button:
 		_refresh_upgrade()
+	var counts := _built_counts()
 	for button in building_list.get_children():
 		if not button.has_meta("scene"):
 			continue
@@ -206,7 +214,7 @@ func _refresh() -> void:
 			continue
 		var building: Building = _templates[scene]
 		if _is_locked(building):
-			button.text = "%s   Hall lv %d" % [_button_name(scene), building.required_town_hall_level]
+			button.text = "%s   Hall lv %d" % [_button_name(scene, counts), building.required_town_hall_level]
 			button.modulate = Color.WHITE
 			for color_name in LOCKED_FONT_COLORS:
 				button.add_theme_color_override(color_name, locked_tint)
@@ -215,7 +223,7 @@ func _refresh() -> void:
 			continue
 		for color_name in LOCKED_FONT_COLORS + LOCKED_ICON_COLORS:
 			button.remove_theme_color_override(color_name)
-		button.text = "%s   %s" % [_button_name(scene), _cost_text(building.min_to_start)]
+		button.text = "%s   %s" % [_button_name(scene, counts), _cost_text(building.min_to_start)]
 		button.modulate = Color.WHITE if building.can_start() else unavailable_tint
 
 
@@ -237,11 +245,15 @@ func _on_building_pressed(scene: PackedScene) -> void:
 	build_system.start_build(scene)
 
 
-func _button_name(scene: PackedScene) -> String:
-	var index := BUILDINGS.find(scene)
-	if index >= HOTKEYS.size():
-		return display_name(scene)
-	return "[%s] %s" % ["-" if HOTKEYS[index] == "minus" else HOTKEYS[index], display_name(scene)]
+func _button_name(scene: PackedScene, counts: Dictionary) -> String:
+	return "[%d] %s" % [counts.get(scene.resource_path, 0), display_name(scene)]
+
+
+func _built_counts() -> Dictionary:
+	var counts := {}
+	for node in get_tree().get_nodes_in_group(Building.COMPLETED_GROUP):
+		counts[node.scene_file_path] = counts.get(node.scene_file_path, 0) + 1
+	return counts
 
 
 func _is_locked(building: Building) -> bool:

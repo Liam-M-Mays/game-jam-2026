@@ -4,6 +4,9 @@ const SPEED_KEY := KEY_F
 const FIRST_TIP_DELAY := 2.0
 const ROTATION_DELAY_MIN := 60.0
 const ROTATION_DELAY_MAX := 90.0
+const DEATH_SCREEN_DELAY := 1.0
+const DEATH_SCREEN_FADE := 2.0
+const DEATH_SCREEN_BLACK := 2.0
 const OPENING_TIP_GAP := 15.0
 const PAUSE_BUILDING_TIP := "Right-click a building under construction to pause it, and right-click again to resume"
 const OPENING_TIPS := [
@@ -50,6 +53,7 @@ const FUN_FACTS := [
 @export var build_button: TextureButton
 @export var build_menu: BuildMenu
 @export var pause_menu: PauseMenu
+@export var death_screen: PauseMenu
 @export var speed_button: Button
 @export var camera: CameraControls
 
@@ -57,6 +61,7 @@ var _building_scene: PackedScene
 var _last_meeple_count := 0
 var _last_food := 0
 var _upgrade_was_ready := false
+var _game_over := false
 var _deck: Array[Dictionary] = []
 
 
@@ -69,6 +74,7 @@ func _ready() -> void:
 	JobSystem.changed.connect(_refresh_counters)
 	JobSystem.changed.connect(_check_meeples)
 	JobSystem.job_rejected.connect(func(_job): GameState.warn("Job queue is full"))
+	Population.all_meeples_died.connect(_on_all_meeples_died)
 	_last_meeple_count = JobSystem.workers.size()
 	_last_food = Inventory.count("food")
 	_refresh_counters()
@@ -90,7 +96,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			GameState.cycle_speed()
 			get_viewport().set_input_as_handled()
 		return
-	if not event.is_action_pressed("ui_cancel"):
+	if not event.is_action_pressed("ui_cancel") or _game_over:
 		return
 	if build_menu and build_menu.visible:
 		build_menu.close()
@@ -225,6 +231,19 @@ func _check_meeples() -> void:
 		GameState.warn("A meeple has died, watch your hunger bar!")
 	_last_meeple_count = count
 	_check_upgrade_ready()
+
+
+func _on_all_meeples_died() -> void:
+	_game_over = true
+	Music.fade_out_game_over()
+	_wait(DEATH_SCREEN_DELAY).connect(_show_death_screen)
+
+
+func _show_death_screen() -> void:
+	if build_menu:
+		build_menu.close()
+	if death_screen:
+		death_screen.fade_in(DEATH_SCREEN_FADE, DEATH_SCREEN_BLACK)
 
 
 func _check_food_empty() -> void:
