@@ -1,4 +1,4 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://cpy6mtl1xpjh8"]
 
 [ext_resource type="Texture2D" uid="uid://dfv2bp6ysarbr" path="res://ART/new_hut_build.png" id="1_tex"]
 [ext_resource type="Script" uid="uid://calo5niqysa1e" path="res://assets/Scripts/Buildings/hut.gd" id="2_scr"]
@@ -31,7 +31,7 @@ costs = Dictionary[String, int]({
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
 size = Vector2(8, 8)
 
-[node name="small_hut" type="Sprite2D" node_paths=PackedStringArray("area")]
+[node name="small_hut" type="Sprite2D" unique_id=969648991 node_paths=PackedStringArray("area")]
 z_index = 1
 scale = Vector2(10, 10)
 texture = ExtResource("1_tex")
@@ -40,13 +40,13 @@ hframes = 4
 script = ExtResource("2_scr")
 frames = Array[ExtResource("3_phase")]([SubResource("Frame_0"), SubResource("Frame_1"), SubResource("Frame_2"), SubResource("Frame_3")])
 min_to_start = Dictionary[String, int]({
-"wood": 4
+"wood": 2
 })
 area = NodePath("Area2D")
 hoverable = false
 
-[node name="Area2D" type="Area2D" parent="."]
+[node name="Area2D" type="Area2D" parent="." unique_id=1373903475]
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=966532175]
 position = Vector2(0, -2)
 shape = SubResource("RectangleShape2D_1")

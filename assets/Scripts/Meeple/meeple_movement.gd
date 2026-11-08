@@ -8,6 +8,9 @@ const SORT_BIAS := Vector2(0, 3)
 const IDLE_CHECK_INTERVAL := 0.5
 const WANDER_JITTER := Vector2(12, 6)
 const PATH_CHECKS := 8
+const FEET_OFFSET := Vector2(0, 1)
+const TOPPLE_REBOUND := 0.2
+const TOPPLE_REBOUND_TIME := 0.08
 
 @export var speed := 100
 @export var y_stretch := 0.1
@@ -20,6 +23,9 @@ const PATH_CHECKS := 8
 @export var wander_pause_max := 3.5
 @export var wander_ring := 2
 @export var building_hop_chance := 0.15
+@export var topple_time := 0.45
+@export var corpse_linger := 0.6
+@export var fade_time := 0.8
 
 @export var grid : Grid
 
@@ -61,11 +67,32 @@ func has_arrived() -> bool:
 
 func die() -> void:
 	set_process(false)
+	set_physics_process(false)
 	if job != null:
 		JobSystem.requeue(job, self)
 		job = null
 	JobSystem.remove_worker(self)
-	queue_free()
+	_topple()
+
+func _topple() -> void:
+	scale.y = _base_scale_y
+	var arm := FEET_OFFSET * scale
+	var feet := position + arm.rotated(rotation)
+	var side := 1.0 if randf() < 0.5 else -1.0
+	var lying := side * PI * 0.5
+	var rebound := lying - side * TOPPLE_REBOUND
+	var lean := _lean.bind(feet, arm)
+	var tween := create_tween()
+	tween.tween_method(lean, rotation, lying, topple_time).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tween.tween_method(lean, lying, rebound, TOPPLE_REBOUND_TIME).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.tween_method(lean, rebound, lying, TOPPLE_REBOUND_TIME).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	tween.tween_interval(corpse_linger)
+	tween.tween_property(self, "modulate:a", 0.0, fade_time)
+	tween.tween_callback(queue_free)
+
+func _lean(angle : float, feet : Vector2, arm : Vector2) -> void:
+	rotation = angle
+	position = feet - arm.rotated(angle)
 
 func carry(kind := "") -> void:
 	_head.frame = CARRY_FRAMES.get(kind, 0)
