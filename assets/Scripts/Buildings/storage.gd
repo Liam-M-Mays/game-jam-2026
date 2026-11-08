@@ -28,6 +28,7 @@ func store(drop : ResourceDrop) -> void:
 	drop.global_position = global_position
 	drop.hide()
 	_held.append(drop)
+	_pop()
 	_refresh()
 	Inventory.set_claimed(drop, false)
 
@@ -56,4 +57,4 @@ func _refresh() -> void:
 	if capacity() <= 0:
 		frame = last_stage()
 		return
-	frame = last_stage() + ceili(float(_held.size()) * _fill_frames() / capacity())
+	_show_frame(last_stage() + ceili(float(_held.size()) * _fill_frames() / capacity()))

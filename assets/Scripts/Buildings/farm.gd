@@ -71,7 +71,7 @@ func _make_idle_job(_worker : Meeple) -> IdleJob:
 func _set_growth(stage : int) -> void:
 	_growth = clampi(stage, 0, grow_stages())
 	_grow_timer = 0.0
-	frame = last_stage() + _growth
+	_show_frame(last_stage() + _growth)
 
 func _barns_with_room() -> Array[Barn]:
 	var list : Array[Barn] = []

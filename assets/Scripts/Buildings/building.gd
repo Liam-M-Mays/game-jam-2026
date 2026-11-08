@@ -10,7 +10,10 @@ const BLUEPRINT_SHADER := preload("res://assets/Shaders/blueprint.gdshader")
 const PREVIEW_OPACITY := 0.5
 const COMPLETED_GROUP := &"completed_buildings"
 const CONSTRUCTION_GROUP := &"construction_sites"
+const POP_RISE := 0.05
+const POP_FALL := 0.13
 
+@export var pop_amount := 0.05
 @export var reverse_frames := false
 @export var build_frames := 0
 @export var frames : Array[BuildFrame] = []
@@ -51,8 +54,7 @@ func last_stage() -> int:
 func _set_stage(stage : int) -> void:
 	stage = mini(stage, last_stage())
 	self_modulate.a = 1.0 if stage > EMPTY_STAGE else 0.0
-	if stage > EMPTY_STAGE:
-		frame = _stage_frame(stage)
+	frame = _stage_frame(maxi(stage, 0))
 	_update_blueprint(stage)
 
 func _stage_frame(stage : int) -> int:
@@ -61,9 +63,11 @@ func _stage_frame(stage : int) -> int:
 func _update_blueprint(stage : int) -> void:
 	var next := stage + 1
 	if next > last_stage():
+		_outline_also_around(frame)
 		if _blueprint != null:
 			_blueprint.visible = false
 		return
+	_outline_also_around(_stage_frame(next))
 	if _blueprint == null:
 		_blueprint = Sprite2D.new()
 		_blueprint.show_behind_parent = true
@@ -151,6 +155,7 @@ func start_construction() -> void:
 	_constructing = true
 	_banked.clear()
 	_incoming.clear()
+	area.input_pickable = true
 	add_to_group(CONSTRUCTION_GROUP)
 	Inventory.changed.connect(_request_hauls)
 	JobSystem.changed.connect(_post_jobs)
@@ -160,6 +165,7 @@ func start_construction() -> void:
 func deliver(kind : String) -> void:
 	_incoming[kind] = _incoming.get(kind, 0) - 1
 	_banked[kind] = _banked.get(kind, 0) + 1
+	_pop()
 	_advance()
 	_refresh_missing()
 
@@ -192,7 +198,19 @@ func _on_worker_idle(worker : Meeple, offers : Array) -> void:
 	if _idle_job == null and has_idle_work(worker):
 		offers.append(self)
 
+func _pop() -> void:
+	var tween := _tween(&"pop").set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.tween_property(self, "scale", _base_scale * (1.0 + pop_amount), POP_RISE)
+	tween.tween_property(self, "scale", _base_scale, POP_FALL)
+
+func _show_frame(index : int) -> void:
+	if index == frame:
+		return
+	frame = index
+	flash()
+
 func _advance() -> void:
+	var before := _built
 	while _built < last_stage():
 		var cost := _frame_cost(_built + 1)
 		if not _covers(_banked, cost):
@@ -204,6 +222,8 @@ func _advance() -> void:
 		_finish_construction()
 	else:
 		_set_stage(_built)
+	if _built != before:
+		flash()
 
 func _finish_construction() -> void:
 	_constructing = false
