@@ -5,12 +5,19 @@ enum ToastKind { INFO, TIP, WARNING }
 signal hunger_changed(value: float)
 signal starved
 signal toast_requested(text: String, kind: int)
+signal speed_changed(speed: float)
 
 const MAX_HUNGER := 100.0
+const FULL_FOOD_PER_MEEPLE := 5.0
 const TOAST_REPEAT_COOLDOWN := 3.0
+const SPEEDS: Array[float] = [1.0, 1.5, 2.0, 3.0]
 
-var hunger_drain_per_second := 0.5
 var _last_toast_time := {}
+var _speed_index := 0
+
+var speed: float:
+	get:
+		return SPEEDS[_speed_index]
 
 var hunger := MAX_HUNGER:
 	set(value):
@@ -21,19 +28,42 @@ var hunger := MAX_HUNGER:
 			starved.emit()
 
 
-func _process(delta: float) -> void:
-	hunger -= hunger_drain_per_second * delta
+func _ready() -> void:
+	_connect_backend.call_deferred()
+
+
+func _connect_backend() -> void:
+	Inventory.changed.connect(_update_hunger)
+	JobSystem.changed.connect(_update_hunger)
+	_update_hunger()
+
+
+func _update_hunger() -> void:
+	var meeples := JobSystem.workers.size()
+	var value := MAX_HUNGER
+	if meeples > 0:
+		value = Inventory.count("food") / (meeples * FULL_FOOD_PER_MEEPLE) * MAX_HUNGER
+	value = clampf(value, 0.0, MAX_HUNGER)
+	if not is_equal_approx(value, hunger):
+		hunger = value
 
 
 func new_game() -> void:
 	Inventory.reset()
 	JobSystem.reset()
-	hunger = MAX_HUNGER
 	_last_toast_time.clear()
+	set_speed_index(0)
+	_update_hunger()
 
 
-func feed(amount: float) -> void:
-	hunger += amount
+func set_speed_index(index: int) -> void:
+	_speed_index = clampi(index, 0, SPEEDS.size() - 1)
+	Engine.time_scale = speed
+	speed_changed.emit(speed)
+
+
+func cycle_speed() -> void:
+	set_speed_index((_speed_index + 1) % SPEEDS.size())
 
 
 func toast(text: String, kind: int = ToastKind.INFO) -> void:

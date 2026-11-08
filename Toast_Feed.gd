@@ -47,6 +47,7 @@ func push(text: String, kind: int = 0) -> void:
 		oldest.queue_free()
 
 	var tween := label.create_tween()
+	tween.set_ignore_time_scale(true)
 	tween.tween_interval(maxf(lifetime - fade_time, 0.0))
 	tween.tween_property(label, "modulate:a", 0.0, fade_time)
 	tween.tween_callback(label.queue_free)
