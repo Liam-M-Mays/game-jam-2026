@@ -1,0 +1,6 @@
+# Who gets asked to review a pull request.
+# Anyone on the team can review anything.
+*           @Liam-M-Mays @Jaslem @mpaccado
+
+# Workflow, CI and repo rules: the lead programmer signs off.
+/.github/   @Liam-M-Mays

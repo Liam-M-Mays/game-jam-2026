@@ -1,0 +1,42 @@
+name: Fix
+description: Something is broken or behaves wrong
+labels: ["fix"]
+body:
+  - type: textarea
+    id: happens
+    attributes:
+      label: What happens?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What should happen instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to make it happen
+      placeholder: |
+        1. Start a new game
+        2. ...
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where did you see it?
+      multiple: true
+      options:
+        - Godot editor
+        - Web build
+        - Windows build
+        - macOS build
+  - type: input
+    id: version
+    attributes:
+      label: Build or commit
+      description: The commit hash, or the date of the build you played.
+  - type: textarea
+    id: extra
+    attributes:
+      label: Screenshot, video or error text

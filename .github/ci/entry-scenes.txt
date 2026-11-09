@@ -1,0 +1,4 @@
+# Scenes that CI boots with no window to catch script errors at startup.
+# One per line: a short name, the scene path ("main" means the project's main scene), and how many frames to run.
+menu main 180
+game res://assets/Scenes/Levels/game.tscn 900

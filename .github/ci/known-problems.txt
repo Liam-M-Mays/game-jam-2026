@@ -1,0 +1,69 @@
+# Known problems that CI tolerates for now.
+# One per line: the rule name, a space, then what it found.
+# When you fix one, delete its line in the same pull request. CI tells you which.
+# Do not add lines by hand to get a pull request through. Fix the problem instead,
+# or agree with the team that it can wait and say so in the pull request.
+
+art-boundary Main_Menu.tscn -> res://ART/Mighty_meeple_logo_andbutons.png
+art-boundary Main_Menu.tscn -> res://ART/shi.png
+art-boundary Main_Menu.tscn -> res://ART/sky_sprites_mountains1.tres
+art-boundary Main_Menu.tscn -> res://ART/sky_sprites_mountains2.tres
+art-boundary Main_Menu.tscn -> res://ART/sky_sprites_sky.tres
+art-boundary Main_Menu.tscn -> res://ART/sky_sprites_trees1.tres
+art-boundary Main_Menu.tscn -> res://ART/sky_sprites_trees2.tres
+art-boundary assets/Art/UI/buildbutton.tres -> res://ART/build_button_thesequal.png
+art-boundary assets/Art/UI/retrybutton.tres -> res://ART/retry_button_thesequal.png
+art-boundary assets/Res/rocks.tres -> res://ART/Meeple_holding_shizz.png
+art-boundary assets/Res/wood.tres -> res://ART/Meeple_holding_shizz.png
+art-boundary assets/Scenes/Buildings/barn.tscn -> res://ART/barn_build.png
+art-boundary assets/Scenes/Buildings/farm.tscn -> res://ART/Farm_food_growing_ass_bih.png
+art-boundary assets/Scenes/Buildings/lumberjack.tscn -> res://ART/lumberjack_build.png
+art-boundary assets/Scenes/Buildings/miner.tscn -> res://ART/minor_build.png
+art-boundary assets/Scenes/Buildings/silo.tscn -> res://ART/Silo_build.png
+art-boundary assets/Scenes/Buildings/small_hut.tscn -> res://ART/new_hut_build.png
+art-boundary assets/Scenes/Buildings/statue.tscn -> res://ART/erection_sheet.png
+art-boundary assets/Scenes/Buildings/statue.tscn -> res://ART/questionmark.png
+art-boundary assets/Scenes/Buildings/stone_hut.tscn -> res://ART/new_big_ol_hut_diddy.png
+art-boundary assets/Scenes/Buildings/stone_pile.tscn -> res://ART/stone_pile_sheet.png
+art-boundary assets/Scenes/Buildings/town_hall.tscn -> res://ART/Townhall_upgrades.png
+art-boundary assets/Scenes/Buildings/windmill.tscn -> res://ART/Windmill_build.png
+art-boundary assets/Scenes/Buildings/wood_pile.tscn -> res://ART/wood_pile_sheet.png
+art-boundary assets/Scenes/Effects/break.tscn -> res://ART/Spark_Spritesheet.png
+art-boundary assets/Scenes/Levels/game.tscn -> res://ART/green.tres
+art-boundary assets/Scenes/Levels/game.tscn -> res://ART/sky_sprites_mountains1.tres
+art-boundary assets/Scenes/Levels/game.tscn -> res://ART/sky_sprites_mountains2.tres
+art-boundary assets/Scenes/Levels/game.tscn -> res://ART/sky_sprites_sky.tres
+art-boundary assets/Scenes/Levels/game.tscn -> res://ART/sky_sprites_trees1.tres
+art-boundary assets/Scenes/Levels/game.tscn -> res://ART/sky_sprites_trees2.tres
+art-boundary assets/Scenes/Meeple/meeple.tscn -> res://ART/Meeple_holding_moreshizz.png
+art-boundary assets/Scenes/Meeple/meeple.tscn -> res://ART/Meeple_holding_shizz.png
+art-boundary assets/Scenes/Resources/george_bush.tscn -> res://ART/George_Bush.png
+art-boundary assets/Scenes/Test/Brady_Scene.tscn -> res://ART/green.tres
+art-boundary assets/Scenes/Test/Brady_Scene.tscn -> res://ART/sky_sprites_mountains1.tres
+art-boundary assets/Scenes/Test/Brady_Scene.tscn -> res://ART/sky_sprites_mountains2.tres
+art-boundary assets/Scenes/Test/Brady_Scene.tscn -> res://ART/sky_sprites_sky.tres
+art-boundary assets/Scenes/Test/Brady_Scene.tscn -> res://ART/sky_sprites_trees1.tres
+art-boundary assets/Scenes/Test/Brady_Scene.tscn -> res://ART/sky_sprites_trees2.tres
+art-boundary assets/Scenes/Test/Mason Scene.tscn -> res://ART/green.tres
+art-boundary assets/Scenes/Test/Mason Scene.tscn -> res://ART/sky_sprites_mountains1.tres
+art-boundary assets/Scenes/Test/Mason Scene.tscn -> res://ART/sky_sprites_mountains2.tres
+art-boundary assets/Scenes/Test/Mason Scene.tscn -> res://ART/sky_sprites_sky.tres
+art-boundary assets/Scenes/Test/Mason Scene.tscn -> res://ART/sky_sprites_trees1.tres
+art-boundary assets/Scenes/Test/Mason Scene.tscn -> res://ART/sky_sprites_trees2.tres
+art-boundary assets/Scenes/game.tscn -> res://ART/green.tres
+art-boundary assets/Scenes/game.tscn -> res://ART/sky_sprites_mountains1.tres
+art-boundary assets/Scenes/game.tscn -> res://ART/sky_sprites_mountains2.tres
+art-boundary assets/Scenes/game.tscn -> res://ART/sky_sprites_sky.tres
+art-boundary assets/Scenes/game.tscn -> res://ART/sky_sprites_trees1.tres
+art-boundary assets/Scenes/game.tscn -> res://ART/sky_sprites_trees2.tres
+art-boundary assets/hud.tscn -> res://ART/GAMEOVER_text.png
+art-boundary assets/hud.tscn -> res://ART/build_button_thesequal.png
+art-boundary assets/hud.tscn -> res://ART/retry_button_thesequal.png
+art-boundary assets/hud.tscn -> res://ART/shi.png
+broken-ref assets/Scenes/game.tscn -> res://assets/Scenes/grid.tscn
+broken-ref assets/Scenes/main.tscn -> res://assets/Scenes/grid.tscn
+broken-ref assets/Scenes/main.tscn -> res://assets/Scenes/meeple.tscn
+cache-ref Main_Menu.tscn -> res://.godot/imported/Mighty_meeple_logo_andbutons.png-c37c5cdf2e332fb5e3531340492bc104.ctex
+cache-ref assets/Art/UI/mainmenuatlas.tres -> res://.godot/imported/Mighty_meeple_logo_andbutons.png-c37c5cdf2e332fb5e3531340492bc104.ctex
+load-error assets/Scenes/game.tscn
+load-error assets/Scenes/main.tscn
