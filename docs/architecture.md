@@ -589,7 +589,7 @@ classDiagram
 
 ### Class diagram 3: UI, audio, camera and the giant
 
-The remaining singletons and everything the player sees. Scripts without a class_name have a lighter header. The red arrow is a rule hiding inside an audio script.
+The remaining singletons and everything the player sees. The arrow from `UISounds` to `GameState` is a rule hiding inside an audio script: a warning toast resets the game speed.
 
 ```mermaid
 classDiagram
