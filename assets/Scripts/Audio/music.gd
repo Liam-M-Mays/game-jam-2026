@@ -38,7 +38,6 @@ func _setup_bus() -> void:
 	var index := AudioServer.bus_count
 	AudioServer.add_bus(index)
 	AudioServer.set_bus_name(index, MUSIC_BUS)
-	AudioServer.set_bus_send(index, &"Master")
 	_distortion.mode = AudioEffectDistortion.MODE_LOFI
 	AudioServer.add_bus_effect(index, _distortion)
 	_player.bus = MUSIC_BUS
