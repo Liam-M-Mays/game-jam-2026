@@ -1,0 +1,69 @@
+name: Art lane
+
+# Lets a pull request that only touches ART/ merge itself with no review.
+# It stays switched off until ART/.gdignore exists on master. See docs/art-folders.md.
+# This runs on pull_request_target, so it must never check out or run code from the pull request.
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  art-lane:
+    name: Self-merge art-only pull requests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      PR: ${{ github.event.pull_request.number }}
+      BASE: ${{ github.event.pull_request.base.ref }}
+      ASSOCIATION: ${{ github.event.pull_request.author_association }}
+      DRAFT: ${{ github.event.pull_request.draft }}
+    steps:
+      - name: Decide and act
+        run: |
+          set -euo pipefail
+
+          if ! gh api "repos/$REPO/contents/ART/.gdignore?ref=$BASE" --silent 2>/dev/null; then
+            echo "The art lane is switched off: ART/.gdignore is not on $BASE yet."
+            exit 0
+          fi
+
+          files="$(gh api --paginate "repos/$REPO/pulls/$PR/files" --jq '.[] | .filename, (.previous_filename // empty)')"
+          art_only=true
+          if [ -z "$files" ]; then art_only=false; fi
+          while IFS= read -r file; do
+            case "$file" in
+              ART/.gdignore) art_only=false ;;
+              ART/*) ;;
+              *) art_only=false ;;
+            esac
+          done <<< "$files"
+
+          trusted=false
+          case "$ASSOCIATION" in OWNER|MEMBER|COLLABORATOR) trusted=true ;; esac
+
+          labelled=false
+          if gh pr view "$PR" --repo "$REPO" --json labels --jq '.labels[].name' | grep -qx 'art-only'; then labelled=true; fi
+
+          if [ "$art_only" = true ] && [ "$trusted" = true ] && [ "$DRAFT" = false ]; then
+            echo "Only ART/ changed, by a team member. Turning on auto-merge."
+            gh pr edit "$PR" --repo "$REPO" --add-label art-only
+            gh pr merge "$PR" --repo "$REPO" --auto --squash
+            if [ "$labelled" = false ]; then
+              gh pr comment "$PR" --repo "$REPO" --body "This pull request only touches \`ART/\`, so it needs no review. It merges by itself once the checks pass."
+            fi
+          elif [ "$labelled" = true ]; then
+            echo "No longer art-only. Turning auto-merge off again."
+            gh pr merge "$PR" --repo "$REPO" --disable-auto || true
+            gh pr edit "$PR" --repo "$REPO" --remove-label art-only
+            gh pr comment "$PR" --repo "$REPO" --body "This pull request now touches files outside \`ART/\`, so it needs a normal review."
+          else
+            echo "Not an art-only pull request. Nothing to do."
+          fi

@@ -1,0 +1,42 @@
+name: Feature
+description: Something new the game should have or do
+labels: ["feature"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What should it do?
+      description: Describe it the way a player would see it.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why do we want it?
+      description: The problem it solves, or the playtest feedback behind it.
+  - type: textarea
+    id: done
+    attributes:
+      label: How do we know it is done?
+      description: A short checklist is perfect.
+      placeholder: |
+        - [ ] ...
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      multiple: true
+      options:
+        - Gameplay
+        - Buildings
+        - Meeples and jobs
+        - Map and world
+        - UI
+        - Art
+        - Audio
+        - Tooling
+        - Not sure
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes, sketches, references
