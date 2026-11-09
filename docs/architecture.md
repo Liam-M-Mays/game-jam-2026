@@ -289,7 +289,7 @@ How to read them:
 - A solid arrow with a triangle means "extends".
 - A dotted arrow means "holds or uses".
 - `+` is public, `#` is meant to be overridden. Private members are left out.
-- `<<autoload>>` is a global singleton, `<<resource>>` is a data resource, `<<script>>` is a script without a `class_name`.
+- `<<autoload>>` is a global singleton, `<<resource>>` is a data resource, `<<unnamed>>` is a script without a `class_name`.
 
 ### Class diagram 1: world objects
 
@@ -610,7 +610,7 @@ classDiagram
         +set_speed_index(i)
     }
     class UISounds {
-        <<script>>
+        <<unnamed>>
     }
     class Music {
         <<autoload>>
@@ -630,12 +630,12 @@ classDiagram
         +KEY = X
     }
     class MainMenu {
-        <<script>>
+        <<unnamed>>
         +start_button, credits_button, quit_button
         +credits_panel, credits_back_button
     }
     class HUD {
-        <<script>>
+        <<unnamed>>
         +build_system: BuildSystem
         +build_menu: BuildMenu
         +pause_menu, death_screen: PauseMenu
@@ -663,7 +663,7 @@ classDiagram
         +push(text, kind)
     }
     class HungerBar {
-        <<script>>
+        <<unnamed>>
         +food_plate, food_label
     }
     class ConstructionTooltip {
@@ -685,7 +685,7 @@ classDiagram
         #_pose(index, t): Vector2
     }
     class GiantAudio {
-        <<script>>
+        <<unnamed>>
         +camera: CameraControls
         +feet: Array[GiantPart]
         +crumble_points: Array[Node2D]
@@ -700,15 +700,15 @@ classDiagram
         +min_delay, max_delay
     }
     class GiantCamera {
-        <<script>>
+        <<unnamed>>
         +wide_position: Vector2
     }
     class GiantStep {
-        <<script>>
+        <<unnamed>>
         +step_height, sway
     }
     class GiantArmStep {
-        <<script>>
+        <<unnamed>>
         +shift_distance, bob_height
         +starts_shifted: bool
     }
