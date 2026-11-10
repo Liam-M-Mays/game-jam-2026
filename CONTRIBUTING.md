@@ -66,9 +66,12 @@ Godot rewrites parts of a `.tscn` file every time it saves, so scenes are where 
 
 ## Issues and the board
 
-- Every issue has one type: `feature`, `fix`, `art` or `chore`. The issue forms set it for you.
-- Issues move through four states on the project board: **Proposed**, **In progress**, **Testing**, **Finished**.
+- Every issue has one type: `feature`, `task`, `art`, `fix`, `chore` or `feedback`. The issue forms set it for you.
+- A `feature` is a parent. The `task` and `art` issues it needs hang under it as sub-issues.
+- Issues move through five states on the [project board](https://github.com/users/Liam-M-Mays/projects/5): **Proposed**, **Backlog**, **In progress**, **Testing**, **Finished**.
+- New ideas and player feedback start in Proposed. They move to Backlog when the team agrees to do them. A `fix` starts in Backlog.
 - Put yourself as the assignee when you start. Move the card when the state changes.
+- The full rules, with diagrams: [docs/workflow.md](docs/workflow.md).
 
 ## Run the checks yourself
 

@@ -4,7 +4,7 @@
 
 **Keep it true:** when a pull request changes the structure, update the matching diagram in the same pull request. The diagrams are plain text, so the change shows up in the diff.
 
-The same diagrams as boards you can zoom and comment on:
+This file is the source of truth. Older copies of the diagrams exist as Figma boards. They are a snapshot from Nov 9, 2026 and are no longer updated:
 
 - [Architecture board (FigJam)](https://www.figma.com/board/VJ8tnLiibSX9ivptyp2nuX)
 - [UML class diagrams (Figma)](https://www.figma.com/design/x7lqHkZwWVC6byvmSV2T8q?node-id=1-2)
