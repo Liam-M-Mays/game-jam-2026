@@ -10,7 +10,7 @@ The split is not finished yet.
 
 - 29 of the 43 files in `ART/` are used by scenes, so `ART/` is still a game folder and changes there get a normal review.
 - CI already blocks **new** references from game files into `ART/`. The existing ones are listed in `.github/ci/known-problems.txt`.
-- Godot still imports `ART/`, which is why every image there has a `.import` file.
+- Godot still imports `ART/`, so it writes a `.import` file next to each image there when someone opens the project. CI does not ask for those files in `ART/`, so art can be uploaded on GitHub without opening Godot.
 
 ## Finishing the split
 

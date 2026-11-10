@@ -85,6 +85,10 @@ def repo_checks(report):
             continue
         if in_ignored(f):
             continue
+        # ART/ is source art that gets uploaded without opening Godot, so its
+        # files do not have to carry a sidecar. See docs/art-folders.md.
+        if f.startswith(ART_DIR):
+            continue
         if f.endswith(SCRIPT_EXT) and f + ".uid" not in fileset:
             report.add("missing-sidecar", f + ".uid", f)
         if f.lower().endswith(IMPORT_EXT) and f + ".import" not in fileset:

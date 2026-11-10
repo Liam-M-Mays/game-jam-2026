@@ -10,7 +10,7 @@ Looks at files and references. It does not need Godot.
 
 | Rule | What it catches | How to fix it |
 | --- | --- | --- |
-| `missing-sidecar` | A script without its `.uid` file, or an asset without its `.import` file | Open the project in Godot once and commit the file it creates |
+| `missing-sidecar` | A script without its `.uid` file, or an asset without its `.import` file. Files in `ART/` are skipped, so art can be uploaded without opening Godot | Open the project in Godot once and commit the file it creates |
 | `orphan-sidecar` | A `.uid` or `.import` file whose source file is gone | Delete it |
 | `broken-ref` | A scene, resource or script that points at a `res://` path that does not exist | Fix the path or remove the reference |
 | `cache-ref` | A file that points into `res://.godot/`, Godot's private cache | Point it at the source file |

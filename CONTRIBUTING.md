@@ -61,7 +61,7 @@ Godot rewrites parts of a `.tscn` file every time it saves, so scenes are where 
 
 ## New files
 
-- Godot creates a `.uid` file next to every script and a `.import` file next to every asset. **Commit them together with the file.**
+- Godot creates a `.uid` file next to every script and a `.import` file next to every asset. **Commit them together with the file.** The one exception is `ART/`: CI does not ask for these files there.
 - Art the game uses goes in `assets/`. Source files and unused art go in `ART/`. See [docs/art-folders.md](docs/art-folders.md).
 
 ## Issues and the board
