@@ -162,7 +162,6 @@ texture_normal = SubResource("AtlasTexture_4anfs")
 texture_pressed = SubResource("AtlasTexture_36vlq")
 
 [node name="TextureRect" type="TextureRect" parent="." unique_id=239408209]
-visible = false
 layout_mode = 0
 offset_left = -50.0
 offset_top = 60.0
@@ -172,7 +171,6 @@ scale = Vector2(4, 4)
 texture = SubResource("AtlasTexture_spy7q")
 
 [node name="StartButton" type="TextureButton" parent="." unique_id=701129200]
-visible = false
 layout_mode = 0
 offset_left = 852.0
 offset_top = 727.0
@@ -186,7 +184,6 @@ texture_pressed = SubResource("AtlasTexture_257up")
 texture_hover = SubResource("AtlasTexture_5cvai")
 
 [node name="CreditsButton" type="TextureButton" parent="." unique_id=657891541]
-visible = false
 layout_mode = 0
 offset_left = 824.0
 offset_top = 839.0
@@ -199,7 +196,6 @@ texture_pressed = SubResource("AtlasTexture_wrfco")
 texture_hover = SubResource("AtlasTexture_domf7")
 
 [node name="QuitButton" type="TextureButton" parent="." unique_id=2017726884]
-visible = false
 layout_mode = 0
 offset_left = 861.0
 offset_top = 953.0

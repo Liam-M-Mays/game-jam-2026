@@ -1,0 +1,35 @@
+name: Art
+description: A sprite, animation, UI piece or sound that needs making or changing
+labels: ["art"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What is needed?
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind
+      options:
+        - New asset
+        - Change to an existing asset
+        - Animation
+        - UI
+        - Sound or music
+    validations:
+      required: true
+  - type: textarea
+    id: where
+    attributes:
+      label: Where does it show up in the game?
+  - type: textarea
+    id: spec
+    attributes:
+      label: Size, frames, format
+      description: For example "16x16, 4 frames in one row, PNG".
+  - type: textarea
+    id: refs
+    attributes:
+      label: References

@@ -1,0 +1,38 @@
+area/code:
+- changed-files:
+  - any-glob-to-any-file:
+    - '**/*.gd'
+    - '**/*.gdshader'
+    - '**/*.gdshaderinc'
+
+area/scenes:
+- changed-files:
+  - any-glob-to-any-file:
+    - '**/*.tscn'
+    - '**/*.tres'
+    - 'project.godot'
+    - 'export_presets.cfg'
+
+area/art:
+- changed-files:
+  - any-glob-to-any-file:
+    - 'ART/**'
+    - 'assets/Art/**'
+    - '**/*.png'
+    - '**/*.aseprite'
+    - '**/*.svg'
+
+area/audio:
+- changed-files:
+  - any-glob-to-any-file:
+    - '**/*.wav'
+    - '**/*.mp3'
+    - '**/*.ogg'
+
+area/tooling:
+- changed-files:
+  - any-glob-to-any-file:
+    - '.github/**'
+    - '.claude/**'
+    - 'docs/**'
+    - '*.md'
