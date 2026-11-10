@@ -21,7 +21,8 @@ flowchart LR
 | **Testing** | A pull request is waiting for review and a play test | It is merged |
 | **Finished** | Merged into `master`, or closed | |
 
-- A confirmed bug skips Proposed and starts in Backlog. A bug nobody can repeat yet stays in Proposed until there are steps.
+- **Every `feature` starts as a suggestion.** It stays in Proposed until the team has talked it through. The text in a Proposed feature is a starting point for that talk, not a decision.
+- **A `fix` skips Proposed and starts in Backlog.** Something broken gets fixed, so there is nothing to agree on. If nobody can repeat the bug yet, the first job is to find the steps.
 - An idea the team turns down is closed as "not planned". It stays searchable.
 - The state lives on the board only. There is no "proposed" label, so the two can never disagree.
 - The board moves a card to Finished by itself when its issue is closed or its pull request is merged.
@@ -62,7 +63,7 @@ flowchart TD
 - An issue has one parent at most.
 - The parent says what and why. The children say how. A parent is finished when all its children are.
 - A pull request closes a child (`Closes #31`), not the parent.
-- **Split late.** A Proposed feature stays one issue. Split it into tasks and art when it moves to Backlog, once its open questions are answered. That keeps the board from filling up with tasks for things we may never build.
+- **No tasks for a Proposed feature.** While a feature is only a suggestion it stays one issue. Split it into tasks and art when it moves to Backlog, once the team has agreed on what it means. That keeps the board from filling up with tasks for things we may never build.
 - When one issue cannot start before another is done, mark it **blocked by** the other (issue sidebar, **Relationships**).
 
 ### Branch names
@@ -82,6 +83,7 @@ Feedback issues are a log, not work, so they stay off the board.
 
 - **Board**: every card by state.
 - **Top level**: the same, without sub-issues. Use it to see features without their tasks.
+- **Fixes and chores**: only `fix`, `chore` and `task` cards.
 - **Table**: everything in rows. Group it by **Parent issue** to see each feature with its children.
 
 ## Diagrams
