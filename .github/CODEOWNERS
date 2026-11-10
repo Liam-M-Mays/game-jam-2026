@@ -1,6 +1,11 @@
-# Who gets asked to review a pull request.
-# Anyone on the team can review anything.
-*           @Liam-M-Mays @Jaslem @mpaccado
+# Who GitHub asks to review a pull request automatically.
+# For now that is the lead programmer only. Other reviews are asked for by hand.
+# Anyone on the team can still review and approve anything.
+#
+# This file also decides whose approval counts if "Require review from Code
+# Owners" is switched on (planned for the art fast lane, see docs/art-folders.md).
+# Add the rest of the team back to the line below before switching that on.
+*           @Liam-M-Mays
 
 # Workflow, CI and repo rules: the lead programmer signs off.
 /.github/   @Liam-M-Mays
