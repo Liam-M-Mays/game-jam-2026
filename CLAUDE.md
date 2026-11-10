@@ -28,7 +28,7 @@ Mighty Meeple is a Godot 4.7.2 game (GDScript, GL Compatibility renderer). Three
 
 ## Code conventions
 
-- GDScript has no comments, and no commented-out code. Explain choices in the pull request instead.
+- Comments in GDScript are allowed. The earlier "no comments" rule was only there to save time during the game jam. How the code gets documented is being worked out in issue #22.
 - Use static types. Match the style of the file you are editing.
 - Game files must not reference anything under `ART/`. Art the game uses belongs in `assets/`. See `docs/art-folders.md`.
 - Do not add entries to `.github/ci/known-problems.txt` to get a check to pass. Fix the problem, or ask.

@@ -35,7 +35,7 @@ The rules behind these steps are in `CONTRIBUTING.md` and `CLAUDE.md`.
 
 ## Rules
 
-- No comments in GDScript and no commented-out code. Explain choices in the pull request text.
+- Follow the code conventions in `CLAUDE.md`. Match the style of the file you are editing.
 - Game files must not point into `ART/`.
 - If the pull request changes the structure of the code, update `docs/architecture.md` in the same pull request.
 - Do not add lines to `.github/ci/known-problems.txt`.
