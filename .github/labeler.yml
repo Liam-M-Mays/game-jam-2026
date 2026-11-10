@@ -33,5 +33,6 @@ area/tooling:
 - changed-files:
   - any-glob-to-any-file:
     - '.github/**'
+    - '.claude/**'
     - 'docs/**'
     - '*.md'
