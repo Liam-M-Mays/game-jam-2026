@@ -7,17 +7,10 @@
 A card moves from left to right on the [project board](https://github.com/users/Liam-M-Mays/projects/5).
 
 ```mermaid
-stateDiagram-v2
-    direction LR
-    state "In progress" as InProgress
-    [*] --> Proposed: idea, request or feedback
-    Proposed --> Backlog: the team says yes
-    Proposed --> [*]: closed as not planned
-    Backlog --> InProgress: someone picks it up
-    InProgress --> Testing: pull request opened
-    Testing --> InProgress: changes asked for
-    Testing --> Finished: merged
-    Finished --> [*]
+flowchart LR
+    Proposed --> Backlog --> InProgress["In progress"] --> Testing --> Finished
+    Testing -. changes asked for .-> InProgress
+    Proposed -. turned down .-> Closed["Closed as not planned"]
 ```
 
 | State | Means | Moves on when |
