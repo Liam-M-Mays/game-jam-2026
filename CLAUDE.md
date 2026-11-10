@@ -9,6 +9,7 @@ Mighty Meeple is a Godot 4.7.2 game (GDScript, GL Compatibility renderer). Three
 - One pull request does one thing. Do not mix a refactor with a feature.
 - Another agent or person may be using the same checkout. Use your own worktree or clone for branch work, and never stash, reset or switch branches in a checkout you did not create.
 - Full rules: `CONTRIBUTING.md`.
+- Issue types, parents and board states: `docs/workflow.md`. New issues start in Proposed. Moving one to Backlog is the team's call, not an agent's.
 
 ## Before you open a pull request
 

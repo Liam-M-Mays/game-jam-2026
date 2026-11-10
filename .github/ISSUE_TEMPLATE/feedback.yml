@@ -1,0 +1,19 @@
+name: Feedback
+description: Raw notes from players. Each point gets sorted into an issue afterwards
+labels: ["feedback"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Paste what players said, as it came. Sorting the points into issues happens afterwards, see `docs/workflow.md`.
+  - type: input
+    id: build
+    attributes:
+      label: Which build?
+      description: For example "jam build", or the date of the build that was played.
+  - type: textarea
+    id: notes
+    attributes:
+      label: What players said
+    validations:
+      required: true

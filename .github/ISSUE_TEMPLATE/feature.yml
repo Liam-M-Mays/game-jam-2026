@@ -2,6 +2,10 @@ name: Feature
 description: Something new the game should have or do
 labels: ["feature"]
 body:
+  - type: markdown
+    attributes:
+      value: |
+        A feature is a parent. Once the team agrees to build it, the tasks and art it needs become its sub-issues. See `docs/workflow.md`.
   - type: textarea
     id: what
     attributes:

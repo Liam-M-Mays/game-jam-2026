@@ -29,6 +29,7 @@ The first time you open a fresh clone, Godot prints script errors while it build
 
 ## More
 
+- [How work moves: issue types, states and the board](docs/workflow.md)
 - [Architecture diagrams](docs/architecture.md)
 - [How the automatic checks work](docs/ci.md)
 - [Credits and third-party assets](CREDITS.md)

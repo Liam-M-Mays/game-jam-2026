@@ -1,0 +1,25 @@
+name: Task
+description: One piece of work under a feature or chore, small enough for one pull request
+labels: ["task"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A task belongs to a parent. The easy way: open the parent issue and press **Create sub-issue**. If you made the task here first, open the parent and choose **Add existing issue**.
+  - type: textarea
+    id: what
+    attributes:
+      label: What needs doing?
+    validations:
+      required: true
+  - type: input
+    id: parent
+    attributes:
+      label: Parent issue
+      description: The feature or chore this belongs to, for example "#7".
+  - type: textarea
+    id: done
+    attributes:
+      label: How do we know it is done?
+      placeholder: |
+        - [ ] ...
