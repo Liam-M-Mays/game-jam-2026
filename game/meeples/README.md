@@ -152,7 +152,7 @@ add_child(view)
 | `test_meeple_walk.gd` | The two speeds, the straight line, the aim, stopping on a thing, the tick a walk is over, a listener that acts inside an arrival |
 | `test_meeple_wander.gd` | The wander rules asked by hand: the pause, the stroll around home, hangouts, the spot near a hangout, the 8 points, the 15 percent and the reach |
 | `test_meeple_strolls.gd` | The same rules on a meeple that ticks: the 15 percent, where a stroll ends, the home and the hangout after a job |
-| `test_meeple_listeners.gd` | A listener of `meeple_changed` that kills, sends on or lets go of a meeple as its walk ends |
+| `test_meeple_listeners.gd` | A listener of `meeple_changed` that kills, sends on, lets go or closes the village as a walk ends, and the other walks that end on the same tick |
 | `test_meeple_dying.gd` | The topple and the fade tick by tick, the side, the freeze, the event |
 | `test_meeple_same_seed.gd` | The same seed and commands give the same village, with the picture or without |
 | `test_meeple_view.gd` | One mover per row, the glide, the poses, the load, the topple and the fade in the batch |

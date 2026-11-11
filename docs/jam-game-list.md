@@ -310,7 +310,7 @@ The issue that checks this list at the end is [#75](https://github.com/Liam-M-Ma
 
 [Issue #16](https://github.com/Liam-M-Mays/game-jam-2026/issues/16)
 
-- [ ] **Changed** · A meeple walks in a straight line to its target. There is no pathfinding and no collision: on a job it walks straight through buildings, trees, rocks and other meeples. *Now:* Decision 11: building bases block walking. Trees, rocks and other meeples still do not. Straight line and 100 units/s stay in #64, with a slight per-meeple speed spread from #46. `meeples-straight-line-walk`
+- [ ] **Changed** · A meeple walks in a straight line to its target. There is no pathfinding and no collision: on a job it walks straight through buildings, trees, rocks and other meeples. *Now:* Decision 11: building bases block walking. Trees, rocks and other meeples still do not. Straight line and 100 units/s stay in #64. Decision 21: every meeple walks at the same speed. Only the start of its bounce is its own. `meeples-straight-line-walk`
 
 ## #6 deconstruct
 
