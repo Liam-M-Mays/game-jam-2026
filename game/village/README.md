@@ -6,7 +6,7 @@ Nothing about a village lives in a global. Two villages run side by side, and a 
 
 ## The files
 
-All of it is simulation code, in `sim/`.
+The simulation is in `sim/`. The picture is in `view/`: see [The picture](#the-picture).
 
 | File | What it is |
 | --- | --- |
@@ -48,6 +48,7 @@ The layout is the one of the jam game.
 - A cell stores its ground kind, what stands on it, who reserved it, and its loose drops.
 - A cell holds one thing at most. A footprint counts right for width and down for depth, 1 to 4 each. One missing or taken cell refuses the whole footprint.
 - Cells can have any coordinates, below zero too. A chunk is only made where a cell is added, so a round map costs no more than its cells.
+- `grid.add_cells(xs, ys, ground_kinds)` adds a whole world at once. It does what `add_cell` does for each cell, about twice as fast. Added by #48 for the world generator.
 
 The four questions it answers:
 
@@ -62,12 +63,45 @@ Reserving: `grid.reserve(cells, reserver)` and `grid.release(reserver)`. A reser
 
 Drops: `grid.drops.add(cell, kind, count)`, `grid.drops.take(cell, kind, count)`, `grid.drops.count_at(cell, kind)`, `grid.drops.has_any(cell)`, `grid.drops.at(cell)`. For now a stack of drops is a small dictionary per cell. Whether drops become rows in arrays is a question for #63.
 
+## The picture
+
+`view/` joins a village to the sprite batch. The picture only reads the village. A village with no picture runs the same.
+
+| File | What it is |
+| --- | --- |
+| `view/village_view.gd` | `VillageView`: the node that shows one village. It builds one atlas and one batch |
+| `view/village_view_layer.gd` | `VillageViewLayer`: the base of one part of the picture |
+| `view/village_layers.gd` | `VillageLayers`: the list of layers. **A new view is added here** |
+
+```gdscript
+var view := VillageView.new()
+add_child(view)
+view.attach(village, world.bounds, VillageLayers.of(village))
+```
+
+- **Art pixels:** the village counts in art pixels. The picture draws them 10 times as big: `VillageView.ART_SCALE`. Use `VillageView.to_pixels()` and `to_art()`.
+- **Cells:** `VillageView.batch_cells()` hands the numbers of `GridLayout` to the batch, so a cell is in the same place for both.
+- **Ids:** a thing goes into the batch under the number the village grid knows it by.
+
+### Adding a view
+
+1. Write a class that extends `VillageViewLayer`, in the `view/` folder of your own feature.
+2. Override what it needs:
+    - `add_sprites(village, atlas)`: add your sprites before the atlas is built. Keep the sprite numbers.
+    - `shader()`: return a batch shader when the plain one will not do. The first layer that names one decides.
+    - `start(village, view)`: put your things into `view.rows`, or shape your movers there. Own nodes go in with `view.add_under(node)` or `view.add_over(node)`.
+    - `update(village, view)`: runs every frame. Move your movers here.
+    - `close()`: let go of everything.
+3. Add one line to `VillageLayers.of()`. Make the layer only when the village has the part it draws.
+
+A layer never changes the village. It sends a command with `village.send()`.
+
 ## See it run
 
 Open `game/dev/village_demo/village_demo.tscn` in Godot and press F6. See [its page](../dev/village_demo/README.md).
 
 ## Tests
 
-`tests/`: `test_village.gd`, `test_village_grid.gd`, `test_grid_layout.gd`, `test_grid_questions.gd`, `test_grid_reserve_and_drops.gd`. Run them with `bash .github/ci/run_tests.sh --only=game/village`.
+`tests/`: `test_village.gd`, `test_village_grid.gd`, `test_grid_layout.gd`, `test_grid_questions.gd`, `test_grid_reserve_and_drops.gd`, `test_grid_add_cells.gd`, and `test_village_view.gd` for the picture. Run them with `bash .github/ci/run_tests.sh --only=game/village`.
 
-Built by: #60, #63 and #65. The rules for this folder are in [game/README.md](../README.md).
+Built by: #60, #63 and #65. The picture: #48. The rules for this folder are in [game/README.md](../README.md).
