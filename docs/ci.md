@@ -2,7 +2,9 @@
 
 **In one line:** every pull request runs two checks, and both have to be green before it can merge.
 
-They also run on `master` after each merge, so a broken master shows up as a red mark on the commit.
+They also run on `master` and on `core-rewrite` after each merge, so a broken branch shows up as a red mark on the commit.
+
+They do not run when you push to your own branch. Run both yourself before every push.
 
 ## Repo checks (a few seconds)
 

@@ -13,7 +13,8 @@ The first time you open a fresh clone, Godot prints script errors while it build
 
 ## How we work
 
-- Nobody pushes to `master`. Work on a branch and open a pull request.
+- This branch, `core-rewrite`, holds the rewrite of the game's core. The plan is issue #57 and the design is [docs/core-design.md](docs/core-design.md).
+- Nobody pushes to `master` or `core-rewrite`. Work on a branch and open a pull request into `core-rewrite`.
 - A pull request needs one approval and green checks before it merges.
 - Step-by-step commands are in [CONTRIBUTING.md](CONTRIBUTING.md).
 

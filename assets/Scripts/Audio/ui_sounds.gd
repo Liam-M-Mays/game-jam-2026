@@ -31,7 +31,9 @@ func _on_node_added(node : Node) -> void:
 		button.pressed.connect(_play_click)
 
 func _play_click() -> void:
-	_click.play()
+	# Buttons of the new game make their own sounds.
+	if OldGame.is_running(get_tree()):
+		_click.play()
 
 func _on_toast_requested(_text : String, kind : int) -> void:
 	if kind != GameState.ToastKind.WARNING:

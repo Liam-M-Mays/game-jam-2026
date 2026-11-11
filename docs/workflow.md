@@ -19,13 +19,14 @@ flowchart LR
 | **Backlog** | Agreed and clear enough to start. Nobody is on it yet | Someone assigns themselves and makes a branch |
 | **In progress** | Someone is working on a branch | A pull request is opened |
 | **Testing** | A pull request is waiting for review and a play test | It is merged |
-| **Finished** | Merged into `master`, or closed | |
+| **Finished** | Merged into `core-rewrite` and the issue closed by hand, or closed | |
 
 - **Every `feature` starts as a suggestion.** It stays in Proposed until the team has talked it through. The text in a Proposed feature is a starting point for that talk, not a decision.
 - **A `fix` skips Proposed and starts in Backlog.** Something broken gets fixed, so there is nothing to agree on. If nobody can repeat the bug yet, the first job is to find the steps.
 - An idea the team turns down is closed as "not planned". It stays searchable.
 - The state lives on the board only. There is no "proposed" label, so the two can never disagree.
-- The board moves a card to Finished by itself when its issue is closed or its pull request is merged.
+- The board moves a card to Finished by itself when its issue is closed.
+- **During the core rewrite** every pull request goes into the branch `core-rewrite`, not into `master`. GitHub does not close an issue from that branch, so the issue is closed by hand after its last pull request is merged. The plan is issue #57.
 
 ## The types
 
@@ -62,7 +63,7 @@ flowchart TD
 - GitHub calls these **sub-issues**. Open the parent and press **Create sub-issue**, or choose **Add existing issue**.
 - An issue has one parent at most.
 - The parent says what and why. The children say how. A parent is finished when all its children are.
-- A pull request closes a child (`Closes #31`), not the parent.
+- A pull request names a child ("Part of #31"), not the parent. The child is closed by hand after the merge.
 - **No tasks for a Proposed feature.** While a feature is only a suggestion it stays one issue. Split it into tasks and art when it moves to Backlog, once the team has agreed on what it means. That keeps the board from filling up with tasks for things we may never build.
 - When one issue cannot start before another is done, mark it **blocked by** the other (issue sidebar, **Relationships**).
 
