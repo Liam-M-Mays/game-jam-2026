@@ -17,18 +17,21 @@ The rules behind these steps are in `CONTRIBUTING.md` and `CLAUDE.md`.
 
    ```bash
    git fetch origin
-   git worktree add <path> -b <type>/<short-name> origin/core-rewrite
+   git worktree add --no-track -b wt/<short-name> <path> origin/core-rewrite
    ```
 
-2. Name the branch `feature/...`, `fix/...`, `art/...` or `chore/...`.
+   The local branch is `wt/<short-name>`, not the name of the pull request branch. Git lets a branch be checked out in one folder only, and Liam tests a pull request by switching his main folder to its branch. A worktree that holds that name blocks him.
+
+2. Name the pull request branch `feature/...`, `fix/...`, `art/...` or `chore/...`. It exists on GitHub, not in your worktree.
 3. Keep it to one part of the plan. A core pull request may be big. A big one comes with a short walkthrough, a demo scene and tests.
 4. Run both checks before every push. CI does not run on a push to your own branch. The `mm-godot-check` skill has the commands and the traps.
 5. Read the diff of every `.tscn` and `.tres`. Revert any scene you did not mean to change.
 6. Commit the `.uid` and `.import` files that Godot made next to new files.
 7. Write a commit message that says what changed and why, in one line.
-8. Push the branch and open the pull request with `gh pr create --base core-rewrite`. Fill in the template: what changed, the "done" lines of the issue it claims with the proof for each, how a person tests it, and the checklist. Name the issue with "Part of #N". Do not write a closing keyword: the issue is closed by hand after the merge.
+8. Push with `git push origin HEAD:<type>/<short-name>` and open the pull request with `gh pr create --base core-rewrite --head <type>/<short-name>`. Fill in the template: what changed, the "done" lines of the issue it claims with the proof for each, how a person tests it, and the checklist. Name the issue with "Part of #N". Do not write a closing keyword: the issue is closed by hand after the merge.
 9. Put the inventory in the pull request. Run `python3 .github/ci/pr_inventory.py` after your last commit and paste what it prints under "Inventory". It counts scripts, scenes and lines of code. Update it whenever you push more commits.
-10. Stop there. A person reviews and merges. Never approve or merge a pull request yourself.
+10. Tell Liam which branch to switch to for testing. Do not build a folder with several pull requests merged together, unless he asks.
+11. Stop there. A person reviews and merges. Never approve or merge a pull request yourself.
 
 ## Leave people to the person you work for
 

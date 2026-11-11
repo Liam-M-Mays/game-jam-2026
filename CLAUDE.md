@@ -7,12 +7,14 @@ Mighty Meeple is a Godot 4.7.2 game (GDScript, GL Compatibility renderer). Three
 ## Workflow rules
 
 - All rework goes into `core-rewrite` through pull requests. Never commit to `core-rewrite` directly.
-- Cut your work from `origin/core-rewrite`, on a branch named `feature/...`, `fix/...`, `art/...` or `chore/...`. Open the pull request with `--base core-rewrite`.
+- Cut your work from `origin/core-rewrite`. The pull request branch is named `feature/...`, `fix/...`, `art/...` or `chore/...`. Open the pull request with `--base core-rewrite`.
 - `master` is frozen until the rework is done. Nothing from this branch goes there. The one exception is art that only touches `ART/`, which follows the rules in the copy of `CONTRIBUTING.md` on `master`.
 - A pull request says "Part of #N". Do not write a closing keyword: GitHub ignores them on this branch. The issue is closed by hand after the merge.
 - Do not merge pull requests and do not approve them. Liam reviews every one.
 - A core pull request may be big. Parts are preferred. A big one comes with a short walkthrough, a demo scene and tests. Once the core works, one pull request does one thing again.
 - Another agent or person may be using the same checkout. Use your own worktree or clone for branch work, and never stash, reset or switch branches in a checkout you did not create.
+- In your worktree the local branch is named `wt/<short-name>`, never the name of the pull request branch. Push with `git push origin HEAD:<type>/<short-name>`. Git lets a branch be checked out in one folder only, and Liam tests a pull request by switching his main folder to its branch. A worktree that holds that name blocks him. Liam asked for this on 2026-11-11.
+- When a pull request is ready, tell Liam which branch to switch to. Do not build a folder with several pull requests merged together for him to test, unless he asks.
 - Full rules: `CONTRIBUTING.md`.
 - Issue types, parents and board states: `docs/workflow.md`.
 - A `feature` is a suggestion until the team agrees on it. Do not assume what it means, do not create tasks for it, and do not move it to Backlog. A `fix` goes straight to Backlog.

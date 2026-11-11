@@ -29,6 +29,8 @@ You are reading the copy of this file on the branch `core-rewrite`. The core of 
    git switch -c feature/village-tick
    ```
 
+   An AI agent that works in its own worktree does this differently. Its local branch is named `wt/...`, and it pushes to the pull request branch with `git push origin HEAD:feature/village-tick`. Git lets a branch be checked out in one folder only, so this keeps the pull request branch free for a person to switch to and test. The rule is in `CLAUDE.md`.
+
 3. Commit as you go, then push the branch.
 
    ```bash
