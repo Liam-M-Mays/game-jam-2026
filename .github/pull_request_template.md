@@ -22,4 +22,5 @@
 - [ ] The base of this pull request is `core-rewrite`
 - [ ] I ran the repo checks, the Godot checks and the linter myself before pushing
 - [ ] New rules in `game/` or `addons/` have a test
+- [ ] Every new class and public function has a `##` doc comment, and the folder's `README.md` is up to date
 - [ ] CI is green, or I explained below why it is not
