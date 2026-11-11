@@ -1,5 +1,7 @@
-extends Sprite2D
+extends RefCounted
 class_name Meeple
+## One meeple as plain data. Grid owns it, ticks it once a frame and gives it one canvas item to draw on.
+## Positions are in Grid's space, apart from `global_position`.
 
 const WANDER_ATTEMPTS := 8
 const CARRY_FRAMES := { "wood": 2, "stone": 4 }
@@ -13,26 +15,24 @@ const PATH_CHECKS := 8
 const FEET_OFFSET := Vector2(0, 1)
 const TOPPLE_REBOUND := 0.2
 const TOPPLE_REBOUND_TIME := 0.08
+## How fast the bounce clock runs per second of game time. The jam's bounce ran this fast at speed x1.
+const BOUNCE_RATE := 1000.0 / 60.0
+## A standing meeple only redraws when its stretch moves by this much, so it costs no call most frames.
+const STAND_STRETCH_STEP := 0.01
 
-@export var speed := 100
-@export var y_stretch := 0.1
-@export var stretch_speed := 0.25
-@export var wobble := 10
-@export var wobble_speed := 1.5
-@export var wander_radius := 60.0
-@export var wander_speed := 30
-@export var wander_pause_min := 1.0
-@export var wander_pause_max := 3.5
-@export var wander_ring := 2
-@export var building_hop_chance := 0.15
-@export var topple_time := 0.45
-@export var corpse_linger := 0.6
-@export var fade_time := 0.8
-
-@export var grid : Grid
-
+var grid : Grid
 var job : Job
+var position : Vector2
+var global_position : Vector2:
+	get:
+		return grid.to_global(position)
 
+var _look : MeepleLook
+var _item : RID
+var _body_color := Color.from_hsv(randf(), 0.8, 0.9)
+var _rotation := 0.0
+var _stretch := 1.0
+var _bounce := 0.0
 var _target : Vector2
 var _stop_cells : Array[Cell] = []
 var _wandering := false
@@ -40,22 +40,32 @@ var _wander_home : Vector2
 var _wander_pause := 0.0
 var _wander_building : Building = null
 var _idle_check := 0.0
+var _dead_time := -1.0
+var _feet : Vector2
+var _arm : Vector2
+var _lying := 0.0
+var _fall_from := 0.0
 
-@onready var _base_scale_y := scale.y
-@onready var _head : AnimatedSprite2D = $head
+func _init(owner : Grid, look : MeepleLook, at : Vector2) -> void:
+	grid = owner
+	_look = look
+	position = at
+	_target = at
+	_bounce = randf() * TAU / look.stretch_speed
+	_item = RenderingServer.canvas_item_create()
+	RenderingServer.canvas_item_set_parent(_item, owner.get_canvas_item())
+	RenderingServer.canvas_item_set_z_index(_item, look.z_index)
+	carry()
+	_show()
 
-func _enter_tree() -> void:
-	JobSystem.add_worker(self)
-
-func _exit_tree() -> void:
-	JobSystem.remove_worker(self)
-
-func _ready() -> void:
-	self_modulate = Color.from_hsv(randf(), 0.8, 0.9)
-	_target = position
+## Frees the canvas item. Grid calls this when it leaves the game.
+func free_item() -> void:
+	if _item.is_valid():
+		RenderingServer.free_rid(_item)
+	_item = RID()
 
 func move_to(world_pos : Vector2, stop_cells : Array[Cell] = []) -> void:
-	_target = get_parent().to_local(world_pos) + SORT_BIAS
+	_target = grid.to_local(world_pos) + SORT_BIAS
 	_stop_cells = stop_cells
 
 func stop() -> void:
@@ -74,51 +84,74 @@ func abandon_job() -> void:
 
 func die() -> void:
 	VillageAudio.play(&"hurt", global_position)
-	set_process(false)
-	set_physics_process(false)
 	if job != null:
 		JobSystem.requeue(job, self)
 		job = null
 	JobSystem.remove_worker(self)
-	_topple()
-
-func _topple() -> void:
-	scale.y = _base_scale_y
-	var arm := FEET_OFFSET * scale
-	var feet := position + arm.rotated(rotation)
-	var side := 1.0 if randf() < 0.5 else -1.0
-	var lying := side * PI * 0.5
-	var rebound := lying - side * TOPPLE_REBOUND
-	var lean := _lean.bind(feet, arm)
-	var tween := create_tween()
-	tween.tween_method(lean, rotation, lying, topple_time).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	tween.tween_method(lean, lying, rebound, TOPPLE_REBOUND_TIME).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	tween.tween_method(lean, rebound, lying, TOPPLE_REBOUND_TIME).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
-	tween.tween_interval(corpse_linger)
-	tween.tween_property(self, "modulate:a", 0.0, fade_time)
-	tween.tween_callback(queue_free)
-
-func _lean(angle : float, feet : Vector2, arm : Vector2) -> void:
-	rotation = angle
-	position = feet - arm.rotated(angle)
+	_stretch = 1.0
+	_arm = FEET_OFFSET * _look.scale
+	_feet = position + _arm.rotated(_rotation)
+	_fall_from = _rotation
+	_lying = (1.0 if randf() < 0.5 else -1.0) * PI * 0.5
+	_dead_time = 0.0
 
 func carry(kind := "", amount := 1) -> void:
 	if amount >= 2 and DOUBLE_CARRY_FRAMES.has(kind):
-		_head.frame = DOUBLE_CARRY_FRAMES[kind]
-		_head.offset.y = DOUBLE_CARRY_HEAD_OFFSET
+		_look.draw(_item, _body_color, DOUBLE_CARRY_FRAMES[kind], DOUBLE_CARRY_HEAD_OFFSET)
 		return
-	_head.frame = CARRY_FRAMES.get(kind, 0)
-	_head.offset.y = CARRY_HEAD_OFFSET if CARRY_FRAMES.has(kind) else 0.0
+	_look.draw(_item, _body_color, CARRY_FRAMES.get(kind, 0), CARRY_HEAD_OFFSET if CARRY_FRAMES.has(kind) else 0.0)
 
-func _physics_process(delta : float) -> void:
-	var t := Time.get_ticks_msec() * delta
+## Moves, works and draws for one frame. Returns false once a dead meeple has faded out and freed its item.
+func tick(delta : float) -> bool:
+	if _dead_time >= 0.0:
+		return _tick_dead(delta)
+	_bounce += delta * BOUNCE_RATE
 	var moving := not has_arrived()
 	if moving:
-		position = position.move_toward(_target, delta * (wander_speed if _wandering else speed))
-	scale.y = _base_scale_y * (1 + sin(t * stretch_speed) * y_stretch * (1.0 if moving else 0.5))
-	rotation_degrees = sin(t * wobble_speed) * wobble if moving else 0.0
+		position = position.move_toward(_target, delta * (_look.wander_speed if _wandering else _look.speed))
+		_stretch = 1 + sin(_bounce * _look.stretch_speed) * _look.y_stretch
+		_rotation = deg_to_rad(sin(_bounce * _look.wobble_speed) * _look.wobble)
+		_show()
+	else:
+		var stretch := 1 + snappedf(sin(_bounce * _look.stretch_speed) * _look.y_stretch * 0.5, STAND_STRETCH_STEP)
+		if stretch != _stretch or _rotation != 0.0:
+			_stretch = stretch
+			_rotation = 0.0
+			_show()
+	_work(delta)
+	return true
 
-func _process(delta : float) -> void:
+func _show() -> void:
+	var scale := Vector2(_look.scale.x, _look.scale.y * _stretch)
+	RenderingServer.canvas_item_set_transform(_item, Transform2D(_rotation, scale, 0.0, position))
+
+func _tick_dead(delta : float) -> bool:
+	_dead_time += delta
+	var fall_end := _look.topple_time + TOPPLE_REBOUND_TIME * 2
+	if _dead_time - delta <= fall_end:
+		_rotation = _topple_angle(minf(_dead_time, fall_end))
+		position = _feet - _arm.rotated(_rotation)
+		_show()
+	var fade := (_dead_time - fall_end - _look.corpse_linger) / _look.fade_time
+	if fade >= 1.0:
+		free_item()
+		return false
+	if fade > 0.0:
+		RenderingServer.canvas_item_set_modulate(_item, Color(1, 1, 1, 1.0 - fade))
+	return true
+
+func _topple_angle(t : float) -> float:
+	var rebound := _lying - signf(_lying) * TOPPLE_REBOUND
+	if t < _look.topple_time:
+		var x := t / _look.topple_time
+		return lerpf(_fall_from, _lying, x * x)
+	t -= _look.topple_time
+	if t < TOPPLE_REBOUND_TIME:
+		return lerpf(_lying, rebound, sin(t / TOPPLE_REBOUND_TIME * PI * 0.5))
+	t -= TOPPLE_REBOUND_TIME
+	return lerpf(rebound, _lying, 1.0 - cos(minf(t / TOPPLE_REBOUND_TIME, 1.0) * PI * 0.5))
+
+func _work(delta : float) -> void:
 	if job is IdleJob and JobSystem.has_pending():
 		JobSystem.requeue(job, self)
 		job = null
@@ -149,12 +182,12 @@ func _wander(delta : float) -> void:
 		_wandering = true
 		_wander_home = position
 		_wander_building = _nearest_building()
-		_wander_pause = randf_range(wander_pause_min, wander_pause_max)
+		_wander_pause = randf_range(_look.wander_pause_min, _look.wander_pause_max)
 	_wander_pause -= delta
 	if _wander_pause > 0:
 		return
-	_wander_pause = randf_range(wander_pause_min, wander_pause_max)
-	if not is_instance_valid(_wander_building) or randf() < building_hop_chance:
+	_wander_pause = randf_range(_look.wander_pause_min, _look.wander_pause_max)
+	if not is_instance_valid(_wander_building) or randf() < _look.building_hop_chance:
 		_wander_building = _pick_building()
 	if _wander_building != null:
 		var spot = _spot_near(_wander_building)
@@ -162,19 +195,19 @@ func _wander(delta : float) -> void:
 			_target = spot
 			return
 	for i in range(WANDER_ATTEMPTS):
-		var spot := _wander_home + Vector2.from_angle(randf() * TAU) * randf_range(wander_radius * 0.25, wander_radius)
-		if grid.cell_at(get_parent().to_global(spot)) != null:
+		var spot := _wander_home + Vector2.from_angle(randf() * TAU) * randf_range(_look.wander_radius * 0.25, _look.wander_radius)
+		if grid.cell_at(grid.to_global(spot)) != null:
 			_target = spot
 			return
 
 func _spot_near(building : Building):
-	var cells := grid.cells_around(building, wander_ring)
+	var cells := grid.cells_around(building, _look.wander_ring)
 	cells.shuffle()
 	var fallback = null
 	var fallback_dist := INF
 	for i in range(mini(cells.size(), WANDER_ATTEMPTS)):
 		var jitter := Vector2(randf_range(-1, 1), randf_range(-1, 1)) * WANDER_JITTER
-		var spot : Vector2 = get_parent().to_local(grid.to_global(cells[i].position)) + jitter
+		var spot : Vector2 = cells[i].position + jitter
 		if _clear_path(spot):
 			return spot
 		var dist := position.distance_squared_to(spot)
@@ -186,7 +219,7 @@ func _spot_near(building : Building):
 func _clear_path(to : Vector2) -> bool:
 	for i in range(1, PATH_CHECKS + 1):
 		var point : Vector2 = position.lerp(to, float(i) / PATH_CHECKS)
-		var cell := grid.cell_at(get_parent().to_global(point))
+		var cell := grid.cell_at(grid.to_global(point))
 		if cell != null and cell.occupant is Building:
 			return false
 	return true
@@ -194,7 +227,7 @@ func _clear_path(to : Vector2) -> bool:
 func _nearest_building() -> Building:
 	var best : Building = null
 	var best_dist := INF
-	for building in get_tree().get_nodes_in_group(Building.COMPLETED_GROUP):
+	for building in grid.get_tree().get_nodes_in_group(Building.COMPLETED_GROUP):
 		var dist := global_position.distance_squared_to(building.global_position)
 		if dist < best_dist:
 			best_dist = dist
@@ -202,7 +235,7 @@ func _nearest_building() -> Building:
 	return best
 
 func _pick_building() -> Building:
-	var buildings := get_tree().get_nodes_in_group(Building.COMPLETED_GROUP)
+	var buildings := grid.get_tree().get_nodes_in_group(Building.COMPLETED_GROUP)
 	if buildings.is_empty():
 		return null
 	var weights : Array[float] = []
