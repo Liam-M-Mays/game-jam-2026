@@ -15,3 +15,8 @@ func test_the_world_has_a_sensible_size() -> void:
 
 func test_the_tick_rate_starts_at_twenty() -> void:
 	check_eq(DevSettings.new().ticks_per_second, 20)
+
+
+func test_no_world_seed_is_fixed() -> void:
+	check_eq(DevSettings.new().world_seed, 0, "0 means a new random seed for each game")
+	check_eq(DevSettings.load_settings().world_seed, 0, "the saved settings fix no seed")

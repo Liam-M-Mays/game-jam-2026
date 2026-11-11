@@ -12,6 +12,10 @@ const PATH := "res://game/core/dev_settings.tres"
 ## real count differs a little.
 @export_range(500, 1000000, 1) var world_cells: int = 100000
 
+## The seed the ground world is made from. 0 means every new game gets a new
+## random seed. Any other number makes the same world every time.
+@export var world_seed: int = 0
+
 ## How many times a second the simulation steps at normal game speed.
 @export_range(1, 120, 1) var ticks_per_second: int = 20
 

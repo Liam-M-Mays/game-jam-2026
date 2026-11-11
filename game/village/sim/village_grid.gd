@@ -56,6 +56,44 @@ func add_cell(cell: Vector2i, ground_kind: int = PLAIN_GROUND) -> bool:
 	return true
 
 
+## Adds many cells at once, for a whole world. Cell number i is at
+## ([param xs][i], [param ys][i]) and gets [param ground_kinds][i]. Each cell
+## is treated as [method add_cell] would treat it, only quicker: the chunk is
+## looked up once per run of cells that share it. A ground kind of 0 leaves
+## its cell out. Returns how many cells are new.
+func add_cells(xs: PackedInt32Array, ys: PackedInt32Array, ground_kinds: PackedByteArray) -> int:
+	var added := 0
+	var size := GridChunk.SIZE
+	var key := GridLayout.NO_CELL
+	var chunk: GridChunk = null
+	for at in mini(xs.size(), mini(ys.size(), ground_kinds.size())):
+		var ground_kind := ground_kinds[at]
+		if ground_kind == NO_GROUND:
+			continue
+		var x := xs[at]
+		var y := ys[at]
+		var column := posmod(x, size)
+		var line := posmod(y, size)
+		@warning_ignore("integer_division")
+		var key_x := (x - column) / size
+		@warning_ignore("integer_division")
+		var key_y := (y - line) / size
+		if key_x != key.x or key_y != key.y:
+			key = Vector2i(key_x, key_y)
+			chunk = _chunks.get(key)
+			if chunk == null:
+				chunk = GridChunk.new()
+				_chunks[key] = chunk
+		var index := line * size + column
+		if chunk.ground[index] == NO_GROUND:
+			added += 1
+		chunk.ground[index] = ground_kind
+	_cell_total += added
+	_last_key = GridLayout.NO_CELL
+	_last_chunk = null
+	return added
+
+
 ## True when [param cell] exists.
 func has_cell(cell: Vector2i) -> bool:
 	return _chunk_with(cell) != null

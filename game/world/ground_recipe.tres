@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="WorldRecipe" format=3 uid="uid://btkyifvowkeum"]
+
+[ext_resource type="Script" path="res://game/world/sim/world_band.gd" id="1_k0dc8"]
+[ext_resource type="Script" path="res://game/world/sim/world_recipe.gd" id="2_8nvm3"]
+
+[sub_resource type="Resource" id="Resource_f2qeb"]
+script = ExtResource("1_k0dc8")
+band_name = &"dark"
+share = 0.25
+colour = Color(0.3686, 0.5765, 0.3647, 1)
+kinds = Array[StringName]([&"big_tree", &"big_rock"])
+
+[sub_resource type="Resource" id="Resource_mnajg"]
+script = ExtResource("1_k0dc8")
+band_name = &"light"
+share = 0.75
+colour = Color(0.4353, 0.6431, 0.4235, 1)
+kinds = Array[StringName]([&"tree", &"rock", &"bush"])
+
+[resource]
+script = ExtResource("2_8nvm3")
+bands = Array[ExtResource("1_k0dc8")]([SubResource("Resource_f2qeb"), SubResource("Resource_mnajg")])
+amounts = Dictionary[StringName, int]({
+&"big_rock": 36,
+&"big_tree": 34,
+&"bush": 15,
+&"rock": 60,
+&"tree": 60
+})

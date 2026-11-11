@@ -53,7 +53,7 @@ func my_function(village: Village) -> void:   # the village is handed over
 
 ## Dev settings
 
-- `dev_settings.gd`: the dev settings and their defaults. Today: the world size (100,000 cells) and the tick rate (20 a second).
+- `dev_settings.gd`: the dev settings and their defaults. Today: the world size (100,000 cells), the world seed (0, which means a new random seed for each game) and the tick rate (20 a second).
 - `dev_settings.tres`: the saved values. Open it in the Godot Inspector to change one. Godot only writes a value into the file when it differs from the default.
 - Read them in code with `DevSettings.load_settings()`.
 
