@@ -9,9 +9,11 @@ shader_type canvas_item;
 // The four numbers of a sprite (INSTANCE_CUSTOM):
 //   x  the sprite to draw. For a meeple this is its head picture.
 //   y  meeple: where its bounce starts, so a crowd does not move as one.
+//      Dying meeple: how far it has tipped over, in radians. Above zero is to the right.
 //   z  meeple: how far the head is lifted, in art pixels. 0.5 or 1 when it carries.
-//   w  0 plain sprite, 1 standing meeple, 2 walking meeple.
-// The colour of a sprite tints all of it. For a meeple it tints the body only.
+//   w  0 plain sprite, 1 standing meeple, 2 walking meeple, 3 dying meeple.
+// The colour of a sprite tints all of it. For a meeple it tints the body only,
+// and its alpha fades the whole meeple.
 
 #include "res://addons/sprite_batch/sprite_batch.gdshaderinc"
 
@@ -20,6 +22,9 @@ const vec2 BOX = vec2(3.0, 6.0);
 // The middle of the body inside the box, counted from the box middle in box sizes.
 // The meeple stretches and tilts around this point.
 const vec2 PIVOT = vec2(0.0, 1.0 / 3.0);
+// The feet: 1 pixel below the middle of the body, which is the bottom of the box.
+// A dying meeple tips over around this point.
+const vec2 FEET = vec2(0.0, 0.5);
 
 // The bounce numbers. MeepleLook sets them, and its tests check them. The
 // values here are the same ones, so the shader is right before it is dressed.
@@ -48,7 +53,14 @@ void vertex() {
 	v_tint = COLOR;
 	v_local = UV;
 	v_body = vec4(0.0);
-	if (INSTANCE_CUSTOM.w > 0.5) {
+	if (INSTANCE_CUSTOM.w > 2.5) {
+		// Dying: no bounce. The whole box turns around the feet by the angle in y.
+		v_body = batch_rect(meeple_body);
+		vec2 v = (VERTEX - FEET) * BOX;
+		float c = cos(INSTANCE_CUSTOM.y);
+		float s = sin(INSTANCE_CUSTOM.y);
+		VERTEX = vec2(v.x * c - v.y * s, v.x * s + v.y * c) / BOX + FEET;
+	} else if (INSTANCE_CUSTOM.w > 0.5) {
 		v_body = batch_rect(meeple_body);
 		float walking = INSTANCE_CUSTOM.w - 1.0;
 		float t = batch_clock * meeple_clock_rate + INSTANCE_CUSTOM.y;
@@ -82,9 +94,12 @@ void fragment() {
 				&& head_pixel.x < v_rect.z && head_pixel.y < v_rect.w) {
 			head = texture(TEXTURE, batch_uv(v_rect, head_pixel)) * meeple_head_tint;
 		}
-		// The head is drawn over the body, as the child sprite was.
-		colour = vec4(mix(body.rgb, head.rgb, head.a), max(body.a, head.a));
-		colour.a *= v_tint.a;
+		// The head is drawn over the body, as the child sprite was. Each of the
+		// two fades by itself, so the body shows through a fading head.
+		float head_a = head.a * v_tint.a;
+		float body_a = body.a * v_tint.a * (1.0 - head_a);
+		float both = head_a + body_a;
+		colour = vec4((head.rgb * head_a + body.rgb * body_a) / max(both, 0.0001), both);
 	}
 	COLOR = colour;
 }

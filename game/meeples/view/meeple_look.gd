@@ -54,6 +54,12 @@ const BOX_SLACK := 1.0
 const STANDING := 1.0
 ## The fourth shader number of a meeple that walks.
 const WALKING := 2.0
+## The fourth shader number of a meeple that is dying. Its second number is
+## then how far it has tipped over, and no longer its bounce start.
+const DYING := 3.0
+## A dying meeple tips over around its feet: this far below the middle of its
+## body, in art pixels.
+const FEET_BELOW := 1.0
 ## The jam game counts its bounce time in milliseconds divided by 60. This
 ## turns seconds into that time.
 const CLOCK_RATE := 1000.0 / 60.0
@@ -150,3 +156,11 @@ func numbers(frame: int, phase: float, walking: bool) -> Vector4:
 	return Vector4(
 		float(head_sprites[frame]), phase, head_lift(frame), WALKING if walking else STANDING
 	)
+
+
+## Returns the four shader numbers of a dying meeple: its head picture, how
+## far it has tipped over in radians (above zero is to the right), how far its
+## head is lifted, and the dying mark. It does not bounce. Its fade is the
+## alpha of its colour.
+func dying_numbers(frame: int, topple: float) -> Vector4:
+	return Vector4(float(head_sprites[frame]), topple, head_lift(frame), DYING)

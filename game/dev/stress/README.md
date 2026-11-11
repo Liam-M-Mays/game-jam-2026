@@ -1,8 +1,8 @@
 # game/dev/stress/
 
-**What lives here:** the scenes that measure and show the sprite batch. Dev only. Nothing here goes into the export.
+**What lives here:** the scenes that measure and show the sprite batch and the meeples. Dev only. Nothing here goes into the export.
 
-Built by #61. More stress tests come with #74.
+Built by #61 (the batch) and #64 (the meeples). More stress tests come with #74.
 
 ## The scenes
 
@@ -11,8 +11,10 @@ Built by #61. More stress tests come with #74.
 | `batch_demo.tscn` | A small village-sized scene to look at. Open it and press F6 |
 | `stress.tscn` | Thousands of wandering meeples and 6,000 static things, all in view. Measures the frame time |
 | `meeple_compare.tscn` | Draws six meeples with the jam game's scene and with the batch, and counts the pixels that differ |
+| `meeple_stress.tscn` | 5,000 meeples wander on a flat grid of 100,000 cells, on the real simulation. Measures the frame time |
+| `meeple_sim_compare.tscn` | Draws walking, carrying and dying meeples with the jam game's scene and with the new simulation, side by side |
 
-All three need a window. They do not run in CI.
+All five need a window. They do not run in CI.
 
 ## The demo
 
@@ -33,6 +35,61 @@ Open `batch_demo.tscn` in Godot and press F6.
 - `shot=/full/path.png` saves a picture of the last run.
 - `churn=30` sets how many drops are taken away and put back every frame. 30 is the default.
 - "Wander ms" is the scene's own stand-in for the simulation. "Batch ms" is the script time of the sprite batch. "Render ms" is Godot's drawing time on the processor. The rest of a frame is spent handing the picture to the screen.
+
+## The meeple stress scene
+
+This is the run of issue #64: the real simulation, not a stand-in. A `Village` with a `VillageMeeples` part is ticked by the Game service, and a `MeepleView` draws it through the batch.
+
+```bash
+"/path/to/Godot" --path . --rendering-driver opengl3 --resolution 1920x1080 "res://game/dev/stress/meeple_stress.tscn" -- meeples=5000,5000,5000 quit=1
+```
+
+- That is three runs of 5,000 meeples. Each run builds a fresh village. It prints one `MEEPLE_STRESS_RESULT` line per run, and a table at the end.
+- The grid is flat and has about 100,000 cells. All of it is in view, so every meeple is drawn. A meeple is only a few pixels tall from that far away.
+- The meeples have nothing to do, so they wander by the jam game's rules: pause, stroll, pause.
+- Before the measuring starts the village runs 400 ticks, which is 20 seconds of game time. A new meeple stands for up to 3.5 seconds first, so without this the run would measure a crowd that mostly stands.
+- `cells=100000` sets the size of the grid. `seed=64` sets the seed. `speed=3` sets the game speed.
+- `hangouts=300` adds huts. The meeples then stroll around the huts and change huts, as they do in a village.
+- `shot=/full/path.png` saves a picture of the last run. `close_shot=/full/path.png` saves one from close up.
+- `column_width=960` sets how wide the batch's mover columns are. See "Batch ms" below.
+
+What the columns mean:
+
+| Column | What it is |
+| --- | --- |
+| Ticks a second | How many ticks ran. 20 at game speed x1 |
+| Walking | How many meeples walked, on average per tick. The others waited and cost nothing |
+| Stepped a tick | How many meeple steps one tick ran |
+| Ms a tick, Worst tick ms | How long one tick of the village took |
+| Sim ms | The ticks, spread over all frames. Most frames run no tick |
+| View ms | `MeepleView`: the glide of the walking meeples |
+| Batch ms | The sprite batch: putting together what is on screen and sending it |
+| Render ms | Godot's drawing time on the processor |
+
+- **Batch ms is high in this scene on purpose.** The whole world is in view, so the batch looks at every mover column of every band in every frame: about 39,000 of them. From close up it looks at far fewer. Wider columns (`column_width=3840`) make it cheaper here.
+- The same traps as for the batch stress scene apply. Read "How a frame rate is measured" below before trusting a number.
+
+## The side-by-side look
+
+```bash
+"/path/to/Godot" --path . --rendering-driver opengl3 --resolution 1920x1080 "res://game/dev/stress/meeple_sim_compare.tscn" -- quit=1
+```
+
+- The lower half is the real thing: a village is ticked, and `MeepleView` draws it through the batch. The upper half is the jam game's meeple scene, posed by hand with the jam game's own formulas and Godot's own tween maths.
+- It ends with exit code 0 when no pose clearly differs in more pixels than the script expects, and with 1 when one does.
+- A normal run writes no file. `save=1` writes the side-by-side pictures. `update=1` also writes the jam half again as the reference.
+- `pictures/meeple_sim_<pose>.png` is the side-by-side picture. `pictures/meeple_sim_<pose>_reference.png` is the jam half alone, so the check still works after the jam scene is gone.
+
+| Pose | What it shows | Pixels that clearly differ, of 921,600 (Apple M3) |
+| --- | --- | --- |
+| `walk_carry` | 8 meeples walking, half way between two ticks, and 8 standing. Every load | 79 |
+| `topple` | 0, 3, 6, 9, 10, 11, 12 and 20 ticks after death. Upper line died standing, lower line died walking | 56 |
+| `fade` | 24, 27, 30, 33, 36, 38, 39 and 40 ticks after death | 0 |
+
+- The walk and the topple differ in single pixels on tilted edges, as in the pixel comparison below.
+- **Colours that are one or two steps of 255 apart count as the same.** About 2,400 pixels of the walk and of the topple are one step off: three whole shirts. The batch keeps the colour of a sprite as a 16-bit number, so a shirt can round the other way.
+- What no picture here shows: two dying meeples that overlap can be drawn in another order than in the jam game. The jam game sorted a falling meeple by its middle, which moves as it falls. The batch keeps it where its feet are.
+- The speeds and the timing are numbers, so tests prove them: see [game/meeples/README.md](../../meeples/README.md).
 
 ## How a frame rate is measured
 
@@ -84,7 +141,7 @@ The scene prints a `STRESS_WARNING` when it could not place as many static thing
 
 - `jam_grid.gd`: `JamGrid`, the jam game's grid and art numbers in one place. The scenes here and the tests build their batch from it. It is a stand-in until a later part joins the batch to the village grid of part #60.
 - `frame_meter.gd`: `FrameMeter`, the measuring rule.
-- `wander_crowd.gd`: `WanderCrowd`, meeples that walk about at random.
+- `wander_crowd.gd`: `WanderCrowd`, meeples that walk about at random. The batch stress scene and the batch demo still use it, so their numbers can be compared with the ones of #61. The real meeples are in `meeple_stress.tscn`.
 - `stress_art.gd`: `StressArt`, the static sprites these scenes use, with the jam game's regions and offsets.
 - `art/town_hall.png`: a copy of the Town Hall sheet from `ART/`, which game files may not use.
 - `pictures/`: the pictures for pull requests. Godot does not import this folder.
