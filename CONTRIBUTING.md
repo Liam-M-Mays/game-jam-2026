@@ -81,6 +81,26 @@ Godot rewrites parts of a `.tscn` file every time it saves, so scenes are where 
 - Godot creates a `.uid` file next to every script and a `.import` file next to every asset. **Commit them together with the file.** The one exception is `ART/`: CI does not ask for these files there.
 - Art the old game uses is in `assets/`. Art the new game uses goes in `game/`. Source files and unused art go in `ART/`. See [docs/art-folders.md](docs/art-folders.md).
 
+## Document the code
+
+This rule is for new code in `game/` and `addons/`. Liam confirmed it on 2026-11-10 (issue #22).
+
+- **Every class gets a `##` doc comment.** It says what the class is for, in a line or two.
+- **Every public function gets a `##` doc comment.** A function whose name starts with `_` is private and does not need one.
+- **Every system gets one short page.** That page is the `README.md` of its folder: what the system does, how to use it, and where its tests are.
+- Update the comment and the page in the pull request that changes the code.
+
+```gdscript
+class_name DevSettings
+extends Resource
+## Values a developer changes while building the game.
+
+
+## Returns the saved dev settings.
+static func load_settings() -> DevSettings:
+	return load(PATH) as DevSettings
+```
+
 ## Issues and the board
 
 - Every issue has one type: `feature`, `task`, `art`, `fix`, `chore` or `feedback`. The issue forms set it for you.
