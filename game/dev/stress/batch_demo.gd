@@ -15,8 +15,9 @@ extends Node2D
 const GRID := Vector2i(60, 40)
 ## How many meeples wander about at the start.
 const MEEPLES := 300
-## The share of the cells that get a static thing, and the share of each kind.
+## The share of the cells that get a static thing.
 const FILL := 0.25
+## The share of each kind among the static things.
 const MIX: Dictionary[StringName, float] = {
 	&"tree": 0.36, &"big_tree": 0.12, &"rock": 0.24, &"big_rock": 0.08,
 	&"wood": 0.08, &"stone": 0.08, &"hut": 0.03, &"town_hall": 0.01,
@@ -28,8 +29,11 @@ const HOVER_TINT := Color(1.0, 0.9, 0.35)
 const CELL_OUTLINE: Array[Vector2] = [
 	Vector2(4, 2), Vector2(4, 1), Vector2(1, -2), Vector2(-5, -2), Vector2(-5, -1), Vector2(-2, 2),
 ]
+## How fast the camera moves, in screen pixels a second.
 const PAN_SPEED := 900.0
+## How much one click of the mouse wheel zooms.
 const ZOOM_STEP := 1.25
+## The furthest and the closest zoom.
 const ZOOM_LIMITS := Vector2(0.125, 8.0)
 
 var _art := StressArt.new()
@@ -143,6 +147,8 @@ func _click(screen_point: Vector2) -> void:
 	if found != BatchRows.NO_THING:
 		_last_click = "took away the %s on cell %s" % [_kinds[found], _thing_cells[found]]
 		_rows.remove_thing(found)
+		if _rows.has_thing(_hovered):
+			_rows.tint_thing(_hovered, Color.WHITE)
 		_hovered = BatchRows.NO_THING
 	elif cell.x >= 0 and cell.y >= 0 and cell.x < GRID.x and cell.y < GRID.y:
 		_plant(cell, &"tree")

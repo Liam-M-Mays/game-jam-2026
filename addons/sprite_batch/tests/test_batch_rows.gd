@@ -114,6 +114,23 @@ func test_a_thing_is_found_by_any_cell_it_takes() -> void:
 		check_eq(_rows.thing_on_cell(cell), BatchRows.NO_THING)
 
 
+func test_a_cell_with_two_things_finds_the_one_that_is_left() -> void:
+	var cell := Vector2i(3, 3)
+	_rows.add_thing(1, cell, _small)
+	_rows.add_thing(2, cell, _small)
+	check_eq(_rows.thing_on_cell(cell), 2, "the newest thing")
+	_rows.remove_thing(2)
+	check_eq(_rows.thing_on_cell(cell), 1, "the older thing, after the newer one left")
+	_rows.add_thing(3, cell, _small)
+	_rows.add_thing(4, cell, _small)
+	_rows.remove_thing(3)
+	check_eq(_rows.thing_on_cell(cell), 4, "the newest, after one in the middle left")
+	_rows.remove_thing(4)
+	check_eq(_rows.thing_on_cell(cell), 1)
+	_rows.remove_thing(1)
+	check_eq(_rows.thing_on_cell(cell), BatchRows.NO_THING)
+
+
 func _fill_all_but(skip: Vector2i) -> void:
 	for row in ROWS:
 		for column in COLUMNS:

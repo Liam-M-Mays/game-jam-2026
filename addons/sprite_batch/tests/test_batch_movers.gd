@@ -80,6 +80,37 @@ func test_a_mover_outside_the_world_is_still_drawn_once() -> void:
 	check_eq(seen.size(), spots.size())
 
 
+func test_a_mover_above_or_below_the_world_is_drawn_when_the_view_looks_there() -> void:
+	_rows.resize_movers(2)
+	_rows.place_mover(0, Vector2(300.0, -400.0), Color.WHITE, _numbers(0))
+	_rows.place_mover(1, Vector2(300.0, 2600.0), Color.WHITE, _numbers(1))
+	var buffer := PackedFloat32Array()
+	check_eq(_rows.assemble(Rect2(0.0, -700.0, 1920.0, 500.0), buffer), 1)
+	check_eq(int(BatchTestKit.read(buffer)[0]["numbers"].y), 0)
+	check_eq(_rows.assemble(Rect2(0.0, 2300.0, 1920.0, 500.0), buffer), 1)
+	check_eq(int(BatchTestKit.read(buffer)[0]["numbers"].y), 1)
+	# After walking further out they are still there.
+	_rows.move_movers(PackedVector2Array([Vector2(350.0, -450.0), Vector2(350.0, 2650.0)]))
+	check_eq(_rows.assemble(Rect2(0.0, -700.0, 1920.0, 500.0), buffer), 1)
+	check_eq(BatchTestKit.read(buffer)[0]["middle"], Vector2(350.0, -450.0) + BOX_OFFSET)
+
+
+func test_a_mover_that_was_not_placed_is_left_alone() -> void:
+	_rows.resize_movers(3)
+	_rows.place_mover(1, Vector2(1000.0, 1000.0), Color.WHITE, _numbers(1))
+	# Movers 0 and 2 were never placed. Their positions are far outside the world.
+	var spots := PackedVector2Array([
+		Vector2(-2000.0, -20.0), Vector2(1010.0, 1005.0), Vector2(99999.0, 99999.0),
+	])
+	_rows.move_movers(spots)
+	_rows.look_mover(0, Color.RED, _numbers(0))
+	_rows.set_mover_number(2, 3, 2.0)
+	var drawn := BatchTestKit.read(_assembled())
+	check_eq(drawn.size(), 1)
+	check_eq(int(drawn[0]["numbers"].y), 1)
+	check_eq(drawn[0]["middle"], Vector2(1010.0, 1005.0) + BOX_OFFSET)
+
+
 func test_a_new_look_reaches_the_right_mover() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 66

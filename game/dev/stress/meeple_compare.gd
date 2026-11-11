@@ -148,7 +148,8 @@ func _compare(pose: Dictionary) -> void:
 
 
 ## Returns "N of M pixels differ" for two pictures, and adds N to the total
-## when [param diff_path] is set. The pixels that differ are saved there in red.
+## when [param diff_path] is set. A dimmed picture is saved there, with a red
+## square around every pixel that differs.
 func _count_text(a: Image, b: Image, diff_path: String) -> String:
 	if a == null or b == null or a.get_size() != b.get_size():
 		_total_differences += 1
@@ -160,8 +161,8 @@ func _count_text(a: Image, b: Image, diff_path: String) -> String:
 	var differ := 0
 	var biggest := 0
 	if bytes_a != bytes_b:
-		var marks := Image.create_empty(a.get_width(), a.get_height(), false, Image.FORMAT_RGBA8)
-		marks.fill(Color(0.1, 0.1, 0.1))
+		var marks := a.duplicate() as Image
+		marks.adjust_bcs(0.45, 1.0, 1.0)
 		for at in range(0, bytes_a.size(), 4):
 			var step := maxi(
 				maxi(absi(bytes_a[at] - bytes_b[at]), absi(bytes_a[at + 1] - bytes_b[at + 1])),
@@ -171,7 +172,8 @@ func _count_text(a: Image, b: Image, diff_path: String) -> String:
 				differ += 1
 				biggest = maxi(biggest, step)
 				@warning_ignore("integer_division")
-				marks.set_pixel((at / 4) % a.get_width(), (at / 4) / a.get_width(), Color.RED)
+				var spot := Vector2i((at / 4) % a.get_width(), (at / 4) / a.get_width())
+				marks.fill_rect(Rect2i(spot - Vector2i(6, 6), Vector2i(13, 13)), Color.RED)
 		if diff_path != "":
 			marks.save_png(diff_path)
 	if diff_path != "":

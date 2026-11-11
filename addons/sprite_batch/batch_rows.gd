@@ -28,6 +28,9 @@ const _WIDTH := 0
 const _HEIGHT := 5
 const _COLOUR := 8
 const _DATA := 12
+const _INT32_MAX := 2147483647
+## The bucket of a mover that was not placed yet. No real bucket is this big.
+const _UNPLACED := _INT32_MAX
 
 ## The cell maths: where a cell is and which cell a point is in.
 var cells: BatchCells
@@ -50,6 +53,7 @@ var _row_versions := PackedInt32Array()
 var _thing_cells: Dictionary[int, Vector2i] = {}
 var _thing_footprints: Dictionary[int, Array] = {}
 var _cell_things: Dictionary[Vector2i, int] = {}
+var _cell_others: Dictionary[Vector2i, PackedInt32Array] = {}
 var _max_up := 0.0
 var _max_down := 0.0
 var _reach_x := 0.0
@@ -95,7 +99,8 @@ func _init(
 
 
 ## Adds a thing that stands still on [param cell], and returns true when it
-## went in. [param id] is the caller's own number for the thing.
+## went in. [param id] is the caller's own number for the thing. It must fit
+## in 32 bits.
 ## [param offset] is in art pixels, from the cell to the middle of the sprite,
 ## like the offset of a Sprite2D. [param footprint] lists every cell the thing
 ## takes. Leave it empty for a thing that takes only its own cell.
@@ -109,7 +114,8 @@ func add_thing(
 		footprint: Array[Vector2i] = []
 ) -> bool:
 	var row := cells.row_of(cell) - _top_row
-	if _thing_cells.has(id) or not atlas.has_sprite(sprite) or row < 0 or row >= _row_count:
+	var fits := id >= -_INT32_MAX and id <= _INT32_MAX and row >= 0 and row < _row_count
+	if not fits or _thing_cells.has(id) or not atlas.has_sprite(sprite):
 		push_error("BatchRows: thing %d cannot be added on cell %s" % [id, cell])
 		return false
 	var anchor := cells.position_of(cell)
@@ -126,11 +132,11 @@ func add_thing(
 		_row_blocks[row] = block.slice(0, at * FLOATS) + record + block.slice(at * FLOATS)
 	_thing_cells[id] = cell
 	if footprint.is_empty():
-		_cell_things[cell] = id
+		_claim_cell(cell, id)
 	else:
 		_thing_footprints[id] = footprint.duplicate()
 		for taken in footprint:
-			_cell_things[taken] = id
+			_claim_cell(taken, id)
 	var half := record[_HEIGHT] * 0.5
 	_stretch_row(row, anchor.y - (record[_Y] - half), record[_Y] + half - anchor.y)
 	_touch_row(row)
@@ -187,8 +193,7 @@ func remove_thing(id: int) -> void:
 	_row_blocks[row] = block.slice(0, at * FLOATS) + block.slice((at + 1) * FLOATS)
 	var footprint: Array = _thing_footprints.get(id, [cell])
 	for taken: Vector2i in footprint:
-		if _cell_things.get(taken, NO_THING) == id:
-			_cell_things.erase(taken)
+		_release_cell(taken, id)
 	_thing_cells.erase(id)
 	_thing_footprints.erase(id)
 	# The row only has to be measured again when its tallest thing left.
@@ -208,6 +213,7 @@ func thing_count() -> int:
 
 
 ## Returns the thing that stands on [param cell], or [constant NO_THING].
+## When several things share the cell, such as two drops, it is the newest one.
 func thing_on_cell(cell: Vector2i) -> int:
 	return _cell_things.get(cell, NO_THING)
 
@@ -253,7 +259,7 @@ func resize_movers(count: int) -> void:
 	_mover_buckets.resize(count)
 	_mover_slots.resize(count)
 	for index in range(before, count):
-		_mover_buckets[index] = -1
+		_mover_buckets[index] = _UNPLACED
 	_serial += 1
 
 
@@ -301,7 +307,7 @@ func move_movers(positions: PackedVector2Array) -> void:
 			var at := slots[index] * FLOATS
 			block[at + _X] = spot.x + shift_x
 			block[at + _Y] = spot.y + shift_y
-		elif buckets[index] >= 0:
+		elif buckets[index] != _UNPLACED:
 			if bucket < 0 or bucket >= bucket_count or spot.x < left or spot.x >= right:
 				bucket = _bucket_at(spot)
 			if bucket != buckets[index]:
@@ -314,7 +320,7 @@ func move_movers(positions: PackedVector2Array) -> void:
 ## Gives mover [param index] another colour and other shader numbers.
 func look_mover(index: int, tint: Color, data: Vector4) -> void:
 	var bucket := _mover_buckets[index]
-	if bucket < 0:
+	if bucket == _UNPLACED:
 		return
 	var block: PackedFloat32Array = _bucket_blocks[bucket]
 	var at := _mover_slots[index] * FLOATS + _COLOUR
@@ -333,7 +339,7 @@ func look_mover(index: int, tint: Color, data: Vector4) -> void:
 ## [param which] is 0 to 3.
 func set_mover_number(index: int, which: int, value: float) -> void:
 	var bucket := _mover_buckets[index]
-	if bucket < 0:
+	if bucket == _UNPLACED:
 		return
 	var block: PackedFloat32Array = _bucket_blocks[bucket]
 	block[_mover_slots[index] * FLOATS + _DATA + which] = value
@@ -361,7 +367,10 @@ func assemble(view: Rect2, into: PackedFloat32Array) -> int:
 	var to_column := floori((view.end.x + mover_side - _left) / _column_width)
 	from_column = clampi(from_column, 0, last_column)
 	to_column = clampi(to_column, 0, last_column)
-	for row in range(maxi(first, 0), mini(last, _row_count - 1) + 1):
+	# A mover outside the world is kept in the band at the edge. So the first
+	# band has no top and the last band has no bottom.
+	var last_row := _row_count - 1
+	for row in range(clampi(first, 0, last_row), clampi(last, 0, last_row) + 1):
 		var line := _top_y + row * height
 		var keys: PackedFloat64Array = _row_keys[row]
 		if not keys.is_empty() and line - _row_up[row] < bottom and line + _row_down[row] > top:
@@ -371,7 +380,8 @@ func assemble(view: Rect2, into: PackedFloat32Array) -> int:
 				into.append_array(_row_blocks[row])
 			elif to > from:
 				into.append_array(_row_blocks[row].slice(from * FLOATS, to * FLOATS))
-		if _band_counts[row] > 0 and line - mover_up < bottom and line + mover_down > top:
+		var below_top := row == last_row or line + mover_down > top
+		if _band_counts[row] > 0 and below_top and (row == 0 or line - mover_up < bottom):
 			var base := row * _columns
 			for column in range(from_column, to_column + 1):
 				var block: PackedFloat32Array = _bucket_blocks[base + column]
@@ -459,6 +469,33 @@ func _stretch_row(row: int, up: float, down: float) -> void:
 	_max_down = maxf(_max_down, down)
 
 
+## Notes that the thing [param id] stands on [param cell]. A thing that was
+## there before is kept, and the cell finds it again when the new one leaves.
+func _claim_cell(cell: Vector2i, id: int) -> void:
+	if _cell_things.has(cell):
+		var others: PackedInt32Array = _cell_others.get(cell, PackedInt32Array())
+		others.append(_cell_things[cell])
+		_cell_others[cell] = others
+	_cell_things[cell] = id
+
+
+func _release_cell(cell: Vector2i, id: int) -> void:
+	var others: PackedInt32Array = _cell_others.get(cell, PackedInt32Array())
+	if _cell_things.get(cell, NO_THING) != id:
+		var at := others.find(id)
+		if at >= 0:
+			others.remove_at(at)
+	elif others.is_empty():
+		_cell_things.erase(cell)
+	else:
+		_cell_things[cell] = others[others.size() - 1]
+		others.remove_at(others.size() - 1)
+	if others.is_empty():
+		_cell_others.erase(cell)
+	else:
+		_cell_others[cell] = others
+
+
 func _touch_row(row: int) -> void:
 	_row_versions[row] += 1
 	_serial += 1
@@ -483,7 +520,7 @@ func _append_mover(index: int, bucket: int, record: PackedFloat32Array) -> void:
 ## Takes a mover out of its bucket. The last mover of the bucket fills the gap.
 func _drop_mover(index: int) -> void:
 	var bucket := _mover_buckets[index]
-	if bucket < 0:
+	if bucket == _UNPLACED:
 		return
 	var block: PackedFloat32Array = _bucket_blocks[bucket]
 	var movers: PackedInt32Array = _bucket_movers[bucket]
@@ -499,7 +536,7 @@ func _drop_mover(index: int) -> void:
 	block.resize(last * FLOATS)
 	@warning_ignore("integer_division")
 	_band_counts[bucket / _columns] -= 1
-	_mover_buckets[index] = -1
+	_mover_buckets[index] = _UNPLACED
 
 
 func _rewrite_spot(index: int, spot: Vector2) -> void:
