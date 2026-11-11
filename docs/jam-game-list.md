@@ -156,13 +156,13 @@ The issue that checks this list at the end is [#75](https://github.com/Liam-M-Ma
 [Issue #64](https://github.com/Liam-M-Mays/game-jam-2026/issues/64)
 
 - [ ] **Keep** · When heading for a building, resource or storage pile, the meeple stops as soon as it steps onto any grid cell belonging to that object instead of walking to its exact centre. Loose items on the ground have no footprint, so the meeple walks right up to them. `meeples-stop-at-footprint`
-- [ ] **Keep** · A meeple aims slightly below the thing it is walking to, so it is drawn in front of it rather than hidden behind it. `meeples-stand-in-front`
-- [ ] **Keep** · A dying meeple freezes, tips over sideways around its feet (left or right at random), bounces once slightly, lies on the ground, fades out and is removed. `meeples-death-topple`
+- [x] **Keep** · A meeple aims slightly below the thing it is walking to, so it is drawn in front of it rather than hidden behind it. `meeples-stand-in-front`
+- [x] **Keep** · A dying meeple freezes, tips over sideways around its feet (left or right at random), bounces once slightly, lies on the ground, fades out and is removed. `meeples-death-topple`
 - [ ] **Keep** · With nothing to do, a meeple finishes its current walk, then switches to wandering: it remembers where it stopped as home and picks the nearest finished building as its hangout. `meeples-wander-start`
-- [ ] **Keep** · A wandering meeple stands still for a random pause, strolls slowly to a new spot, then pauses again. *But:* #46: 30 is the middle value. Each meeple's own speed differs a little. `meeples-wander-pause-and-speed`
+- [x] **Keep** · A wandering meeple stands still for a random pause, strolls slowly to a new spot, then pauses again. *But:* Decision 21: every meeple strolls at the same speed, 30. Only the start of its bounce is its own. `meeples-wander-pause-and-speed`
 - [ ] **Keep** · Each stroll goes to a random free cell close to the hangout building, nudged by a small random offset so meeples do not line up. It prefers a spot it can reach without crossing a building; if none of the tried spots is clear it goes to the closest tried spot anyway. *But:* Decision 11: the walking issue decides how a base is avoided. Wandering near a building stays. `meeples-wander-near-building`
-- [ ] **Keep** · On each stroll there is a small chance the meeple changes its hangout to another finished building, with nearby buildings much more likely than far ones. It also re-picks if its hangout no longer exists. `meeples-wander-building-hop`
-- [ ] **Keep** · If there is no building to hang around, or no free cell next to it, the meeple instead strolls to a random point around the spot where it went idle, as long as that point is on the grid. `meeples-wander-fallback-home`
+- [x] **Keep** · On each stroll there is a small chance the meeple changes its hangout to another finished building, with nearby buildings much more likely than far ones. It also re-picks if its hangout no longer exists. `meeples-wander-building-hop`
+- [x] **Keep** · If there is no building to hang around, or no free cell next to it, the meeple instead strolls to a random point around the spot where it went idle, as long as that point is on the grid. `meeples-wander-fallback-home`
 - [ ] **Keep** · A starving meeple cries out, tips over sideways around its feet, bounces once on landing, lies still for a moment, then fades away. *But:* The sound is ticked in #73. This issue sends the event. `effects-meeple-death`
 
 ## #65 Core: job board where jobs find meeples

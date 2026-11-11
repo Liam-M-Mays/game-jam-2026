@@ -110,7 +110,7 @@ The simulation runs on a fixed tick, and the picture runs as fast as the screen 
 - **Game speed:** more ticks per second. This replaces changing the engine's time scale.
 - **Off screen:** every village ticks, shown or not. A village that is not shown skips drawing and nothing else.
 - **Between ticks:** the picture glides each meeple from its last position to its next one.
-- **Waiting costs nothing:** a meeple that is waiting or working sets a wake-up tick. Only walking and dying meeples are stepped.
+- **Waiting costs nothing:** a meeple that is waiting or working sets a wake-up tick. Only walking and dying meeples are stepped. This line said "Only walking meeples are stepped" before [#64](https://github.com/Liam-M-Mays/game-jam-2026/issues/64). Liam has not confirmed the change yet.
 
 Still to test: letting the shader do the glide, so the processor does no drawing work between ticks.
 
@@ -124,7 +124,7 @@ A meeple is a row number, not a node.
 - **No meeple belongs to a house.** The village tracks the total of meeples and the total room, nothing more.
 - Animals can use the same system later, with their own kind and sprites.
 - **A walk is over one tick after its last step.** The picture is one tick behind, and it needs that tick to glide the last step in. Built this way in [#64](https://github.com/Liam-M-Mays/game-jam-2026/issues/64). Liam has not confirmed this rule yet.
-- **A dying meeple is stepped too.** Its topple and its fade are set on the tick, and the meeple shader draws them. There is no tween.
+- **A dying meeple is stepped too,** on every tick for about 2 seconds. Its topple and its fade are set on the tick, and the meeple shader draws them. There is no tween. Built this way in [#64](https://github.com/Liam-M-Mays/game-jam-2026/issues/64). Liam has not confirmed this rule yet.
 - **An idle meeple strolls around a hangout,** as in the jam game. A hangout is a finished building. Until buildings exist, whoever finishes one tells the meeples. Built this way in [#64](https://github.com/Liam-M-Mays/game-jam-2026/issues/64). Liam has not confirmed this rule yet.
 
 Measured: moving 10,000 wandering meeples costs 1.6 ms per frame in GDScript.

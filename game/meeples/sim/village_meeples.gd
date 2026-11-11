@@ -359,7 +359,9 @@ func _step_walkers(village: Village) -> void:
 
 
 ## Deals with the walks that ended on this tick, after all the stepping, so
-## nothing a listener does can disturb the stepping.
+## nothing a listener does can disturb the stepping. A listener of
+## [signal meeple_arrived] may send, let go or kill any meeple, also one whose
+## own arrival is still to come in this loop.
 func _handle_arrivals(village: Village) -> void:
 	if _arrivals.is_empty():
 		return
@@ -435,7 +437,9 @@ func _go_idle(village: Village, row: int) -> void:
 
 
 ## Puts the meeple to sleep for one pause. It costs nothing until it wakes.
+## A meeple sleeps on one timer at most: a timer it still has is stopped first.
 func _sleep(village: Village, row: int) -> void:
+	_cancel_timer(village, row)
 	var ticks := wander.pause_ticks(village)
 	_timers[row] = village.timers.wake_after(ticks, _wake.bind(ids[row]))
 

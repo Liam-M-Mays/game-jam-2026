@@ -3,7 +3,11 @@ extends GameTest
 ## home, the hangout, the spot near it and the change of hangout.
 ##
 ## Ten jam units are one art pixel. So the jam game's 60 units are 6 art
-## pixels, and its nudge of 12 by 6 units is 1.2 by 0.6 art pixels.
+## pixels, and its nudge of 12 by 6 units is 1.2 by 0.6 art pixels. The reach
+## for changing hangout is the one exception: it is 100 art pixels.
+##
+## These tests ask the wander rules by hand. test_meeple_strolls.gd checks
+## the same rules on a meeple that ticks.
 
 var _village: Village
 var _meeples: VillageMeeples
@@ -28,26 +32,6 @@ func test_a_pause_is_between_1_and_3_5_seconds() -> void:
 	check_eq(shortest, 20, "1.0 second is 20 ticks")
 	check_eq(longest, 70, "3.5 seconds are 70 ticks")
 	check_eq(seen.size(), 51, "every length from 20 to 70 ticks comes up")
-
-
-func test_a_meeple_stands_for_one_pause_between_two_strolls() -> void:
-	MeepleTestKit.spawn(_village, MeepleTestKit.middle())
-	# It is standing when it is added, so that moment counts as the first tick.
-	var stood := 1
-	var pauses: Dictionary[int, bool] = {}
-	var strolls := 0
-	for tick in 12000:
-		_village.tick()
-		if _meeples.walking[0] == 0:
-			stood += 1
-		elif stood > 0:
-			# The pause only counts the ticks it stood: 20 to 70 of them.
-			check(stood >= 20 and stood <= 70, "it stood for %d ticks" % stood)
-			pauses[stood] = true
-			strolls += 1
-			stood = 0
-	check(strolls > 100, "it went on %d strolls" % strolls)
-	check(pauses.size() > 30, "the pause is random each time: %d lengths" % pauses.size())
 
 
 func test_with_no_hangout_a_stroll_goes_15_to_60_jam_units_from_home() -> void:
@@ -164,6 +148,33 @@ func test_the_way_to_a_spot_is_checked_at_8_points() -> void:
 	check(_wander.is_clear(_village, from, from + Vector2(80.0, 0.0)), "8 points step over it")
 
 
+func test_only_8_points_find_a_hangout_under_the_7th_point() -> void:
+	# A way of 400 art pixels along row 20. The 7th of its 8 points is 350 along.
+	var from := GridLayout.position_of(Vector2i(2, 20))
+	var to := from + Vector2(400.0, 0.0)
+	var cell := GridLayout.cell_under(from.lerp(to, 7.0 / 8.0))
+	# With 6, 7, 9 or 10 points no point is on that cell: the closest one is
+	# 5.6 art pixels from the 7th of 8, and a cell is 7 wide.
+	for points: int in [6, 7, 9, 10]:
+		for step in range(1, points + 1):
+			var point := from.lerp(to, float(step) / points)
+			check(GridLayout.cell_under(point) != cell, "%d points would find it too" % points)
+	check(_wander.is_clear(_village, from, to), "nothing is in the way yet")
+	_wander.add_hangout(_village, MeepleTestKit.place_thing(_village, cell))
+	check(not _wander.is_clear(_village, from, to), "the 7th of the 8 points is on the hangout")
+
+
+func test_the_end_of_the_way_is_checked_and_its_start_is_not() -> void:
+	var hut := MeepleTestKit.place_thing(_village, Vector2i(30, 20))
+	_wander.add_hangout(_village, hut)
+	var on_hut := GridLayout.position_of(Vector2i(30, 20))
+	var away := on_hut - Vector2(80.0, 0.0)
+	# The points are 10 art pixels apart, so only the last one is on the hut.
+	check(not _wander.is_clear(_village, away, on_hut), "a way that ends on a hangout is blocked")
+	# A meeple that stands on a cell of a hangout can walk off it.
+	check(_wander.is_clear(_village, on_hut, away), "the start of the way does not count")
+
+
 func test_with_no_clear_spot_the_closest_tried_spot_wins() -> void:
 	# A tiny island: a hut, three empty cells in a row to its right, and a
 	# wall between them and the meeple. Every way to them crosses the wall.
@@ -248,24 +259,30 @@ func test_every_meeple_strolls_at_the_same_speed() -> void:
 
 
 func test_a_near_hangout_is_much_more_likely_to_be_picked_than_a_far_one() -> void:
-	# Weight = 1 / (1 + (distance / 100 jam units) squared). 100 jam units are
-	# 10 art pixels. The three hangouts are 0, 14.1 and 28.3 art pixels away,
-	# so they weigh 1, a third and a ninth.
-	var here := MeepleTestKit.place_thing(_village, Vector2i(10, 20))
+	# Weight = 1 / (1 + (distance / 100) squared). The jam game takes this one
+	# distance from global_position, where one unit is one art pixel, so the
+	# 100 is in art pixels. The three hangouts are 0, 98 and 196 art pixels
+	# away (14 and 28 cells), so they weigh 1, about a half and about a fifth.
 	var from := GridLayout.position_of(Vector2i(10, 20))
-	var at_ten := MeepleTestKit.place_thing(_village, Vector2i(10, 22))
-	var at_twenty := MeepleTestKit.place_thing(_village, Vector2i(10, 24))
-	check_near(from.distance_to(GridLayout.position_of(Vector2i(10, 22))), 14.142, 0.001)
-	for thing: int in [here, at_ten, at_twenty]:
-		_wander.add_hangout(_village, thing)
-	var weights: Array[float] = [1.0, 1.0 / (1.0 + 2.0), 1.0 / (1.0 + 8.0)]
-	var total := weights[0] + weights[1] + weights[2]
-	var picks: Dictionary[int, int] = {here: 0, at_ten: 0, at_twenty: 0}
-	for index in 13000:
+	var things: Array[int] = []
+	for cell: Vector2i in [Vector2i(10, 20), Vector2i(24, 20), Vector2i(38, 20)]:
+		things.append(MeepleTestKit.place_thing(_village, cell))
+		_wander.add_hangout(_village, things[-1])
+	var weights: Array[float] = []
+	var total := 0.0
+	for thing in things:
+		var hundreds := from.distance_to(_village.grid.thing_position(thing)) / 100.0
+		weights.append(1.0 / (1.0 + hundreds * hundreds))
+		total += weights[-1]
+	check_near(from.distance_to(_village.grid.thing_position(things[1])), 98.0, 0.001)
+	check_near(weights[1], 0.5101, 0.0001, "98 art pixels away: about a half")
+	check_near(weights[2], 0.2065, 0.0001, "196 art pixels away: about a fifth")
+	var picks: Dictionary[int, int] = {things[0]: 0, things[1]: 0, things[2]: 0}
+	for index in 20000:
 		picks[_wander.pick_hangout(_village, from)] += 1
-	check_near(picks[here], 13000.0 * weights[0] / total, 300.0, "9,000 are expected")
-	check_near(picks[at_ten], 13000.0 * weights[1] / total, 300.0, "3,000 are expected")
-	check_near(picks[at_twenty], 13000.0 * weights[2] / total, 300.0, "1,000 are expected")
+	check_near(picks[things[0]], 20000.0 * weights[0] / total, 300.0, "11,651 are expected")
+	check_near(picks[things[1]], 20000.0 * weights[1] / total, 300.0, "5,943 are expected")
+	check_near(picks[things[2]], 20000.0 * weights[2] / total, 300.0, "2,406 are expected")
 
 
 func test_a_meeple_picks_its_hangout_again_on_15_percent_of_its_strolls() -> void:
@@ -275,12 +292,22 @@ func test_a_meeple_picks_its_hangout_again_on_15_percent_of_its_strolls() -> voi
 	_wander.add_hangout(_village, left)
 	_wander.add_hangout(_village, right)
 	var from := GridLayout.position_of(Vector2i(25, 20))
-	var changes := 0
+	# A twin of the village's random numbers says what each call must answer:
+	# the first number decides if it picks again, the second one which.
+	var twin := RandomNumberGenerator.new()
+	twin.state = _village.rng.state
+	var picked_again := 0
+	var wrong := 0
 	for index in 20000:
-		if _wander.next_hangout(_village, from, left) == right:
-			changes += 1
-	# 15 percent pick again, and half of those pick the other one: 1,500.
-	check(changes > 1350 and changes < 1650, "%d of 20,000 strolls changed the hangout" % changes)
+		var want := left
+		if twin.randf() < 0.15:
+			picked_again += 1
+			want = left if twin.randf() <= 0.5 else right
+		if _wander.next_hangout(_village, from, left) != want:
+			wrong += 1
+	check_eq(wrong, 0, "calls that answered something else than the 15 percent rule")
+	check_eq(_village.rng.state, twin.state, "one random number, and a second one for a new pick")
+	check(picked_again > 2800 and picked_again < 3200, "%d of 20,000 picked again" % picked_again)
 
 
 func test_a_meeple_picks_again_when_its_hangout_is_gone() -> void:
@@ -303,6 +330,26 @@ func test_a_meeple_picks_again_when_its_hangout_is_gone() -> void:
 	var state := _village.rng.state
 	check_eq(_wander.next_hangout(_village, MeepleTestKit.middle(), other), MeepleWander.NO_HANGOUT)
 	check_eq(_village.rng.state, state)
+
+
+func test_the_hangouts_left_keep_their_places_when_one_is_removed() -> void:
+	var cells: Array[Vector2i] = [Vector2i(5, 5), Vector2i(30, 20), Vector2i(50, 35)]
+	var things: Array[int] = []
+	for cell in cells:
+		things.append(MeepleTestKit.place_thing(_village, cell))
+		_wander.add_hangout(_village, things[-1])
+	check(_wander.remove_hangout(things[0]))
+	check_eq(_wander.hangout_count(), 2)
+	for index: int in [1, 2]:
+		var next_to := GridLayout.position_of(cells[index] + Vector2i(1, 0))
+		check_eq(_wander.nearest_hangout(next_to), things[index], "the one right next to it")
+	var listed := _wander.snapshot()
+	var listed_things: PackedInt32Array = listed["things"]
+	var listed_places: PackedVector2Array = listed["places"]
+	check_eq(listed_things.size(), 2)
+	for slot in listed_things.size():
+		var stands := _village.grid.thing_position(listed_things[slot])
+		check_eq(listed_places[slot], stands, "the list has the place of another hangout")
 
 
 func test_meeples_with_a_hangout_stay_near_it() -> void:

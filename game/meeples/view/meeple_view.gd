@@ -8,8 +8,13 @@ extends Node
 ##
 ## The village steps on ticks, and the screen draws more often than that. So
 ## in every frame a walking meeple is put between the spot it had one tick
-## ago and the spot it has now: it glides. A meeple that stands still is not
-## touched at all. The topple and the fade of a dying meeple glide the same way.
+## ago and the spot it has now: it glides. The topple and the fade of a dying
+## meeple glide the same way.
+##
+## This view only works out the walking and the dying meeples. With nobody
+## walking or dying it tells the batch nothing. But while anybody walks or
+## dies, it hands the places of all meeples to the batch in every frame, and
+## the batch looks at every mover, the standing ones too.
 ##
 ## Use it like this, with a batch that was set up with the meeple shader:
 ## [codeblock]
@@ -85,7 +90,8 @@ func let_go() -> void:
 
 ## Puts every meeple where it is [param fraction] of the way from the last
 ## tick to the next one, from 0 to 1. It runs by itself every frame, with the
-## fraction of the game clock. Only walking and dying meeples are looked at.
+## fraction of the game clock. Only walking and dying meeples are worked out
+## here. The batch then looks at every mover once, if anybody moved.
 func show_frame(fraction: float) -> void:
 	if _meeples == null:
 		return

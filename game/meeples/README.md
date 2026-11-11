@@ -52,6 +52,7 @@ village.send(MeepleCommands.Kill.new(meeple))    # it tips over, fades and is ta
 - A village works in **art pixels**, like `GridLayout`.
 - The jam game measured a walk in its own units. **Ten jam units are one art pixel.**
 - `MeepleNumbers` holds each jam number and turns it into art pixels once. So the jam game's 100 units a second are 10 art pixels a second.
+- **One number is the exception: the reach for changing hangout.** The jam game measured that one distance on the screen side of its scale, where one unit is one art pixel already. So its 100 stays 100 art pixels.
 
 ### Walking
 
@@ -62,6 +63,7 @@ village.send(MeepleCommands.Kill.new(meeple))    # it tips over, fades and is ta
 - With a thing to stop on, the meeple stops as soon as it stands on any cell of that thing.
 - **A walk is over one tick after its last step.** The picture needs that tick to glide the last step in. `meeple_arrived` is sent then.
 - After that the meeple waits for its job. `release` lets it go.
+- A listener of `meeple_arrived` may send, let go or kill any meeple, also one that arrives on the same tick.
 
 ### Waiting costs nothing
 
@@ -77,9 +79,11 @@ A meeple with nothing to do wanders. These are the jam game's rules.
 - It stands for a random pause of 1.0 to 3.5 seconds, strolls to a spot, and pauses again.
 - With a hangout: the spot is on an empty cell at most 2 steps from it, nudged by up to 12 by 6 jam units. Up to 8 cells are tried. A spot it can reach without crossing a hangout wins. If none is clear, the closest tried spot wins.
 - With no hangout, or none with an empty cell near it: a random spot 15 to 60 jam units from its home, on the grid. After 8 tries with no luck it stays put.
-- On each stroll there is a 15 percent chance that it picks its hangout again. Near ones are much more likely. It also picks again when its hangout is gone.
+- On each stroll there is a 15 percent chance that it picks its hangout again. Near ones are much more likely: the weight of a hangout is 1 / (1 + (distance / 100 art pixels) squared), counted from where the meeple stands. So one 100 art pixels away, about 14 cells, is half as likely as one right here. It also picks again when its hangout is gone.
 
 **A hangout** is a thing on the grid that meeples stroll around. In the jam game these were the finished buildings. Buildings come with #67. Until then, whoever finishes a building calls `meeples.wander.add_hangout(village, thing)`, and `remove_hangout(thing)` when it goes.
+
+- **After a move: remove the hangout and add it again.** The list keeps the place a hangout had when it was added. It does not ask the grid again, so that picking a hangout stays a walk over one array.
 
 ### Carrying
 
@@ -127,7 +131,8 @@ add_child(view)
 
 - **Each meeple is one mover of the [sprite batch](../../addons/sprite_batch/README.md),** with the same number as its row.
 - **The glide:** the village steps 20 times a second and the screen draws more often. In every frame a walking meeple is put between the spot it had one tick ago and the spot it has now. `Game.clock.fraction()` says how far between.
-- A meeple that stands still is not touched. With nobody walking, the view tells the batch nothing.
+- The view only works out the walking and the dying meeples. With nobody walking or dying, it tells the batch nothing.
+- **While anybody walks or dies, the batch looks at every mover in each frame,** the standing ones too. The view hands it the places of all meeples, because the batch has no call for a single mover.
 - `rows` is a `BatchRows` made with the game's grid numbers and art scale. The view turns art pixels into the pixels of the batch.
 - The position of a meeple is the middle of its body, as in the jam game.
 - A walking meeple shows the walking pose until its glide is over.
@@ -140,8 +145,9 @@ add_child(view)
 | File | What it checks |
 | --- | --- |
 | `test_meeple_rows.gd` | Rows and ids, a waiting meeple costs nothing, 10,000 spawns and deaths leave no row behind, carrying, a closed village lets go |
-| `test_meeple_walk.gd` | The two speeds, the straight line, the aim, stopping on a thing, the tick a walk is over |
-| `test_meeple_wander.gd` | The pause, the stroll around home, hangouts, the spot near a hangout, the 15 percent |
+| `test_meeple_walk.gd` | The two speeds, the straight line, the aim, stopping on a thing, the tick a walk is over, a listener that acts inside an arrival |
+| `test_meeple_wander.gd` | The wander rules asked by hand: the pause, the stroll around home, hangouts, the spot near a hangout, the 8 points, the 15 percent and the reach |
+| `test_meeple_strolls.gd` | The same rules on a meeple that ticks: the 15 percent, where a stroll ends, the home and the hangout after a job |
 | `test_meeple_dying.gd` | The topple and the fade tick by tick, the side, the freeze, the event |
 | `test_meeple_same_seed.gd` | The same seed and commands give the same village, with the picture or without |
 | `test_meeple_view.gd` | One mover per row, the glide, the poses, the load, the topple and the fade in the batch |
@@ -154,6 +160,9 @@ add_child(view)
 
 - **Walking is a straight line.** Nothing is walked around. Path-finding is #16.
 - **A hangout stands in for a finished building.** A building site in the way does not count as blocking, because nobody tells the meeples about sites yet.
+- **A hangout keeps the place it had when it was added.** A thing that is moved has to be removed and added again, or the meeples measure to its old place.
+- **The view owns every mover of its batch.** Mover number and meeple row are the same number. So no other part can put its own movers into the batch of a village. Animals would need the batch or the view to change first.
+- **While anybody walks or dies, the batch looks at every mover in each frame.** Only a village where everybody stands costs the picture nothing.
 - **Picking a hangout looks at every hangout.** That is fine for hundreds. It is not measured for thousands.
 - **A dying meeple is stepped on every tick,** for about 41 ticks, also while it lies still.
 - **A shirt can be one colour step of 255 off the jam game's.** The batch keeps the colour of a sprite as a 16-bit number.

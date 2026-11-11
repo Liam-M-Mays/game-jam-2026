@@ -168,6 +168,11 @@ func test_a_meeple_carries_one_or_two_pieces_of_a_kind() -> void:
 	check_eq(_meeples.load_kinds[0], VillageMeeples.NO_LOAD)
 	check_eq(int(_meeples.load_counts[0]), 0)
 	check(not _meeples.carry(9999, WOOD, 1), "nobody to carry it")
+	# The count is kept in a byte: 255 at most, and never below 0.
+	_meeples.carry(meeple, WOOD, 300)
+	check_eq(int(_meeples.load_counts[0]), 255)
+	_meeples.carry(meeple, WOOD, -4)
+	check_eq(int(_meeples.load_counts[0]), 0)
 
 
 func test_the_snapshot_holds_every_column() -> void:
@@ -183,6 +188,20 @@ func test_the_snapshot_holds_every_column() -> void:
 	MeepleTestKit.spawn(_village, MeepleTestKit.middle())
 	check_eq(columns["ids"].size(), 7)
 	check_eq(_village.snapshot()["parts"][Village.MEEPLES]["columns"]["ids"].size(), 8)
+	# The hangouts are in it too.
+	var before_hangout := _village.state_hash()
+	var thing := MeepleTestKit.place_thing(_village, Vector2i(3, 3))
+	var with_thing := _village.state_hash()
+	_meeples.wander.add_hangout(_village, thing)
+	check(_village.state_hash() != with_thing, "a new hangout changes the snapshot")
+	check(with_thing != before_hangout)
+	check_eq(_meeples.snapshot()["wander"]["things"], PackedInt32Array([thing]))
+
+
+func test_a_village_with_no_meeples_part_refuses_the_two_commands() -> void:
+	var bare := Village.new(1, MeepleTestKit.TICKS_PER_SECOND)
+	check(not bare.send(MeepleCommands.Spawn.new(Vector2.ZERO)), "nowhere to add a meeple")
+	check(not bare.send(MeepleCommands.Kill.new(1)), "nobody to kill")
 
 
 func test_a_closed_village_lets_go_of_its_meeples() -> void:

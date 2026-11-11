@@ -9,6 +9,8 @@ extends RefCounted
 ## idle meeples stroll around. In the jam game these were the finished
 ## buildings. Buildings come with a later part, so whoever finishes a building
 ## calls [method add_hangout], and [method remove_hangout] when it goes.
+## The list keeps the place a hangout had when it was added. A thing that is
+## moved has to be removed and added again.
 ## The numbers are in [MeepleNumbers].
 
 ## The hangout of a meeple that has none.
@@ -23,6 +25,9 @@ var _slots: Dictionary[int, int] = {}
 
 ## Makes [param thing] a hangout. It has to stand on the grid of
 ## [param village]. Returns false when it does not, or when it is one already.
+## Its place is read once, here. After a move of the thing, call
+## [method remove_hangout] and then this again, or the meeples keep measuring
+## to the old place.
 func add_hangout(village: Village, thing: int) -> bool:
 	if _slots.has(thing) or village.grid.thing_cells(thing).is_empty():
 		return false
@@ -80,7 +85,8 @@ func nearest_hangout(from: Vector2) -> int:
 
 ## A hangout picked at random for a meeple at [param from], or
 ## [constant NO_HANGOUT] when there is none. A near one is much more likely
-## than a far one: its weight is 1 / (1 + (distance / 100 jam units) squared).
+## than a far one: its weight is 1 / (1 + (distance / 100 art pixels) squared).
+## One at 100 art pixels, about 14 cells, is half as likely as one right here.
 func pick_hangout(village: Village, from: Vector2) -> int:
 	if _things.is_empty():
 		return NO_HANGOUT

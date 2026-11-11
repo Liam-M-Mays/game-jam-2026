@@ -14,6 +14,10 @@ var _village: Village
 var _meeples: VillageMeeples
 var _arrived: Array[int] = []
 var _start: Vector2
+## What the listener of the next arrival does to the other meeples of
+## [member _pair]: "release", "send" or "kill". It does it once.
+var _answer := ""
+var _pair: Array[int] = []
 
 
 func before_each() -> void:
@@ -159,6 +163,26 @@ func test_a_meeple_walks_right_up_to_a_point_with_no_thing() -> void:
 	check_eq(_arrived, [meeple] as Array[int])
 
 
+func test_a_walk_with_no_thing_named_does_not_stop_on_the_thing_of_the_walk_before() -> void:
+	var anchor := Vector2i(36, 20)
+	var thing := MeepleTestKit.place_thing(_village, anchor, 2, 2)
+	var meeple := MeepleTestKit.spawn(_village, _start)
+	_meeples.walk_to(_village, meeple, GridLayout.position_of(anchor + Vector2i(1, 1)), thing)
+	MeepleTestKit.run(_village, 400)
+	var cell := GridLayout.cell_under(_meeples.spots[0])
+	check_eq(_village.grid.occupant(cell), thing, "it stopped on the thing it was sent to")
+	# Back to the start with no thing named: it walks off the thing.
+	MeepleTestKit.send(_village, meeple, _start)
+	MeepleTestKit.run(_village, 400)
+	_check_spot(_meeples.spots[0], _start)
+	# And right across the thing to a point behind it, as to a loose item.
+	var behind := GridLayout.position_of(anchor + Vector2i(5, 0))
+	MeepleTestKit.send(_village, meeple, behind)
+	MeepleTestKit.run(_village, 400)
+	_check_spot(_meeples.spots[0], behind)
+	check_eq(_arrived, [meeple, meeple, meeple] as Array[int])
+
+
 func test_a_meeple_that_is_there_already_arrives_on_the_next_tick() -> void:
 	var thing := MeepleTestKit.place_thing(_village, Vector2i(30, 20))
 	var meeple := MeepleTestKit.spawn(_village, _start)
@@ -237,6 +261,57 @@ func test_a_meeple_let_go_while_standing_wanders_at_once() -> void:
 	check(not _meeples.release(_village, 9999))
 
 
+func test_a_meeple_let_go_inside_another_arrival_sleeps_on_one_timer() -> void:
+	# What a job does: its first meeple arrives, the job is done, and it lets go
+	# of the other one, whose own arrival is still to come on this tick.
+	_walk_a_pair_and_answer("release")
+	var first := _arrived[0]
+	var other := _other_of(first)
+	check_eq(_arrived.size(), 1, "the one that was let go has no job to tell")
+	check_eq(int(_meeples.states[_meeples.row_of(first)]), VillageMeeples.ON_JOB)
+	check_eq(int(_meeples.states[_meeples.row_of(other)]), VillageMeeples.IDLE)
+	check_eq(int(_meeples.walking[_meeples.row_of(other)]), 0)
+	check_eq(_village.timers.sleeping(), 1, "one idle meeple, one wake-up timer")
+	check(_meeples.release(_village, first))
+	# An idle meeple either sleeps on one timer or walks. Never both, never two.
+	var most := 0
+	for tick in 4000:
+		_village.tick()
+		most = maxi(most, _village.timers.sleeping() + _meeples.walkers.size())
+		if most > 2:
+			break
+	check_eq(most, 2, "two idle meeples: timers and walkers together")
+	check(_meeples.steps > 200, "they went on strolls")
+
+
+func test_a_meeple_sent_on_inside_another_arrival_keeps_walking() -> void:
+	_walk_a_pair_and_answer("send")
+	var first := _arrived[0]
+	var other := _other_of(first)
+	var row := _meeples.row_of(other)
+	check_eq(_arrived.size(), 1, "the one that was sent on has not arrived")
+	check_eq(int(_meeples.states[row]), VillageMeeples.ON_JOB)
+	check_eq(int(_meeples.walking[row]), 1, "it shows the walking pose")
+	check_eq(_meeples.walkers.size(), 1)
+	MeepleTestKit.run(_village, 60)
+	_check_spot(_meeples.spots[row], _start + Vector2(20.0, 20.0))
+	check_eq(_arrived, [first, other] as Array[int])
+	check_eq(_village.timers.sleeping(), 0, "both wait for their job")
+
+
+func test_a_meeple_killed_inside_another_arrival_just_dies() -> void:
+	_walk_a_pair_and_answer("kill")
+	var first := _arrived[0]
+	var other := _other_of(first)
+	check_eq(_arrived.size(), 1, "a dying meeple does not arrive")
+	check_eq(int(_meeples.states[_meeples.row_of(other)]), VillageMeeples.DYING)
+	check_eq(_village.timers.sleeping(), 0, "no wake-up timer for a dying meeple")
+	MeepleTestKit.run(_village, 41)
+	check(not _meeples.has_meeple(other))
+	check_eq(_meeples.count(), 1)
+	check_eq(_arrived, [first] as Array[int])
+
+
 func test_nobody_can_be_sent_who_is_not_there() -> void:
 	check(not _meeples.walk_to(_village, 9999, _start))
 	check(not _meeples.halt(9999))
@@ -249,3 +324,38 @@ func _check_spot(got: Vector2, want: Vector2) -> void:
 
 func _note_arrived(meeple: int) -> void:
 	_arrived.append(meeple)
+
+
+## Sends two meeples on walks of the same length, so both walks are over on
+## the same tick, and runs to that tick. The listener of the first arrival
+## does [param answer] to the other meeple.
+func _walk_a_pair_and_answer(answer: String) -> void:
+	_pair = [
+		MeepleTestKit.spawn(_village, _start),
+		MeepleTestKit.spawn(_village, _start + Vector2(0.0, 10.0)),
+	]
+	_answer = answer
+	_meeples.meeple_arrived.connect(_answer_arrival)
+	MeepleTestKit.send(_village, _pair[0], _start + Vector2(2.0, 0.0))
+	MeepleTestKit.send(_village, _pair[1], _start + Vector2(2.0, 10.0))
+	# 2 art pixels are 4 steps, and a walk is over one tick after its last step.
+	MeepleTestKit.run(_village, 5)
+
+
+func _other_of(meeple: int) -> int:
+	return _pair[1] if meeple == _pair[0] else _pair[0]
+
+
+func _answer_arrival(meeple: int) -> void:
+	var answer := _answer
+	_answer = ""
+	if answer == "":
+		return
+	var other := _other_of(meeple)
+	match answer:
+		"release":
+			check(_meeples.release(_village, other), "a meeple on a job can be let go")
+		"send":
+			MeepleTestKit.send(_village, other, _start + Vector2(20.0, 20.0))
+		"kill":
+			check(_meeples.kill(_village, other), "a meeple on a job can be killed")

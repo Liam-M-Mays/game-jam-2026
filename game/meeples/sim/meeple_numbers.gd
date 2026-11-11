@@ -7,6 +7,9 @@ extends Object
 ## A village works in art pixels, as [GridLayout] does, so each distance here
 ## is turned into art pixels once, with [constant UNIT]. The jam number is the
 ## one written in front of it.
+##
+## One distance is the exception: [constant HOP_REACH]. The jam game measured
+## it on the screen side of its scale, where one unit is one art pixel already.
 
 ## One jam unit in art pixels.
 const UNIT := 0.1
@@ -41,9 +44,12 @@ const WANDER_JITTER := Vector2(12.0, 6.0) * UNIT
 const PATH_CHECKS := 8
 ## The chance, on each stroll, that a meeple picks a hangout again.
 const HOP_CHANCE := 0.15
-## A hangout this far away is half as likely to be picked as one right here.
-## 100 jam units.
-const HOP_REACH := 100.0 * UNIT
+## A hangout this far away is half as likely to be picked as one right here,
+## in art pixels. The jam game divides this one distance by 100 after it took
+## it from [code]global_position[/code], where one unit is one art pixel. So
+## the 100 is in art pixels (1,000 jam units), and it is not turned with
+## [constant UNIT].
+const HOP_REACH := 100.0
 
 ## How long a dying meeple takes to tip over to 90 degrees, in seconds.
 const FALL_SECONDS := 0.45

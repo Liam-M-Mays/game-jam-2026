@@ -67,7 +67,10 @@ func test_a_meeple_shows_the_walking_pose_while_it_walks() -> void:
 	check_eq(_stage.mover(0)["numbers"].w, MeepleLook.STANDING)
 	var target := _start + Vector2(2.0, 0.0)
 	MeepleTestKit.send(_village, meeple, target)
-	check_eq(_stage.mover(0)["numbers"].w, MeepleLook.WALKING)
+	var walking: Vector4 = _stage.mover(0)["numbers"]
+	check_eq(walking.w, MeepleLook.WALKING)
+	# A walking meeple keeps its own bounce start, so a group does not walk as one block.
+	check_near(walking.y, _meeples.bounces[0] * MeepleLook.PHASE_RANGE, 0.0001)
 	MeepleTestKit.run(_village, 4)
 	_stage.view.show_frame(0.9)
 	check_eq(_stage.mover(0)["numbers"].w, MeepleLook.WALKING, "it still glides the last step")
@@ -103,6 +106,7 @@ func test_a_dying_meeple_shows_its_topple_and_its_fade() -> void:
 	var numbers: Vector4 = mover["numbers"]
 	check_eq(numbers.w, MeepleLook.DYING)
 	check_eq(numbers.x, float(_stage.look.head_sprites[3]), "it keeps its load")
+	check_eq(numbers.z, 1.0, "and the load stays lifted above its head")
 	# Half way between tick 4 and tick 5 of the fall.
 	var side := signf(_meeples.topples[0])
 	check_near(numbers.y * side, (0.310281 + 0.484814) * 0.5, 0.0001)
@@ -148,6 +152,29 @@ func test_a_meeple_that_dies_walking_falls_from_the_tilt_it_had() -> void:
 	_village.tick()
 	_stage.view.show_frame(1.0)
 	check_near(_stage.mover(0)["numbers"].y * side, 1.404502, 0.0001)
+
+
+func test_a_meeple_that_dies_in_the_middle_of_a_walk_is_glided_to_where_it_died() -> void:
+	var meeple := MeepleTestKit.spawn(_village, _start)
+	MeepleTestKit.send(_village, meeple, _start + Vector2(40.0, 0.0))
+	MeepleTestKit.run(_village, 3)
+	var from := _meeples.before[0]
+	var died_at := _meeples.spots[0]
+	check(died_at.distance_to(from) > 0.49, "it took a step on the tick it dies after")
+	_stage.batch.clock = 0.31
+	var phase := _meeples.bounces[0] * MeepleLook.PHASE_RANGE
+	var lean := deg_to_rad(MeepleLook.pose(0.31, phase, true).y)
+	# Its feet stay where the tilted meeple had them, as in the test above.
+	var feet := Vector2(0.0, 1.0)
+	var shift := feet.rotated(lean) - feet
+	MeepleTestKit.kill(_village, meeple)
+	_stage.view.show_frame(0.5)
+	var half_way := _stage.in_batch(from.lerp(died_at, 0.5) + shift)
+	check(_stage.view.shown_spot(0).distance_to(half_way) < 0.001, "half of its last step is shown")
+	_village.tick()
+	_stage.view.show_frame(0.5)
+	var lies := _stage.in_batch(died_at + shift)
+	check(_stage.view.shown_spot(0).distance_to(lies) < 0.001, "one tick later it is where it died")
 
 
 func test_a_meeple_that_dies_standing_falls_from_upright() -> void:
