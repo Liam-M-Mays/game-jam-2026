@@ -78,3 +78,4 @@ add_child(batch)
 - An atlas holds at most 2,048 sprites.
 - Every mover has the same box size. Other kinds of mover, such as animals, need a second size later.
 - A mover outside the world area is drawn with the row at the edge.
+- A cell remembers one thing. When two things share a cell, such as two drops, the cell finds the newer one. Both are still found by their pictures.

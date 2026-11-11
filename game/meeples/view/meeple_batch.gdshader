@@ -47,6 +47,7 @@ void vertex() {
 	v_data = INSTANCE_CUSTOM;
 	v_tint = COLOR;
 	v_local = UV;
+	v_body = vec4(0.0);
 	if (INSTANCE_CUSTOM.w > 0.5) {
 		v_body = batch_rect(meeple_body);
 		float walking = INSTANCE_CUSTOM.w - 1.0;
