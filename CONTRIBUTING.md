@@ -4,6 +4,19 @@
 
 This applies to everyone: the three of us, and any AI agent working for one of us.
 
+## While the rework runs
+
+The jam game is being fixed in place on the branch `rework`. The plan is [docs/rework-plan.md](docs/rework-plan.md). Until it is done:
+
+- `master` is frozen. Only art into `ART/` lands there.
+- Cut your branch from `origin/rework` instead of `master`, and open the pull request with `--base rework`.
+- Write "Part of #N" instead of "Closes #N". GitHub only closes issues from `master`, so the issue is closed by hand after the merge.
+- One part per pull request. Aim for under 300 lines of game code.
+- Liam reviews and merges every pull request into `rework`.
+- `core-rewrite` is an old attempt kept as an archive. Do not build on it.
+
+The five steps below still apply, with `rework` in place of `master`.
+
 ## The workflow in five steps
 
 1. Get the latest master.
