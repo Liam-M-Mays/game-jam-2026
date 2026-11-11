@@ -54,22 +54,28 @@ static func squash_scale(age: float, seconds: float, from: Vector2) -> Vector2:
 
 ## The tilt of a wobble: to [param angle] in the first quarter, across to the
 ## other side in the next half, and back to upright in the last quarter.
-static func wobble_angle(age: float, seconds: float, angle: float) -> float:
+## [param from] is the tilt it starts at: not 0 when it took over from a
+## wobble that was still running.
+static func wobble_angle(age: float, seconds: float, angle: float, from: float = 0.0) -> float:
 	if seconds <= 0.0 or age >= seconds or age < 0.0:
 		return 0.0
 	var t := age / seconds
 	if t < 0.25:
-		return angle * t * 4.0
+		return lerpf(from, angle, t * 4.0)
 	if t < 0.75:
 		return angle * (1.0 - (t - 0.25) * 4.0)
 	return -angle * (1.0 - (t - 0.75) * 4.0)
 
 
 ## The size of a popping picture against its full size: up by [param amount]
-## in [param rise] seconds, and back in [param fall] seconds.
-static func pop_scale(age: float, amount: float, rise: float, fall: float) -> float:
+## in [param rise] seconds, and back in [param fall] seconds. [param from] is
+## the size it starts at: not 1 when it took over from a pop that was still
+## running.
+static func pop_scale(
+		age: float, amount: float, rise: float, fall: float, from: float = 1.0
+) -> float:
 	if age < 0.0 or age >= rise + fall:
 		return 1.0
 	if age < rise:
-		return 1.0 + amount * sine_out(age / rise)
+		return lerpf(from, 1.0 + amount, sine_out(age / rise))
 	return 1.0 + amount * (1.0 - sine_out((age - rise) / fall))

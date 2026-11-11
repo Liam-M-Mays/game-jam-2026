@@ -278,8 +278,15 @@ func decor_count() -> int:
 	return _decor_layers.size()
 
 
+## Returns true when mover [param index] was placed with
+## [method BatchRows.place_mover], so it is drawn and can carry an extra number.
+func is_mover_placed(index: int) -> bool:
+	return index >= 0 and index < _mover_buckets.size() and _mover_buckets[index] != _UNPLACED
+
+
 ## Sets the extra number of mover [param index]. See [method set_thing_extra].
-## [method place_mover] and [method look_mover] keep it.
+## [method place_mover] and [method look_mover] keep it. A mover that was not
+## placed yet takes none.
 func set_mover_extra(index: int, value: float) -> void:
 	var bucket := _mover_buckets[index]
 	if bucket == _UNPLACED:

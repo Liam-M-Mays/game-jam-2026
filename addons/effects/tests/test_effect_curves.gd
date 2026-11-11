@@ -71,6 +71,23 @@ func test_a_wobble_rocks_one_way_then_the_other_and_back() -> void:
 	check_eq(EffectCurves.wobble_angle(8.0, 8.0, 0.5), 0.0)
 
 
+func test_a_wobble_and_a_pop_can_start_from_where_the_sprite_is() -> void:
+	# A wobble that starts at a tilt of 0.25 goes on to 0.5 in a straight line.
+	check_near(EffectCurves.wobble_angle(0.0, 8.0, 0.5, 0.25), 0.25, 0.000001)
+	check_near(EffectCurves.wobble_angle(1.0, 8.0, 0.5, 0.25), 0.375, 0.000001)
+	check_near(EffectCurves.wobble_angle(2.0, 8.0, 0.5, 0.25), 0.5, 0.000001, "full tilt")
+	check_near(EffectCurves.wobble_angle(4.0, 8.0, 0.5, 0.25), 0.0, 0.000001, "then as always")
+	# A pop that starts at 1.25 eases on to 1.5 and comes back as always.
+	check_near(EffectCurves.pop_scale(0.0, 0.5, 2.0, 6.0, 1.25), 1.25, 0.000001)
+	check_near(
+		EffectCurves.pop_scale(1.0, 0.5, 2.0, 6.0, 1.25), 1.25 + 0.25 * SINE_AT_HALF, 0.000001
+	)
+	check_near(EffectCurves.pop_scale(2.0, 0.5, 2.0, 6.0, 1.25), 1.5, 0.000001, "the top")
+	check_near(
+		EffectCurves.pop_scale(5.0, 0.5, 2.0, 6.0, 1.25), 1.5 - 0.5 * SINE_AT_HALF, 0.000001
+	)
+
+
 func test_a_pop_gets_bigger_fast_and_comes_back() -> void:
 	check_near(EffectCurves.pop_scale(0.0, 0.5, 2.0, 6.0), 1.0, 0.000001)
 	check_near(EffectCurves.pop_scale(1.0, 0.5, 2.0, 6.0), 1.0 + 0.5 * SINE_AT_HALF, 0.000001)

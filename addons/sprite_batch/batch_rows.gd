@@ -445,16 +445,18 @@ func _thing_record(
 	return record
 
 
-## Works out how far the things of one row reach above and below its line.
+## Works out how far one row reaches above and below its line: its things,
+## and the front decor that is drawn with it.
 func _measure_row(row: int) -> void:
-	var block: PackedFloat32Array = _row_blocks[row]
 	var line := _top_y + row * _row_height
 	var up := 0.0
 	var down := 0.0
-	for at in range(0, block.size(), FLOATS):
-		var half := block[at + _HEIGHT] * 0.5
-		up = maxf(up, line - (block[at + _Y] - half))
-		down = maxf(down, block[at + _Y] + half - line)
+	var front: PackedFloat32Array = _front_blocks.get(row, PackedFloat32Array())
+	for block: PackedFloat32Array in [_row_blocks[row], front]:
+		for at in range(0, block.size(), FLOATS):
+			var half := block[at + _HEIGHT] * 0.5
+			up = maxf(up, line - (block[at + _Y] - half))
+			down = maxf(down, block[at + _Y] + half - line)
 	_row_up[row] = up
 	_row_down[row] = down
 	_max_up = maxf(_max_up, up)

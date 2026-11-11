@@ -60,6 +60,20 @@ func test_the_layer_with_the_higher_rank_wins_a_cell() -> void:
 	check_eq(_cells.colour_of(Vector2i(1, 1)), DARK)
 
 
+func test_a_lit_cell_that_changes_colour_is_drawn_in_the_new_colour() -> void:
+	# The barn plot: the plot cells are pale yellow, the cell under the
+	# preview turns white, and yellow again when the preview moves on.
+	var under := Vector2i(2, 1)
+	_cells.show(&"area", [Vector2i(1, 1), under], YELLOW, 2)
+	check_eq(_drawn_tint(under), YELLOW)
+	_cells.show(&"under_preview", [under], Color.WHITE, 3)
+	check_eq(_drawn_tint(under), Color.WHITE, "what the batch draws is white now")
+	check_eq(_drawn_tint(Vector2i(1, 1)), YELLOW, "its neighbour is not")
+	_cells.clear(&"under_preview")
+	check_eq(_drawn_tint(under), YELLOW, "and yellow again")
+	check_eq(_rows.decor_count(), 2)
+
+
 func test_clearing_makes_the_cells_dark_again() -> void:
 	_cells.show(&"hover", [Vector2i(1, 1)], GREY)
 	_cells.show(&"area", [Vector2i(5, 5), Vector2i(6, 5)], YELLOW)
@@ -100,3 +114,15 @@ func _touched(centre: Vector2, radius: float) -> Array[Vector2i]:
 		Vector2(-20.0, -20.0), Vector2(20.0, -20.0), Vector2(20.0, 20.0), Vector2(-20.0, 20.0),
 	])
 	return CellHighlights.cells_in_circle(BatchTestKit.cells(), box, centre, radius)
+
+
+## The colour of the cell picture the batch draws on [param cell]. It is read
+## from the assembled sprites, not from the books of the highlights.
+func _drawn_tint(cell: Vector2i) -> Color:
+	var middle := _rows.cells.position_of(cell) + Vector2(-0.5, 0.0) * _rows.pixel_scale
+	var buffer := PackedFloat32Array()
+	_rows.assemble(BatchTestKit.everything(), buffer)
+	for sprite in BatchTestKit.read(buffer):
+		if sprite["middle"] == middle:
+			return sprite["tint"]
+	return DARK

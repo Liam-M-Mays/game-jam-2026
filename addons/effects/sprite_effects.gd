@@ -109,18 +109,18 @@ func close() -> void:
 ## game time: at speed 3 they take a third of the time, and while paused
 ## nothing moves.
 func advance(real_seconds: float, speed: float = 1.0, paused: bool = false) -> void:
-	if paused or real_seconds <= 0.0 or speed <= 0.0:
-		return
-	_now += real_seconds * speed
-	if _now >= _next_end:
-		_end_finished()
-	shots.advance_to(_now)
+	if not (paused or real_seconds <= 0.0 or speed <= 0.0):
+		_now += real_seconds * speed
+		if _now >= _next_end:
+			_end_finished()
+		shots.advance_to(_now)
+	_serve_waiting()
 
 
 ## Shows or hides the hover outline of [param target].
 func hover(target: int, on: bool) -> void:
 	var state := _state(target, on)
-	if state == null or state.hovered == on:
+	if state == null or (state.hovered == on and not _waiting.has(target)):
 		return
 	state.hovered = on
 	_refresh(target, state)
@@ -130,7 +130,8 @@ func hover(target: int, on: bool) -> void:
 ## colours the outline.
 func select(target: int, on: bool, tint: Color = Color.WHITE) -> void:
 	var state := _state(target, on)
-	if state == null or (state.selected == on and (not on or state.select_tint == tint)):
+	var same := state != null and state.selected == on and (not on or state.select_tint == tint)
+	if state == null or (same and not _waiting.has(target)):
 		return
 	state.selected = on
 	state.select_tint = tint if on else Color.WHITE
@@ -207,11 +208,13 @@ func grow_in(target: int) -> void:
 
 
 ## Rocks [param target] to one side, to the other and back. [param degrees]
-## is how far: leave it out for the angle of the style.
+## is how far: leave it out for the angle of the style. A wobble that takes
+## over from a running one carries on from the tilt the sprite has.
 func wobble(target: int, degrees: float = NAN) -> void:
 	var state := _timed_state(target, _style.wobble_seconds)
 	if state == null:
 		return
+	state.wobble_from = _wobble_now(state)
 	state.wobble_radians = deg_to_rad(_style.wobble_degrees if is_nan(degrees) else degrees)
 	state.wobble_seconds = _style.wobble_seconds
 	state.start(EffectState.WOBBLE, _now, state.wobble_seconds)
@@ -219,11 +222,14 @@ func wobble(target: int, degrees: float = NAN) -> void:
 
 
 ## Gives [param target] a quick little bounce. [param amount] is how much
-## bigger it gets: leave it out for the amount of the style.
+## bigger it gets: leave it out for the amount of the style. A pop that takes
+## over from a running one carries on from the size the sprite has, so many
+## pops in a row do not snap back.
 func pop(target: int, amount: float = NAN) -> void:
 	var state := _timed_state(target, _style.pop_rise_seconds + _style.pop_fall_seconds)
 	if state == null:
 		return
+	state.pop_from = _pop_now(state)
 	state.pop_amount = _style.pop_amount if is_nan(amount) else amount
 	state.pop_rise = _style.pop_rise_seconds
 	state.pop_fall = _style.pop_fall_seconds
@@ -258,16 +264,29 @@ func pose(target: int) -> Dictionary:
 		scale = EffectCurves.squash_scale(
 			_now - starts[EffectState.SQUASH], state.squash_seconds, state.squash_from
 		)
-	if starts[EffectState.POP] != EffectState.OFF:
-		scale *= EffectCurves.pop_scale(
-			_now - starts[EffectState.POP], state.pop_amount, state.pop_rise, state.pop_fall
-		)
-	result["scale"] = scale
-	if starts[EffectState.WOBBLE] != EffectState.OFF:
-		result["degrees"] = rad_to_deg(EffectCurves.wobble_angle(
-			_now - starts[EffectState.WOBBLE], state.wobble_seconds, state.wobble_radians
-		))
+	result["scale"] = scale * _pop_now(state)
+	result["degrees"] = rad_to_deg(_wobble_now(state))
 	return result
+
+
+## The size the pop of a state gives it right now, against full size.
+func _pop_now(state: EffectState) -> float:
+	var start := state.starts[EffectState.POP]
+	if start == EffectState.OFF:
+		return 1.0
+	return EffectCurves.pop_scale(
+		_now - start, state.pop_amount, state.pop_rise, state.pop_fall, state.pop_from
+	)
+
+
+## The tilt the wobble of a state gives it right now, in radians.
+func _wobble_now(state: EffectState) -> float:
+	var start := state.starts[EffectState.WOBBLE]
+	if start == EffectState.OFF:
+		return 0.0
+	return EffectCurves.wobble_angle(
+		_now - start, state.wobble_seconds, state.wobble_radians, state.wobble_from
+	)
 
 
 ## The state of a target for a timed effect of [param seconds]. Returns null

@@ -125,6 +125,26 @@ func test_a_tall_front_decor_sprite_is_sent_when_only_its_top_is_on_screen() -> 
 	check_eq(_rows.assemble(Rect2(0.0, -200.0, 800.0, 100.0), buffer), 1)
 
 
+func test_tall_front_decor_stays_in_view_when_a_thing_of_its_row_changes_or_leaves() -> void:
+	# The row line is at 150. The view only shows a strip far above it, where
+	# nothing but the top of a tall sprite reaches.
+	var strip := Rect2(0.0, -200.0, 800.0, 100.0)
+	var buffer := PackedFloat32Array()
+	_rows.add_thing(1, Vector2i(0, 3), _small, BatchTestKit.SMALL_OFFSET)
+	_rows.add_thing(2, Vector2i(5, 3), _tall, BatchTestKit.TALL_OFFSET)
+	var decor := _rows.add_decor(Vector2i(2, 3), _tall, BatchTestKit.TALL_OFFSET)
+	check_eq(_rows.assemble(strip, buffer), 3, "the whole row is sent while the decor is in view")
+	# The thing that reached as far as the decor leaves: the row is measured again.
+	_rows.remove_thing(2)
+	check_eq(_rows.assemble(strip, buffer), 2, "the decor still reaches into the view")
+	_rows.change_thing(1, _small, Vector2(0.0, -2.0))
+	check_eq(_rows.assemble(strip, buffer), 2, "and after another thing of the row changed")
+	check_eq(BatchTestKit.read(buffer)[1]["sprite"], _tall, "the decor is the one in front")
+	_rows.remove_decor(decor)
+	_rows.change_thing(1, _small, BatchTestKit.SMALL_OFFSET)
+	check_eq(_rows.assemble(strip, buffer), 0, "with the decor gone the row is out of view")
+
+
 func test_decor_under_and_over_everything_is_always_sent() -> void:
 	_rows.add_decor(Vector2i(2, 3), _small, Vector2.ZERO, Color.WHITE, BatchRows.UNDER)
 	_rows.add_decor(Vector2i(2, 3), _small, Vector2.ZERO, Color.WHITE, BatchRows.OVER)

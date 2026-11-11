@@ -94,6 +94,28 @@ func test_a_mover_carries_an_extra_number_too() -> void:
 	check_eq(extras, PackedFloat32Array([0.0, 12.0]))
 
 
+func test_setting_the_extra_number_of_a_mover_makes_the_batch_send_again() -> void:
+	# The batch only sends when the serial changed. Without this a hover glow
+	# on a standing meeple would not appear while nothing else moves.
+	_rows.resize_movers(1)
+	_rows.place_mover(0, Vector2(100.0, 100.0), Color.WHITE, Vector4(float(_small), 0, 0, 1))
+	var serial := _rows.serial()
+	_rows.set_mover_extra(0, 3.0)
+	check(_rows.serial() > serial, "the serial went up")
+
+
+func test_a_mover_says_whether_it_was_placed() -> void:
+	_rows.resize_movers(2)
+	check(not _rows.is_mover_placed(0), "counted, not placed yet")
+	_rows.place_mover(0, Vector2(100.0, 100.0), Color.WHITE, Vector4(float(_small), 0, 0, 1))
+	check(_rows.is_mover_placed(0), "placed")
+	check(not _rows.is_mover_placed(1), "its neighbour is not")
+	check(not _rows.is_mover_placed(2) and not _rows.is_mover_placed(-1), "no such mover")
+	_rows.resize_movers(0)
+	_rows.resize_movers(1)
+	check(not _rows.is_mover_placed(0), "a number that is used again starts unplaced")
+
+
 func test_a_mover_that_was_not_placed_yet_has_none_and_takes_none() -> void:
 	_rows.resize_movers(1)
 	_rows.set_mover_extra(0, 6.0)

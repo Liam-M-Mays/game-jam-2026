@@ -80,7 +80,10 @@ func test_the_last_hit_squashes_and_stays_white_for_006_seconds() -> void:
 	check_eq(_scale(), Vector2(1.15, 0.85))
 	_effects.advance(0.059)
 	check_eq(_effects.pose(_tree)["flash"], 1.0, "still solid white just before the break")
+	check_eq(_effects.pose(_tree)["degrees"], 0.0, "the hit that breaks it has no wobble")
 	check_eq(JamEffects.BREAK_HOLD, 0.06)
+	_effects.advance(0.004)
+	check_near(_effects.pose(_tree)["flash"], 1.0 - 0.003 / 0.12, 0.000001, "the hold was 0.06")
 
 
 func test_a_refused_click_flashes_red_for_012_seconds() -> void:

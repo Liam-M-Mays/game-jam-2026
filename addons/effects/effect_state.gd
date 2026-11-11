@@ -57,6 +57,11 @@ var wobble_seconds: float = 0.0
 var pop_amount: float = 0.0
 var pop_rise: float = 0.0
 var pop_fall: float = 0.0
+## The size a pop starts from, against full size. It is not 1 when the pop
+## took over from a pop that was still running.
+var pop_from: float = 1.0
+## The tilt a wobble starts from, in radians.
+var wobble_from: float = 0.0
 
 
 ## Starts the named slot [param slot] at [param now] for [param seconds].

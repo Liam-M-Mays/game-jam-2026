@@ -10,6 +10,12 @@ extends RefCounted
 
 ## Returned when nothing was played.
 const NO_SHOT := -1
+## A layer only a one-shot has: it is put in the drawing order by the height
+## of its own middle, as a node in a parent that sorts by height would be.
+## So it is in front of the things on the last row line at or above its
+## middle, and behind the things of the next row. A one-shot whose middle is
+## above the line its thing stands on is drawn behind that thing's own row.
+const BY_HEIGHT := 3
 
 var _rows: BatchRows
 var _now := 0.0
@@ -26,7 +32,8 @@ func _init(batch_rows: BatchRows) -> void:
 ## them away again. It plays [param frames_per_second] pictures a second of
 ## game time. The place is given like the place of a thing: a cell and an
 ## offset in art pixels. [param layer] is a decor layer: in front of the
-## cell's own row, or over everything. Returns a number for [method stop].
+## cell's own row, or over everything. Or it is [constant BY_HEIGHT].
+## Returns a number for [method stop].
 func play(
 		frames: PackedInt32Array,
 		frames_per_second: float,
@@ -36,11 +43,19 @@ func play(
 ) -> int:
 	if frames.is_empty() or frames_per_second <= 0.0:
 		return NO_SHOT
-	var shot := _rows.add_decor(cell, frames[0], offset, Color.WHITE, layer)
+	var on := cell
+	var by := offset
+	var decor_layer := layer
+	if layer == BY_HEIGHT:
+		decor_layer = BatchStore.FRONT
+		on = _cell_by_height(cell, offset)
+		var cells := _rows.cells
+		by = offset + (cells.position_of(cell) - cells.position_of(on)) / _rows.pixel_scale
+	var shot := _rows.add_decor(on, frames[0], by, Color.WHITE, decor_layer)
 	if shot == BatchStore.NO_DECOR:
 		return NO_SHOT
 	_shots[shot] = {
-		"frames": frames, "rate": frames_per_second, "start": _now, "offset": offset, "shown": 0,
+		"frames": frames, "rate": frames_per_second, "start": _now, "offset": by, "shown": 0,
 	}
 	_next_change = minf(_next_change, _now + 1.0 / frames_per_second)
 	return shot
@@ -60,6 +75,19 @@ func play_on(
 		return NO_SHOT
 	var offset := _rows.thing_offset(id) + effect_offset
 	return play(frames, frames_per_second, _rows.thing_cell(id), offset, layer)
+
+
+## A cell of the row whose line is the last at or above the middle of a
+## picture that is drawn [param offset] art pixels from [param cell]. The
+## front decor of that row is where a sprite sorted by height belongs.
+func _cell_by_height(cell: Vector2i, offset: Vector2) -> Vector2i:
+	var cells := _rows.cells
+	var middle := cells.position_of(cell) + offset * _rows.pixel_scale
+	var row := cells.band_at(middle.y)
+	if row == cells.row_of(cell):
+		return cell
+	var found := cells.cell_at(Vector2(middle.x, cells.row_y(row)) + cells.middle)
+	return found if cells.row_of(found) == row else cell
 
 
 ## Takes the one-shot [param shot] away before it has finished.

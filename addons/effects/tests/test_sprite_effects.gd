@@ -49,6 +49,44 @@ func test_a_new_effect_in_a_slot_takes_the_place_of_the_old_one() -> void:
 	check(not _effects.has_effect(_tree), "it ends one flash time after the second start")
 
 
+func test_a_pop_that_takes_over_from_a_pop_carries_on_from_the_size_it_has() -> void:
+	# The sample pop: a quarter bigger, 24 frames up and 72 back.
+	_effects.pop(_tree)
+	_run(12, 1.0)
+	var size: float = _effects.pose(_tree)["scale"].x
+	check_near(size, 1.0 + 0.25 * sin(PI * 0.25), 0.000001, "half way up")
+	_effects.pop(_tree)
+	check_near(_effects.pose(_tree)["scale"].x, size, 0.000001, "it does not snap back to 1")
+	_run(12, 1.0)
+	var want := lerpf(size, 1.25, sin(PI * 0.25))
+	check_near(_effects.pose(_tree)["scale"].x, want, 0.000001, "it eases on to the top")
+	_run(12, 1.0)
+	check_near(_effects.pose(_tree)["scale"].x, 1.25, 0.000001, "the top, one rise time later")
+	var line := _effects.line_of(_tree)
+	check_near(_effects.table().read(line, 8).x, size, 0.000001, "the shader gets the start size")
+	_run(72, 1.0)
+	check(not _effects.has_effect(_tree), "and back as always")
+
+
+func test_a_wobble_that_takes_over_from_a_wobble_carries_on_from_the_tilt_it_has() -> void:
+	# The sample wobble: 10 degrees, 48 frames, so full tilt after 12.
+	_effects.wobble(_tree)
+	_run(6, 1.0)
+	check_near(_effects.pose(_tree)["degrees"], 5.0, 0.000001)
+	_effects.wobble(_tree)
+	check_near(_effects.pose(_tree)["degrees"], 5.0, 0.000001, "it does not snap upright")
+	_run(6, 1.0)
+	check_near(_effects.pose(_tree)["degrees"], 7.5, 0.000001, "half of the rest of the way")
+	_run(6, 1.0)
+	check_near(_effects.pose(_tree)["degrees"], 10.0, 0.000001, "full tilt")
+	var line := _effects.line_of(_tree)
+	check_near(_effects.table().read(line, 8).y, deg_to_rad(5.0), 0.000001, "the start tilt")
+	_run(36, 1.0)
+	check(not _effects.has_effect(_tree))
+	_effects.wobble(_tree)
+	check_eq(_effects.table().read(_effects.line_of(_tree), 8).y, 0.0, "a new one starts upright")
+
+
 func test_grow_in_and_squash_share_one_slot() -> void:
 	_effects.squash(_tree)
 	_run(10, 1.0)

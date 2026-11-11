@@ -18,7 +18,7 @@
 // changes nothing and effects_colour hands the colour back as it is.
 //
 // A sprite with an effect has the number of a line of the effect table as
-// its extra number. One line is 8 pixels of 4 numbers. SpriteEffects._write
+// its extra number. One line is 9 pixels of 4 numbers. EffectLines._write
 // fills them in:
 //   0  x: 1 hovered, 2 selected, 3 both.  yzw: the tint of the selected outline.
 //   1  xyz: the ghost colour.  w: how solid the sprite is as a ghost, 0 for no ghost.
@@ -30,6 +30,7 @@
 //   5  x: shake distance in art pixels.  y: squash start.  z: squash time.  w: pop fall time.
 //   6  xy: the size the squash starts from.  z: wobble start.  w: wobble time.
 //   7  x: wobble angle in radians.  y: pop start.  z: pop amount.  w: pop rise time.
+//   8  x: the size the pop starts from.  y: the tilt the wobble starts from, in radians.
 // A start is in seconds on the effect clock. A start below 0 means "off".
 
 // One line per effect number. See the layout above.
@@ -121,6 +122,7 @@ mat4 effects_vertex(mat4 model, mat4 canvas, vec2 size, inout vec2 vertex, inout
 	vec4 t5 = texelFetch(effects_table, ivec2(5, line), 0);
 	vec4 t6 = texelFetch(effects_table, ivec2(6, line), 0);
 	vec4 t7 = texelFetch(effects_table, ivec2(7, line), 0);
+	vec4 t8 = texelFetch(effects_table, ivec2(8, line), 0);
 	found[0] = outline;
 	found[1] = ghost;
 	found[3] = vec4(1.0, under.x, under.y, 0.0);
@@ -169,7 +171,7 @@ mat4 effects_vertex(mat4 model, mat4 canvas, vec2 size, inout vec2 vertex, inout
 	if (t7.y >= 0.0) {
 		float age = effects_age(t7.y);
 		if (age < t7.w) {
-			scale *= 1.0 + t7.z * sin(age / t7.w * PI * 0.5);
+			scale *= mix(t8.x, 1.0 + t7.z, sin(age / t7.w * PI * 0.5));
 		} else if (age < t7.w + t5.w) {
 			scale *= 1.0 + t7.z * (1.0 - sin((age - t7.w) / t5.w * PI * 0.5));
 		}
@@ -177,7 +179,7 @@ mat4 effects_vertex(mat4 model, mat4 canvas, vec2 size, inout vec2 vertex, inout
 	if (t6.z >= 0.0 && t6.w > 0.0) {
 		float t = effects_age(t6.z) / t6.w;
 		if (t < 0.25) {
-			turn = t7.x * t * 4.0;
+			turn = mix(t8.y, t7.x, t * 4.0);
 		} else if (t < 0.75) {
 			turn = t7.x * (1.0 - (t - 0.25) * 4.0);
 		} else if (t < 1.0) {

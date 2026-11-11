@@ -104,10 +104,14 @@ func last_hit(effects: SpriteEffects, target: int) -> void:
 	effects.flash(target, Color.WHITE, BREAK_HOLD)
 
 
-## Plays the spark burst at the middle of the thing [param id], in front of
-## its own row.
+## Plays the spark burst at the middle of the thing [param id]. It is put in
+## the drawing order by the height of its own middle, as in the jam game.
+## That middle is above the line the thing stands on, so the sparks are
+## behind the things of the thing's own row and in front of the row above.
 func sparks(effects: SpriteEffects, id: int) -> int:
-	return effects.shots.play_on(id, spark_sprites, SPARK_RATE)
+	return effects.shots.play_on(
+		id, spark_sprites, SPARK_RATE, Vector2.ZERO, EffectShots.BY_HEIGHT
+	)
 
 
 ## Plays the dust cloud at the middle of the thing [param id], over

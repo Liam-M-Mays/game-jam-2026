@@ -8,7 +8,7 @@ extends RefCounted
 ## four numbers each, all 32-bit. The table grows by itself.
 
 ## How many pixels of the texture one line takes.
-const TEXELS := 8
+const TEXELS := 9
 ## How many numbers one line holds.
 const NUMBERS := TEXELS * 4
 ## The line that means "no effect".

@@ -71,6 +71,7 @@ func test_the_table_line_holds_what_the_shader_reads() -> void:
 	check_eq(table.read(line, 7).y, start, "pop start")
 	check_eq(table.read(line, 7).z, 0.25, "pop amount")
 	check_eq(table.read(line, 7).w, 0.1875, "pop rise")
+	check_eq(table.read(line, 8), Vector4(1.0, 0.0, 0.0, 0.0), "pop from full size, wobble upright")
 
 
 func test_a_start_time_is_written_small_however_late_in_the_game() -> void:
@@ -160,6 +161,18 @@ func test_a_ghost_takes_its_colour_and_strength_from_the_style() -> void:
 	check_eq(_effects.table().read(line, 1), Vector4(0.125, 0.25, 0.5, 0.0), "itself no ghost")
 	check_eq(_effects.table().read(line, 2).x, _small + 1.0, "the sprite behind it")
 	check_eq(_effects.table().read(line, 2).y, 0.25, "how solid the ghost behind it is")
+
+
+func test_a_meeple_squashes_round_its_feet_and_a_thing_round_its_own_point() -> void:
+	# The shader squashes, tilts and pops a sprite round the point it stands
+	# on. It reads how far that point is from the middle of the picture.
+	_effects.squash(_tree)
+	_effects.squash(_meeple)
+	var tree := _effects.table().read(_effects.line_of(_tree), 2)
+	var meeple := _effects.table().read(_effects.line_of(_meeple), 2)
+	check_eq(Vector2(tree.z, tree.w), BatchTestKit.TALL_OFFSET, "the offset of the tree")
+	check_eq(Vector2(meeple.z, meeple.w), Vector2(0.0, -2.0), "the offset every mover has")
+	check_eq(_rows.mover_offset(), Vector2(0.0, -2.0))
 
 
 func test_forget_takes_every_effect_off() -> void:

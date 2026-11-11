@@ -28,6 +28,9 @@ var _next_end := INF
 var _shared_lines: Dictionary[Array, int] = {}
 var _shared_keys: Dictionary[int, Array] = {}
 var _shared_counts: Dictionary[int, int] = {}
+## The sprites that are short of a table line because the table was full.
+var _waiting: Dictionary[int, bool] = {}
+var _line_came_free := false
 var _full_warned := false
 
 
@@ -36,15 +39,20 @@ func clock() -> float:
 	return _now
 
 
-## Takes every effect off [param target]. Call it when the sprite leaves the batch.
+## Takes every effect off [param target]. Call it when the sprite leaves the
+## batch. A mover that keeps its number through [method BatchRows.place_mover]
+## keeps its effect number too, so without this call the next meeple with
+## that number would show the old one's hover or selected outline.
 func forget(target: int) -> void:
 	var state: EffectState = _states.get(target)
 	if state == null:
 		return
 	_release(state)
-	_set_line(target, EffectTable.NONE)
+	if _carried(target) != EffectTable.NONE:
+		_set_line(target, EffectTable.NONE)
 	_states.erase(target)
 	_timed.erase(target)
+	_waiting.erase(target)
 
 
 ## Returns true when [param target] has an effect right now.
@@ -73,17 +81,33 @@ func _is_mover(target: int) -> bool:
 	return target & 1 == 1
 
 
+## True when the sprite is in the batch and drawn. A mover counts once it
+## was placed: before that it cannot carry an effect number.
 func _exists(target: int) -> bool:
 	var number := target >> 1
 	if _is_mover(target):
-		return number >= 0 and number < _rows.mover_count()
-	return _rows.has_thing(number)
+		return _rows.is_mover_placed(number)
+	return target >= 0 and _rows.has_thing(number)
+
+
+## The effect number the sprite really carries in the batch.
+func _carried(target: int) -> int:
+	if not _exists(target):
+		return EffectTable.NONE
+	var number := target >> 1
+	return int(_rows.mover_extra(number) if _is_mover(target) else _rows.thing_extra(number))
 
 
 ## The state of a target. With [param make] a missing one is made. Returns
 ## null for a sprite that is not in the batch.
+## A state whose line the sprite does not carry belonged to an earlier sprite
+## with the same number, one that left without [method forget]. It is dropped
+## here, so the new sprite starts with no effect.
 func _state(target: int, make: bool) -> EffectState:
 	var state: EffectState = _states.get(target)
+	if state != null and state.line != _carried(target):
+		forget(target)
+		state = null
 	if state != null or not make or not _exists(target):
 		return state
 	state = EffectState.new()
@@ -101,28 +125,65 @@ func _set_line(target: int, line: int) -> void:
 ## Puts a state on the right table line after it changed: none when nothing
 ## is left, a line it shares while only lasting values are set, and a line of
 ## its own while a timed effect runs.
+## When the table is full, a sprite keeps its lasting look on a shared line
+## if it can, and waits. It gets its line when one comes free.
 func _refresh(target: int, state: EffectState) -> void:
-	var before := state.line
 	if not _exists(target) or not (state.is_timed() or state.is_lasting()):
 		forget(target)
 		return
-	if state.is_timed():
-		if state.shared or state.line == EffectTable.NONE:
-			_release(state)
-			state.line = _table.take()
-		if state.line != EffectTable.NONE:
-			state.offset = _offset_of(target)
-			_write(state.line, state, true)
+	var timed := state.is_timed()
+	if timed:
 		_timed[target] = true
 		_next_end = minf(_next_end, state.next_end())
 	else:
 		_timed.erase(target)
+	if timed and _take_own(state):
+		state.offset = _offset_of(target)
+		_write(state.line, state, true)
+	elif state.is_lasting():
 		_share(state)
-	if state.line == EffectTable.NONE and not _full_warned:
-		_full_warned = true
-		push_warning("SpriteEffects: the effect table is full. Some effects are not shown.")
-	if state.line != before:
+	else:
+		_release(state)
+	if state.line == EffectTable.NONE or (timed and state.shared):
+		_waiting[target] = true
+		if not _full_warned:
+			_full_warned = true
+			push_warning("SpriteEffects: the effect table is full. Some effects are not shown.")
+	else:
+		_waiting.erase(target)
+	if state.line != _carried(target):
 		_set_line(target, state.line)
+
+
+## Gives a state a line of its own, and returns true when it has one. The
+## new line is taken before the shared one is given up, so at a full table a
+## selected sprite keeps its outline.
+func _take_own(state: EffectState) -> bool:
+	if state.line != EffectTable.NONE and not state.shared:
+		return true
+	var own := _table.take()
+	if own == EffectTable.NONE and state.shared and _shared_counts[state.line] == 1:
+		# Nobody else reads its shared line, so that line becomes its own.
+		_release(state)
+		own = _table.take()
+	if own == EffectTable.NONE:
+		return false
+	_release(state)
+	state.line = own
+	return true
+
+
+## Tries again for every sprite that is short of a line, once a line came free.
+func _serve_waiting() -> void:
+	if not _line_came_free:
+		return
+	_line_came_free = false
+	for target: int in _waiting.keys():
+		var state: EffectState = _states.get(target)
+		if state == null:
+			_waiting.erase(target)
+		else:
+			_refresh(target, state)
 
 
 func _offset_of(target: int) -> Vector2:
@@ -157,6 +218,7 @@ func _release(state: EffectState) -> void:
 		return
 	if not state.shared:
 		_table.give_back(line)
+		_line_came_free = true
 		return
 	state.shared = false
 	_shared_counts[line] -= 1
@@ -165,6 +227,7 @@ func _release(state: EffectState) -> void:
 		_shared_keys.erase(line)
 		_shared_counts.erase(line)
 		_table.give_back(line)
+		_line_came_free = true
 
 
 ## Writes a state into a table line. This is the layout the shader reads in
@@ -198,6 +261,7 @@ func _write(line: int, state: EffectState, with_timed: bool) -> void:
 	_table.write(
 		line, 7, state.wobble_radians, starts[EffectState.POP], state.pop_amount, state.pop_rise
 	)
+	_table.write(line, 8, state.pop_from, state.wobble_from, 0.0, 0.0)
 
 
 ## Switches off the timed effects that have run out, and finds the next end.

@@ -11,14 +11,15 @@ func test_line_zero_means_no_effect_and_is_never_handed_out() -> void:
 	check_eq(table.lines_in_use(), 3)
 
 
-func test_a_line_holds_eight_pixels_of_four_numbers() -> void:
+func test_a_line_holds_nine_pixels_of_four_numbers() -> void:
 	var table := EffectTable.new()
 	var line := table.take()
 	for texel in EffectTable.TEXELS:
 		table.write(line, texel, texel + 0.25, texel + 0.5, texel + 0.75, -1.0)
 	for texel in EffectTable.TEXELS:
 		check_eq(table.read(line, texel), Vector4(texel + 0.25, texel + 0.5, texel + 0.75, -1.0))
-	check_eq(EffectTable.NUMBERS, 32)
+	check_eq(EffectTable.TEXELS, 9)
+	check_eq(EffectTable.NUMBERS, 36)
 
 
 func test_a_line_that_is_given_back_is_wiped_and_handed_out_again() -> void:
