@@ -125,11 +125,13 @@ func test_a_one_shot_by_height_above_or_below_every_row_of_the_batch_still_plays
 	check_eq(_small_middle(), Vector2(-3870.0, -4140.0), "at the middle of the thing")
 	check_eq(_drawn_order(), "small tall tall wide", "behind the thing, as on any other row")
 	_effects.shots.stop(shot)
-	# The last row of the batch is 81. A middle below it stays on that row.
+	# The last row of the batch is 81. A middle below it stays on that row:
+	# in front of a thing that stands there.
+	_rows.add_thing(21, Vector2i(4, 81), _wide)
 	var low := Vector2(0.0, 12.0)
 	shot = _effects.shots.play(frames, 4.0, Vector2i(2, 81), low, EffectShots.BY_HEIGHT)
 	check(shot != EffectShots.NO_SHOT, "it plays at the bottom edge too")
-	check_eq(_drawn_order(), "tall tall wide small", "in front of everything")
+	check_eq(_drawn_order(), "tall tall wide wide small", "in front of the thing on the last row")
 
 
 func test_a_one_shot_by_height_on_a_row_line_is_in_that_row_whatever_the_grid_origin() -> void:

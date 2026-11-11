@@ -312,6 +312,40 @@ func test_at_a_full_table_a_selected_sprite_that_is_hovered_keeps_its_outline() 
 	check_eq(_effects.table().lines_in_use(), FULL)
 
 
+func test_at_a_full_table_a_selected_sprite_keeps_a_line_when_its_flash_ends() -> void:
+	# The tree is selected and flashes: a line of its own. Then the crowd
+	# fills the table, and flashes 8 steps longer than the tree.
+	_effects.select(_tree, true)
+	_effects.flash(_tree)
+	_run(8)
+	_add_crowd(FULL - 1)
+	_flash_crowd(FULL - 1)
+	check_eq(_effects.table().lines_in_use(), FULL)
+	_run(88)
+	check_eq(_effects.table().lines_in_use(), FULL, "only the flash of the tree has ended")
+	check_eq(_effects.waiting_count(), 0, "nobody else reads its line: it became its new one")
+	var line := _effects.line_of(_tree)
+	check(line != EffectTable.NONE, "it has a line")
+	check_eq(_rows.thing_extra(TREE), float(line))
+	check_eq(_effects.table().read(line, 0).x, 2.0, "selected")
+	check(_effects.table().read(line, 3).w < 0.0, "with no flash on it")
+	_effects.select(_house, true)
+	check_eq(_effects.line_of(_house), line, "a shared line: the next selected sprite reads it too")
+
+
+func test_a_ghost_asked_for_twice_stays_on_its_line_and_nobody_waits() -> void:
+	_effects.ghost(_tree, true)
+	var line := _effects.line_of(_tree)
+	check(line != EffectTable.NONE, "it has a line")
+	_effects.ghost(_tree, true)
+	check_eq(_effects.line_of(_tree), line, "it was on the line for this look already")
+	check_eq(_rows.thing_extra(TREE), float(line))
+	# The full-table warning is only logged for a sprite that is put on the
+	# waiting list. So nobody waiting also means no warning.
+	check_eq(_effects.waiting_count(), 0, "the table is all but empty: nobody is short of a line")
+	check_eq(_effects.table().lines_in_use(), 1)
+
+
 func _place(index: int) -> void:
 	_rows.place_mover(index, Vector2(100.0, 100.0), Color.WHITE, Vector4(float(_small), 0, 0, 1))
 

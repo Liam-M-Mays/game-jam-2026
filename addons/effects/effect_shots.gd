@@ -80,10 +80,12 @@ func play_on(
 ## A cell of the row whose line is the last at or above the middle of a
 ## picture that is drawn [param offset] art pixels from [param cell]. The
 ## front decor of that row is where a sprite sorted by height belongs.
-## The row is counted in whole rows from the line the cell is on, so a
-## middle exactly on a row line belongs to that row whatever the origin of
-## the grid is. A middle above or below every row of the batch goes to its
-## first or last row.
+## The row is counted in whole rows from the line the cell is on. So with an
+## offset that is handed in, a middle exactly on a row line belongs to that
+## row whatever the origin of the grid is. An offset that [method play_on]
+## reads back from the batch is only exact on a grid that starts on a whole
+## pixel. A middle above or below every row of the batch goes to its first
+## or last row.
 func _cell_by_height(cell: Vector2i, offset: Vector2) -> Vector2i:
 	var cells := _rows.cells
 	var own := cells.row_of(cell)
