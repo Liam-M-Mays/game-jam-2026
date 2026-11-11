@@ -230,6 +230,10 @@ Resources become counts, and each building is one object driven by a data file.
 - Drops stay on the ground where they fall. There is no limit on loose drops for now.
 - The HUD shows wood and stone as "have / room". "Have" counts the drops on the ground and what is in piles, so it can be higher than "room".
 - Resource kinds are data files: wood, stone and food.
+- **A loose drop is a row:** its kind, its cell and the spot where it landed. Each cell also keeps a count per kind. Built in [#63](https://github.com/Liam-M-Mays/game-jam-2026/issues/63).
+- **Two promises, both made by an id.** A building site reserves a number of units of a kind. A hauler claims one unit in particular, on the ground or in a pile, so two haulers never go for the same item.
+- **"Closest loose drop" only looks around the point.** It walks the cells outwards and stops when no cell further out can hold a closer drop. On one cell it looks at the 8 newest loose drops only, so a heap costs no more. The pick can then be off by less than one cell. Built this way in #63. Liam has not confirmed this rule yet.
+- **A drop is drawn in the grid row of its cell.** The jam game sorted drops by height. On the cell of a tree the two can differ: see the stock demo's page. Built this way in #63. Liam has not confirmed this rule yet.
 
 **Buildings**
 

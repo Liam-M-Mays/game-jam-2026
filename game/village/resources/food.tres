@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ResourceKind" format=3]
+
+[ext_resource type="Script" path="res://game/village/sim/resource_kind.gd" id="1_kind"]
+
+[resource]
+script = ExtResource("1_kind")
+id = &"food"
+number = 3
+start_amount = 10
+base_cap = 20

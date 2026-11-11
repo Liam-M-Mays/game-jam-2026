@@ -17,8 +17,15 @@ var ground := PackedByteArray()
 var occupant := PackedInt32Array()
 ## The id of who reserved each cell. 0 means nobody.
 var reserved := PackedInt32Array()
-## The loose drops of each cell that has any: cell index, then drop kind, then count.
-var drops: Dictionary[int, Dictionary] = {}
+## How many drops of each kind lie on each cell: drop kind, then one count per
+## cell. A kind gets its counts when its first drop comes into the chunk.
+var drop_counts: Dictionary[int, PackedInt32Array] = {}
+## The newest loose drop of each kind on each cell: drop kind, then one row
+## number per cell. -1 means the cell has no loose drop of that kind.
+var loose_heads: Dictionary[int, PackedInt32Array] = {}
+## How many loose drops of each kind lie in this chunk. A lookup skips a
+## chunk that has none.
+var loose_totals: Dictionary[int, int] = {}
 
 
 func _init() -> void:
@@ -39,9 +46,12 @@ static func index_of(cell: Vector2i) -> int:
 
 ## The chunk as plain data.
 func snapshot() -> Dictionary:
+	var counts := {}
+	for kind: int in drop_counts:
+		counts[kind] = drop_counts[kind].duplicate()
 	return {
 		"ground": ground.duplicate(),
 		"occupant": occupant.duplicate(),
 		"reserved": reserved.duplicate(),
-		"drops": drops.duplicate(true),
+		"drop_counts": counts,
 	}

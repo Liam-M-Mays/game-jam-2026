@@ -239,6 +239,7 @@ func snapshot() -> Dictionary:
 		"chunks": chunks,
 		"things": _things.duplicate(),
 		"reserved": _reserved_cells.duplicate(true),
+		"drops": drops.snapshot(),
 	}
 
 

@@ -129,26 +129,26 @@ The issue that checks this list at the end is [#75](https://github.com/Liam-M-Ma
 [Issue #63](https://github.com/Liam-M-Mays/game-jam-2026/issues/63)
 
 - [ ] **Keep** · Two kinds of drop item exist, wood and stone. Each is a tiny sprite lying on the ground. `world-drop-kinds`
-- [ ] **Keep** · A drop counts toward the stock the moment it appears, before any meeple picks it up, and stops counting when it is removed from the world. `world-drop-counts-at-once`
-- [ ] **Changed** · A drop that expires fades out and disappears. It cannot be picked up once the fade starts. *Now:* Decision 10: drops no longer expire, so nothing triggers this fade. `world-drop-expire-fade`
-- [ ] **Keep** · A new game starts with 10 food and no wood or stone. `world-stock-start`
+- [x] **Keep** · A drop counts toward the stock the moment it appears, before any meeple picks it up, and stops counting when it is removed from the world. `world-drop-counts-at-once`
+- [x] **Changed** · A drop that expires fades out and disappears. It cannot be picked up once the fade starts. *Now:* Decision 10: drops no longer expire, so nothing triggers this fade. `world-drop-expire-fade`
+- [x] **Keep** · A new game starts with 10 food and no wood or stone. `world-stock-start`
 - [ ] **Keep** · Food has a cap: a base amount plus the capacity of every finished silo. `world-stock-food-cap`
-- [ ] **Keep** · Food added above the cap is lost. `world-stock-food-overflow`
+- [x] **Keep** · Food added above the cap is lost. `world-stock-food-overflow`
 - [ ] **Keep** · Food counts as full when it is at or above the cap. Being full blocks bush picking and farm collecting. `world-stock-food-full`
-- [ ] **Keep** · Spending more than is in stock just empties it to zero. Stock never goes negative. `world-stock-spend-floor`
-- [ ] **Keep** · The number shown for a resource is the banked amount plus every drop item of that kind that exists: on the ground, being carried, or in a storage pile. `world-stock-count`
-- [ ] **Keep** · Wood and stone are never banked as a number. Each unit is a physical drop item until it is delivered to a building site, and only food is a banked number. `world-stock-wood-stone-are-items`
-- [ ] **Keep** · What can be promised to a building is the number of drops of that kind not yet claimed, minus those already reserved. `world-stock-available`
+- [x] **Keep** · Spending more than is in stock just empties it to zero. Stock never goes negative. `world-stock-spend-floor`
+- [x] **Keep** · The number shown for a resource is the banked amount plus every drop item of that kind that exists: on the ground, being carried, or in a storage pile. `world-stock-count`
+- [x] **Keep** · Wood and stone are never banked as a number. Each unit is a physical drop item until it is delivered to a building site, and only food is a banked number. `world-stock-wood-stone-are-items`
+- [x] **Keep** · What can be promised to a building is the number of drops of that kind not yet claimed, minus those already reserved. `world-stock-available`
 - [ ] **Keep** · A building site reserves one unit for every haul it asks for. Dropping the haul gives the reservation back. `world-stock-reserve`
-- [ ] **Keep** · When a hauler starts, it claims the nearest unclaimed drop of the needed kind, whether on the ground or in a pile. That turns one reservation into a claim. `world-stock-claim-closest`
-- [ ] **Keep** · If a haul is aborted, its drop is unclaimed again and the reservation is restored. `world-stock-release`
+- [x] **Keep** · When a hauler starts, it claims the nearest unclaimed drop of the needed kind, whether on the ground or in a pile. That turns one reservation into a claim. `world-stock-claim-closest`
+- [x] **Keep** · If a haul is aborted, its drop is unclaimed again and the reservation is restored. `world-stock-release`
 - [ ] **Keep** · A loose drop is one lying on the ground: not claimed and not in a pile. Idle meeples storing things take the nearest loose drop of the pile's kind. *But:* Decision 9: storage workers store drops, not idle meeples. `world-stock-loose`
-- [ ] **Changed** · Only 30 loose drops may lie around for long. When there are more, the oldest extra drops that no building has reserved start a 20 second timer and then expire, which lowers the stock. If the number falls back to 30 or less, the timers reset. *Now:* Decision 10: no 30-drop limit, drops stay where they fall. `world-stock-ground-limit`
+- [x] **Changed** · Only 30 loose drops may lie around for long. When there are more, the oldest extra drops that no building has reserved start a 20 second timer and then expire, which lowers the stock. If the number falls back to 30 or less, the timers reset. *Now:* Decision 10: no 30-drop limit, drops stay where they fall. `world-stock-ground-limit`
 - [ ] **Keep** · The stock announces every change, so the HUD counters, build menu, hunger, building sites and bushes update at once. `world-stock-changed-signal`
-- [ ] **Keep** · Starting a new game resets the banked stock to the starting values and clears all reservations. `world-stock-reset`
+- [x] **Keep** · Starting a new game resets the banked stock to the starting values and clears all reservations. `world-stock-reset`
 - [ ] **Keep** · Only wood and stone are ever physically carried. Food is never an item: when berries or crops are gathered the food count goes up instantly at the spot. `meeples-carry-only-wood-stone`
 - [ ] **Keep** · When a meeple starts a delivery it claims the unclaimed unit of that resource closest to itself, whether it lies on the ground or sits in a storage pile. `meeples-haul-pick-closest`
-- [ ] **Changed** · Surplus drops left lying on the ground fade out and vanish. *Now:* Decision 10: no 30-drop limit, drops stay where they fall, so nothing fades out. `effects-drop-expire`
+- [x] **Changed** · Surplus drops left lying on the ground fade out and vanish. *Now:* Decision 10: no 30-drop limit, drops stay where they fall, so nothing fades out. `effects-drop-expire`
 - [ ] **Keep** · A loose item that a meeple has chosen to carry to a pile is locked from the moment the trip is chosen until it lands in the pile. During the walk it still counts in the stock number but cannot be promised to a building site. Landing in the pile makes sites ask for materials again. `gap-stock-store-trip-locks-unit`
 
 ## #64 Core: meeples as data
