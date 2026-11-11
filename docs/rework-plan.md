@@ -105,7 +105,7 @@ Each line is one pull request into `rework`. "After" names the parts that must b
 
 ## Changed on purpose
 
-These go against an earlier answer of Liam's. Each one needs his yes.
+These go against an earlier answer of Liam's. Liam agreed to all of them on 2026-11-11, when he approved this plan.
 
 - **Godot's y-sort, not our own draw order.** Liam asked for our own order on 2026-11-10. The y-sort is far less code, and the numbers above say it holds the bar when trees are drawn by row. The fallback is above.
 - **Meeples walk straight, as in the jam game.** Path-finding (#16) and its red flash for a target that cannot be reached wait until after the rework.
