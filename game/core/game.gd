@@ -2,10 +2,19 @@ class_name GameService
 extends Node
 ## The Game service: the session, pause, game speed and the village in view.
 ##
-## It is loaded as the global [code]Game[/code]. It owns the tick clock and
-## ticks every village of the session, shown or not. It holds no rule and no
-## data of a village: those are in [Village]. With no village it does nothing,
-## so it stays quiet in the old jam game and in the menu.
+## It is loaded as the global [code]Game[/code]. Game is the session and sits
+## above the villages: it creates, holds, ticks and closes them, shown or not
+## (Decision 33 in docs/core-design.md). It is the one service that knows the
+## villages. It holds no rule and no data of a village: those are in
+## [Village], and a village never names Game. With no village it does
+## nothing, so it stays quiet in the old jam game and in the menu.
+
+## A village joined the session.
+signal village_added(village: Village)
+## A village left the session and was closed.
+signal village_removed(village: Village)
+## Another village is in view now. [param village] is null when none is.
+signal village_in_view_changed(village: Village)
 
 ## Turns the seconds of a frame into ticks. Its tick rate comes from [DevSettings].
 var clock: TickClock
@@ -75,7 +84,7 @@ func add_village(village: Village) -> void:
 	if village == null or _villages.has(village):
 		return
 	_villages.append(village)
-	Events.village_added.emit(village)
+	village_added.emit(village)
 
 
 ## Takes [param village] out of the session and closes it.
@@ -86,7 +95,7 @@ func remove_village(village: Village) -> void:
 		show_village(null)
 	_villages.erase(village)
 	village.close()
-	Events.village_removed.emit(village)
+	village_removed.emit(village)
 
 
 ## The villages of the session, in the order they were added.
@@ -107,7 +116,7 @@ func show_village(village: Village) -> void:
 	if village == village_in_view:
 		return
 	village_in_view = village
-	Events.village_in_view_changed.emit(village)
+	village_in_view_changed.emit(village)
 
 
 ## Takes [param seconds] of real time and runs the ticks they are worth, on

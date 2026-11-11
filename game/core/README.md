@@ -8,9 +8,12 @@ Two exist today. Both are loaded before any scene, under these names.
 
 | Name | File | What it owns |
 | --- | --- | --- |
-| `Game` | `game.gd` | The session, pause, game speed, and which village is in view. It ticks every village |
-| `Events` | `events.gd` | News from the simulation to the UI. Today: village added or removed, village in view, pause, speed |
+| `Game` | `game.gd` | The session, pause, game speed, and which village is in view. It creates, holds, ticks and closes the villages |
+| `Events` | `events.gd` | News that knows nothing about villages. Today: pause and speed |
 
+- **`Game` is the one service here that knows the villages.** It is the session and sits above them (Decision 33 in [docs/core-design.md](../../docs/core-design.md)). Everything else in this folder is the bottom layer and knows nothing about villages.
+- `Game` sends the news about villages itself: `Game.village_added`, `Game.village_removed` and `Game.village_in_view_changed`.
+- No script in a `sim/` folder may name `Game`, and `events.gd` may not name a village. `tests/test_layers.gd` checks both.
 - Settings, Audio and Data do not exist yet. Toasts join `Events` with #70.
 - With no village, `Game` does nothing. So it stays quiet in the old jam game and in the menu.
 - `Game` never holds data or rules of a village. Those are in the `Village` object, see [game/village/](../village/README.md).
@@ -55,6 +58,6 @@ func my_function(village: Village) -> void:   # the village is handed over
 
 ## Tests
 
-`tests/`: `test_tick_clock.gd`, `test_tick_timers.gd`, `test_game.gd`, `test_dev_settings.gd`. Run them with `bash .github/ci/run_tests.sh --only=game/core`.
+`tests/`: `test_tick_clock.gd`, `test_tick_timers.gd`, `test_game.gd`, `test_layers.gd`, `test_dev_settings.gd`. Run them with `bash .github/ci/run_tests.sh --only=game/core`.
 
 Built by: #60. The rules for this folder are in [game/README.md](../README.md).

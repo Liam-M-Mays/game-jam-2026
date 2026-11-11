@@ -1,8 +1,9 @@
 extends GameTest
 ## Checks the Game service: the session, pause, speed and the village in view.
 ##
-## Each test makes its own Game, so the tests do not share a session. The news
-## it sends goes through the real global Events.
+## Each test makes its own Game, so the tests do not share a session. Pause
+## and speed news goes through the real global Events. News about villages
+## comes from the Game itself.
 
 const FRAMES := 60
 const WOOD := 1
@@ -41,18 +42,18 @@ func before_each() -> void:
 	_game = GameService.new()
 	Events.speed_changed.connect(_on_speed_changed)
 	Events.paused_changed.connect(_on_paused_changed)
-	Events.village_in_view_changed.connect(_on_village_in_view_changed)
-	Events.village_added.connect(_on_village_added)
-	Events.village_removed.connect(_on_village_removed)
+	_game.village_in_view_changed.connect(_on_village_in_view_changed)
+	_game.village_added.connect(_on_village_added)
+	_game.village_removed.connect(_on_village_removed)
 
 
 ## Stops listening, ends the session and frees the Game.
 func after_each() -> void:
 	Events.speed_changed.disconnect(_on_speed_changed)
 	Events.paused_changed.disconnect(_on_paused_changed)
-	Events.village_in_view_changed.disconnect(_on_village_in_view_changed)
-	Events.village_added.disconnect(_on_village_added)
-	Events.village_removed.disconnect(_on_village_removed)
+	_game.village_in_view_changed.disconnect(_on_village_in_view_changed)
+	_game.village_added.disconnect(_on_village_added)
+	_game.village_removed.disconnect(_on_village_removed)
 	_game.end_session()
 	_game.free()
 

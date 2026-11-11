@@ -223,7 +223,7 @@ func test_a_village_is_made_ticked_and_freed_100_times_and_nothing_stays_in_a_gl
 	check_eq(Game.village_count(), 0)
 	check(Game.villages().is_empty(), "the session holds no village")
 	check_eq(Game.village_in_view, null)
-	check_eq(_listeners(), listeners_before, "no listener was left on Events")
+	check_eq(_listeners(), listeners_before, "no listener was left on Events or Game")
 	check_eq(Performance.get_monitor(Performance.OBJECT_COUNT), objects_before, "objects alive")
 	check_eq(_log.size(), 0, "no timer of a removed village woke in a later turn")
 
@@ -464,10 +464,12 @@ func _run_1000_ticks(village_seed: int, with_commands: bool) -> Village:
 	return village
 
 
+## How many listeners hang on the signals of the two global services.
 func _listeners() -> int:
 	var total := 0
-	for event in Events.get_signal_list():
-		total += Events.get_signal_connection_list(event["name"]).size()
+	for service: Node in [Events, Game]:
+		for event in service.get_signal_list():
+			total += service.get_signal_connection_list(event["name"]).size()
 	return total
 
 
