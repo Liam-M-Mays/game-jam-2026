@@ -38,7 +38,7 @@ const ZOOM_LIMITS := Vector2(0.125, 8.0)
 
 var _art := StressArt.new()
 var _look := MeepleLook.new()
-var _cells := BatchCells.new()
+var _cells := JamGrid.cells()
 var _rows: BatchRows
 var _batch: SpriteBatch
 var _crowd: WanderCrowd
@@ -62,7 +62,7 @@ func _ready() -> void:
 	_art.add_to(atlas)
 	_look.add_to(atlas)
 	atlas.build()
-	_rows = BatchRows.new(_cells, atlas, world)
+	_rows = BatchRows.new(_cells, atlas, world, JamGrid.ART_SCALE)
 	_look.shape(_rows)
 	_batch = SpriteBatch.new()
 	_batch.setup(_rows, MeepleLook.SHADER)

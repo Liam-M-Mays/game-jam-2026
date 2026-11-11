@@ -11,7 +11,7 @@ const BOX_OFFSET := Vector2(0.0, -20.0)
 const BOX_SLACK := 10.0
 
 var _rows: BatchRows
-var _cells := BatchCells.new()
+var _cells := BatchTestKit.cells()
 var _small := 0
 var _tall := 0
 var _world := Rect2()
@@ -26,7 +26,7 @@ func before_each() -> void:
 	_tall = atlas.find(BatchTestKit.TALL)
 	var far_corner := _cells.position_of(GRID - Vector2i.ONE)
 	_world = Rect2(Vector2.ZERO, far_corner)
-	_rows = BatchRows.new(_cells, atlas, _world)
+	_rows = BatchRows.new(_cells, atlas, _world, BatchTestKit.ART_SCALE)
 	_rows.shape_movers(BOX, BOX_OFFSET, BOX_SLACK)
 	# A small thing on every second cell: 50,000 things.
 	for row in GRID.y:
@@ -60,11 +60,33 @@ func test_no_more_is_sent_than_the_rows_on_screen_and_one_row_each_side() -> voi
 			var row: int = _cells.cell_at(sprite["middle"]).y
 			if sprite["numbers"].w == BatchRows.PLAIN and (row < first_row or row > last_row):
 				fail("view %s: a thing of row %d was sent" % [view, row])
+		# A tighter limit, which also fails when the sides are not cut off.
+		var near := _sprites_near(view)
+		check(sent <= near, "view %s: %d sent, only %d are near the screen" % [view, sent, near])
 		print(
-			"CULL view at %s: %d sprites sent, " % [view.position, sent],
+			"CULL view at %s: %d sprites sent, %d are near the screen, " % [view.position, sent, near],
 			"%d sprites in the rows on screen plus one row each side, " % allowed,
 			"%d sprites in all" % (_thing_cells.size() + MOVERS)
 		)
+
+
+func test_every_sprite_that_is_sent_is_near_the_screen() -> void:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 960
+	for view in _views(rng):
+		_rows.assemble(view, _buffer)
+		var far_things := 0
+		var far_movers := 0
+		for sprite in BatchTestKit.read(_buffer):
+			var box := Rect2(sprite["middle"] - sprite["size"] * 0.5, sprite["size"])
+			if sprite["numbers"].w == BatchRows.PLAIN:
+				# A thing is only sent when its picture touches the screen.
+				if not box.grow(1.0).intersects(view):
+					far_things += 1
+			elif not box.intersects(_mover_window(view)):
+				far_movers += 1
+		check_eq(far_things, 0, "view %s: things sent that do not touch the screen" % view)
+		check_eq(far_movers, 0, "view %s: movers sent from further than one column" % view)
 
 
 func test_nothing_that_is_on_screen_is_left_out() -> void:
@@ -150,6 +172,29 @@ func _views(rng: RandomNumberGenerator) -> Array[Rect2]:
 		)
 		views.append(Rect2(corner, VIEW_SIZE))
 	return views
+
+
+## The area a mover may be sent from: the screen, one column of movers to
+## each side, one thin band above and below, and the slack of its box.
+func _mover_window(view: Rect2) -> Rect2:
+	var sideways := 960.0 + BOX_SLACK
+	var window := view.grow_individual(sideways, BOX_SLACK, sideways, BOX_SLACK)
+	return window.grow_individual(0.0, BatchTestKit.ART_SCALE, 0.0, BatchTestKit.ART_SCALE)
+
+
+## Counts the things whose picture touches [param view], and the movers
+## inside the area a mover may be sent from.
+func _sprites_near(view: Rect2) -> int:
+	var count := 0
+	for cell in _thing_cells:
+		var middle := _cells.position_of(cell) + BatchTestKit.SMALL_OFFSET * BatchTestKit.ART_SCALE
+		if Rect2(middle - Vector2(20.0, 20.0), Vector2(40.0, 40.0)).grow(1.0).intersects(view):
+			count += 1
+	var window := _mover_window(view)
+	for spot in _mover_spots:
+		if Rect2(spot + BOX_OFFSET - BOX * 0.5, BOX).intersects(window):
+			count += 1
+	return count
 
 
 ## Counts the things and movers in the grid rows [param first] to [param last].

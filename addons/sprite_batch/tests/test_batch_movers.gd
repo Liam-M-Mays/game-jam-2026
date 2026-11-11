@@ -1,6 +1,6 @@
 extends GameTest
-## Checks the movers: they are drawn between two rows, and each is drawn once
-## however much it walks.
+## Checks the movers: they are drawn between two rows, a lower one is in
+## front of a higher one, and each is drawn once however much it walks.
 
 const WORLD := Rect2(0.0, 0.0, 4000.0, 2000.0)
 const BOX := Vector2(30.0, 60.0)
@@ -9,14 +9,14 @@ const BOX_OFFSET := Vector2(0.0, -20.0)
 const MOVER := 1.0
 
 var _rows: BatchRows
-var _cells := BatchCells.new()
+var _cells := BatchTestKit.cells()
 var _small := 0
 
 
 func before_each() -> void:
 	var atlas := BatchTestKit.atlas()
 	_small = atlas.find(BatchTestKit.SMALL)
-	_rows = BatchRows.new(_cells, atlas, WORLD, 500.0)
+	_rows = BatchRows.new(_cells, atlas, WORLD, BatchTestKit.ART_SCALE, 500.0)
 	_rows.shape_movers(BOX, BOX_OFFSET, 10.0)
 
 
@@ -32,9 +32,82 @@ func test_a_mover_on_a_row_line_is_in_front_of_that_row() -> void:
 	for row in [3, 4, 5]:
 		_rows.add_thing(row, Vector2i(2, row), _small, BatchTestKit.SMALL_OFFSET)
 	_rows.resize_movers(2)
-	_rows.place_mover(0, Vector2(300.0, _cells.row_y(4)), Color.WHITE, _numbers(0))
-	_rows.place_mover(1, Vector2(300.0, _cells.row_y(4) - 0.5), Color.WHITE, _numbers(1))
-	check_eq(_drawing_order(), ["thing 3", "mover 1", "thing 4", "mover 0", "thing 5"])
+	var spots := PackedVector2Array([
+		Vector2(300.0, _cells.row_y(4)), Vector2(300.0, _cells.row_y(4) - 0.5),
+	])
+	_rows.place_mover(0, spots[0], Color.WHITE, _numbers(0))
+	_rows.place_mover(1, spots[1], Color.WHITE, _numbers(1))
+	var want := ["thing 3", "mover 1", "thing 4", "mover 0", "thing 5"]
+	check_eq(_drawing_order(), want, "after placing")
+	# Moving to the same spots must not change a band.
+	_rows.move_movers(spots)
+	check_eq(_drawing_order(), want, "after moving to the same spots")
+
+
+func test_a_row_line_gives_the_same_band_when_placing_and_when_moving() -> void:
+	# Row heights where dividing and multiplying by the inverse disagree.
+	var atlas := BatchTestKit.atlas()
+	for height: float in [49.0, 98.0, 103.0, 107.0, 161.0]:
+		var cells := BatchCells.new(70.0, 50.0, height, Vector2.ZERO, Vector2.ZERO)
+		var rows := BatchRows.new(cells, atlas, Rect2(0.0, 0.0, 4000.0, height * 40.0), 10.0)
+		rows.shape_movers(BOX, BOX_OFFSET, 10.0)
+		rows.resize_movers(30)
+		var spots := PackedVector2Array()
+		for row in 30:
+			rows.add_thing(row, Vector2i(2, row), atlas.find(BatchTestKit.SMALL))
+			spots.append(Vector2(300.0, cells.row_y(row)))
+			rows.place_mover(row, spots[row], Color.WHITE, _numbers(row))
+		var buffer := PackedFloat32Array()
+		rows.assemble(BatchTestKit.everything(), buffer)
+		var placed := BatchTestKit.read(buffer)
+		rows.move_movers(spots)
+		rows.assemble(BatchTestKit.everything(), buffer)
+		check(BatchTestKit.read(buffer) == placed, "row height %s: a band changed" % height)
+		# Each mover on a line comes right after the thing of that row.
+		for row in 30:
+			check_eq(placed[row * 2 + 1]["numbers"], _numbers(row), "row height %s" % height)
+
+
+func test_a_lower_mover_is_in_front_of_a_higher_one_in_the_same_row_band() -> void:
+	# Both stand between the lines of row 2 and row 3. The lower one came first.
+	_rows.resize_movers(2)
+	var line := _cells.row_y(2)
+	_rows.place_mover(0, Vector2(300.0, line + 40.0), Color.WHITE, _numbers(0))
+	_rows.place_mover(1, Vector2(310.0, line + 5.0), Color.WHITE, _numbers(1))
+	check_eq(_drawing_order(), ["mover 1", "mover 0"])
+	# They swap heights: the order follows.
+	_rows.move_movers(PackedVector2Array([Vector2(300.0, line + 5.0), Vector2(310.0, line + 40.0)]))
+	check_eq(_drawing_order(), ["mover 0", "mover 1"])
+	# One art pixel apart is enough, also across a column line at x 500.
+	_rows.move_movers(PackedVector2Array([Vector2(501.0, line + 22.0), Vector2(499.0, line + 12.0)]))
+	check_eq(_drawing_order(), ["mover 1", "mover 0"])
+	_rows.move_movers(PackedVector2Array([Vector2(501.0, line + 12.0), Vector2(499.0, line + 22.0)]))
+	check_eq(_drawing_order(), ["mover 0", "mover 1"])
+
+
+func test_two_movers_keep_their_order_when_a_third_leaves() -> void:
+	# Three movers in one thin band, less than one art pixel apart in height.
+	_rows.resize_movers(4)
+	var line := _cells.row_y(2)
+	var spots := PackedVector2Array([
+		Vector2(300.0, line + 12.0), Vector2(305.0, line + 14.0),
+		Vector2(310.0, line + 16.0), Vector2(315.0, line + 18.0),
+	])
+	for index in spots.size():
+		_rows.place_mover(index, spots[index], Color.WHITE, _numbers(index))
+	check_eq(_drawing_order(), ["mover 0", "mover 1", "mover 2", "mover 3"])
+	# The first one walks down into the next row band. The others did not move.
+	spots[0] = Vector2(300.0, line + 70.0)
+	_rows.move_movers(spots)
+	check_eq(_drawing_order(), ["mover 1", "mover 2", "mover 3", "mover 0"])
+	# One from the middle walks up and out.
+	spots[2] = Vector2(310.0, line - 30.0)
+	_rows.move_movers(spots)
+	check_eq(_drawing_order(), ["mover 2", "mover 1", "mover 3", "mover 0"])
+	# A look change and a dropped mover leave the order alone too.
+	_rows.look_mover(3, Color.RED, _numbers(3))
+	_rows.resize_movers(3)
+	check_eq(_drawing_order(), ["mover 2", "mover 1", "mover 0"])
 
 
 func test_a_mover_that_walks_down_moves_to_the_next_band() -> void:
@@ -190,7 +263,8 @@ func _check_movers(spots: PackedVector2Array, when: String) -> void:
 		seen[index] = true
 		if sprite["middle"] != _as_stored(spots[index] + BOX_OFFSET):
 			wrong += 1
-		var band := _cells.band_at(spots[index].y)
+		# Mover bands are one art pixel tall, and they come out top to bottom.
+		var band := floori(spots[index].y / BatchTestKit.ART_SCALE)
 		if band < last_band:
 			wrong += 1
 		last_band = band

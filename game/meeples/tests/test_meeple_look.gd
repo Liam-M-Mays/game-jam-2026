@@ -153,7 +153,7 @@ func test_a_meeple_is_a_tiny_sprite_at_ten_times_its_size() -> void:
 	var look := MeepleLook.new()
 	look.add_to(atlas)
 	atlas.build()
-	var rows := BatchRows.new(BatchCells.new(), atlas, Rect2(0.0, 0.0, 1000.0, 1000.0))
+	var rows := JamGrid.rows(atlas, Rect2(0.0, 0.0, 1000.0, 1000.0))
 	look.shape(rows)
 	rows.resize_movers(1)
 	rows.place_mover(0, Vector2(500.0, 500.0), Color.WHITE, look.numbers(0, 0.0, false))

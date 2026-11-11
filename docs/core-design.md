@@ -158,7 +158,8 @@ Each village is drawn as one batch, in one draw call, in our own order.
 - **Effects become values the shader reads:** hover outline, flash, squash and the blueprint ghost. This is the effects toolkit.
 - **Clicking uses maths.** The mouse position gives a cell, and the cell gives what stands on it. In the jam game 2,091 cells each carry their own click area.
 - **A picture in front wins the click.** A tall sprite sticks up over the row behind it, so the picture under the mouse is checked first, and only its solid pixels count. Where no picture is hit, the cell decides. Built this way in [#61](https://github.com/Liam-M-Mays/game-jam-2026/issues/61). Liam has not confirmed this rule yet.
-- **Only what is on screen is sent.** Rows off screen are left out, and so are the things and meeples left and right of the screen.
+- **Only what is on screen is sent.** Rows off screen are left out, and so are the things and meeples left and right of the screen. While meeples move, what is on screen is put together and sent again every frame. Rows are copied as they are, not rebuilt.
+- **Meeples between two rows are kept in thin bands,** one art pixel tall, so a lower meeple is drawn in front of a higher one with no sorting. Two meeples closer than one art pixel in height are drawn in the order they came. Built this way in [#61](https://github.com/Liam-M-Mays/game-jam-2026/issues/61). Liam has not confirmed this rule yet.
 
 Stress test on an Apple M3, 2026-11-10. Time per frame in milliseconds, with 6,000 static things. 16.7 ms is 60 frames per second.
 

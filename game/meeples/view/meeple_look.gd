@@ -68,9 +68,10 @@ const WOBBLE_DEGREES := 10.0
 const WOBBLE_SPEED := 1.5
 ## Bounce starts are picked from 0 to this. It is one full stretch cycle.
 const PHASE_RANGE := TAU / STRETCH_SPEED
-## The batch clock starts again after this many seconds. It is a whole number
-## of stretch and rocking cycles, so no meeple jumps when it does.
-const CLOCK_WRAP := 2400.0 * TAU / (CLOCK_RATE * STRETCH_SPEED)
+## The batch clock starts again after this many seconds: one full stretch,
+## which is six full rocks. So no meeple jumps when it does, and the shader
+## only ever counts with small numbers, which keeps the bounce exact.
+const CLOCK_WRAP := TAU / (CLOCK_RATE * STRETCH_SPEED)
 
 ## The sprite number of the body.
 var body_sprite: int = SpriteAtlas.NO_SPRITE

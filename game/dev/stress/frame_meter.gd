@@ -8,6 +8,10 @@ extends Node
 ## down too. The window is pinned on top, and the run checks that every frame
 ## was really drawn: a covered window stops drawing and reports fake fast frames.
 ##
+## A run only counts when the window is 1920x1080, vsync reads as off and
+## every frame was drawn. The result says so in "run_counts", and "holds_60"
+## is only true for a run that counts.
+##
 ## Add it to a scene, call [method prepare] once, then
 ## [code]await measure()[/code] for each run.
 
@@ -35,6 +39,18 @@ func prepare() -> void:
 	DisplayServer.window_set_flag(DisplayServer.WINDOW_FLAG_ALWAYS_ON_TOP, true)
 	DisplayServer.window_move_to_foreground()
 	RenderingServer.viewport_set_measure_render_time(get_viewport().get_viewport_rid(), true)
+
+
+## Returns the refresh rate of the screen the window is on, in frames a second.
+## A frame time that sits at a whole part of it may be the screen's pace, not
+## the game's.
+func screen_refresh_rate() -> float:
+	return DisplayServer.screen_get_refresh_rate(get_window().current_screen)
+
+
+## Returns true when vsync reads as switched off for the window.
+func vsync_is_off() -> bool:
+	return DisplayServer.window_get_vsync_mode() == DisplayServer.VSYNC_DISABLED
 
 
 ## Adds [param milliseconds] to the running total called [param label], for
@@ -79,17 +95,23 @@ func measure() -> Dictionary:
 	for frame in frames:
 		total += frame
 	var average := total / float(count) / 1000.0
+	var every_frame_drawn := could_draw == count and absi(drawn - count) <= 1
+	var window_ok := get_window().size == WINDOW_SIZE
+	var run_counts := every_frame_drawn and window_ok and vsync_is_off()
 	var result := {
 		"frames": count,
 		"average_ms": snappedf(average, 0.01),
 		"fps": snappedf(1000.0 / average, 0.1),
 		"p95_ms": snappedf(sorted[mini(int(count * 0.95), count - 1)] / 1000.0, 0.01),
 		"worst_ms": snappedf(sorted[count - 1] / 1000.0, 0.01),
-		"holds_60": average <= HOLDS_60_MS,
+		"run_counts": run_counts,
+		"holds_60": run_counts and average <= HOLDS_60_MS,
 		"frames_drawn": drawn,
-		"every_frame_drawn": could_draw == count and absi(drawn - count) <= 1,
+		"every_frame_drawn": every_frame_drawn,
 		"window": get_window().size,
-		"window_ok": get_window().size == WINDOW_SIZE,
+		"window_ok": window_ok,
+		"vsync_off": vsync_is_off(),
+		"screen_hz": snappedf(screen_refresh_rate(), 0.1),
 		"render_cpu_ms": snappedf(render_cpu / count, 0.01),
 		"draw_calls": snappedf(draw_calls / count, 0.1),
 	}

@@ -4,7 +4,9 @@ extends Node2D
 ##
 ## Fill a [BatchRows], hand it to [method setup] and add this node to the scene.
 ## Just before each frame is drawn it asks the rows for what is on screen and
-## sends that to the graphics card. When nothing changed it sends nothing.
+## sends that to the graphics card. It sends nothing in a frame where the rows
+## did not change and the view did not move. While movers move, it sends the
+## sprites on screen again every frame.
 
 ## The shader used when [method setup] is given none.
 const PLAIN_SHADER := preload("res://addons/sprite_batch/sprite_batch.gdshader")
@@ -13,7 +15,8 @@ const CLOCK_WRAP := 3600.0
 
 ## The sprites this node draws.
 var rows: BatchRows
-## The clock the shader reads, in seconds. It runs by itself.
+## The clock the shader reads, in seconds. It runs by itself. The shader gets
+## it wrapped to [member clock_wrap], so it stays exact however late it is.
 var clock: float = 0.0
 ## Set this to stop the clock, for a still picture.
 var clock_frozen: bool = false
@@ -90,7 +93,7 @@ func sprites_sent() -> int:
 
 
 ## Returns how many times a new buffer was sent to the graphics card. It
-## stands still while nothing changes and the view does not move.
+## stands still while the rows do not change and the view does not move.
 func sends() -> int:
 	return _sends
 
@@ -118,7 +121,7 @@ func prepare_frame() -> void:
 	if rows == null or not is_visible_in_tree():
 		return
 	var started := Time.get_ticks_usec()
-	_material.set_shader_parameter(&"batch_clock", clock)
+	_material.set_shader_parameter(&"batch_clock", fmod(clock, clock_wrap))
 	var view := view_rect()
 	if rows.serial() != _seen_serial or view != _seen_view:
 		_seen_serial = rows.serial()

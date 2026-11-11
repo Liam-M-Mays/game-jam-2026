@@ -7,7 +7,7 @@ const ROWS := 20
 const NEW_THING := 9999
 
 var _rows: BatchRows
-var _cells := BatchCells.new()
+var _cells := BatchTestKit.cells()
 var _small := 0
 var _tall := 0
 
@@ -16,7 +16,7 @@ func before_each() -> void:
 	var atlas := BatchTestKit.atlas()
 	_small = atlas.find(BatchTestKit.SMALL)
 	_tall = atlas.find(BatchTestKit.TALL)
-	_rows = BatchRows.new(_cells, atlas, Rect2(0.0, 0.0, 2600.0, 1100.0))
+	_rows = BatchRows.new(_cells, atlas, Rect2(0.0, 0.0, 2600.0, 1100.0), BatchTestKit.ART_SCALE)
 
 
 func test_adding_changing_and_removing_one_thing_only_rebuilds_its_own_row() -> void:
@@ -89,7 +89,7 @@ func test_a_second_thing_on_a_cell_is_drawn_in_front_of_the_first() -> void:
 
 
 func test_a_sprite_is_drawn_at_ten_times_its_size() -> void:
-	check_eq(_rows.pixel_scale, 10.0)
+	check_eq(_rows.pixel_scale, BatchTestKit.ART_SCALE)
 	_rows.add_thing(1, Vector2i(4, 6), _tall, Vector2(3.0, -13.0), Color(0.5, 0.25, 1.0, 0.75))
 	var sprite := BatchTestKit.read(_assembled())[0]
 	check_eq(sprite["size"], Vector2(60.0, 300.0))
@@ -112,6 +112,15 @@ func test_a_thing_is_found_by_any_cell_it_takes() -> void:
 	check(not _rows.has_thing(1), "the thing is gone")
 	for cell in footprint:
 		check_eq(_rows.thing_on_cell(cell), BatchRows.NO_THING)
+
+
+func test_a_thing_cannot_have_the_number_that_means_no_thing() -> void:
+	# The refusal also logs an error, which shows as a warning in the test run.
+	check(not _rows.add_thing(BatchRows.NO_THING, Vector2i(3, 3), _small), "-1 is refused")
+	check_eq(_rows.thing_count(), 0)
+	check_eq(_rows.pick(_cells.position_of(Vector2i(3, 3))), BatchRows.NO_THING)
+	check(_rows.add_thing(-2, Vector2i(3, 3), _small), "another negative number is fine")
+	check_eq(_rows.pick(_cells.position_of(Vector2i(3, 3))), -2)
 
 
 func test_a_cell_with_two_things_finds_the_one_that_is_left() -> void:

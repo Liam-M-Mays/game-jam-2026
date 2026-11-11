@@ -5,16 +5,22 @@ extends RefCounted
 ## A [b]thing[/b] stands still on a cell: a tree, a rock, a building, a drop.
 ## Things are grouped by grid row. A row is only rebuilt when one of its own
 ## things is added, changed or removed.
-## A [b]mover[/b] walks around: a meeple. Movers are slotted into the band
-## between two rows.
+## A [b]mover[/b] walks around: a meeple. Movers are slotted in between two
+## rows, into thin bands that are one art pixel tall. A mover is in front of
+## every mover in a band above it. Two movers in one band are drawn in the
+## order they came into it.
 ## [method assemble] writes what is on screen into one buffer, back to front,
 ## and [SpriteBatch] draws that buffer. [method pick] finds the thing under a
 ## point with maths.
 ##
 ## Nothing here needs a window, so all of it can be tested alone.
+## The cell maths and the art scale are given once and must not change later.
 
 ## How many numbers one sprite takes in the buffer: 8 say where it is and how
 ## big, 4 are its colour and 4 are for the shader.
+## The colour and the four shader numbers reach the graphics card as 16-bit
+## numbers on Godot's OpenGL renderer: about 3 digits, and whole numbers are
+## only exact up to 2,048. Keep them small. The 8 place numbers are 32-bit.
 const FLOATS := 16
 ## Returned when there is no thing.
 const NO_THING := -1
@@ -36,14 +42,18 @@ const _UNPLACED := _INT32_MAX
 var cells: BatchCells
 ## The image that holds every sprite.
 var atlas: SpriteAtlas
-## How many pixels one art pixel takes at zoom 1. The jam game draws its art at 10 times size.
-var pixel_scale: float = 10.0
+## How many pixels one art pixel takes at zoom 1. It is given once, in the first call.
+var pixel_scale: float:
+	get:
+		return _pixel_scale
 
+var _pixel_scale := 1.0
 var _serial := 0
 
 var _top_row := 0
 var _top_y := 0.0
 var _row_count := 0
+var _row_height := 1.0
 var _row_blocks: Array[PackedFloat32Array] = []
 var _row_ids: Array[PackedInt32Array] = []
 var _row_keys: Array[PackedFloat64Array] = []
@@ -68,23 +78,38 @@ var _mover_buckets := PackedInt32Array()
 var _mover_slots := PackedInt32Array()
 var _bucket_blocks: Array[PackedFloat32Array] = []
 var _bucket_movers: Array[PackedInt32Array] = []
+var _bands_per_row := 1.0
+var _band_height := 1.0
+var _band_count := 0
 var _band_counts := PackedInt32Array()
 
 
 ## [param world] is the area, in pixels, that holds every cell and every mover.
+## [param art_scale] is how many pixels one art pixel takes at zoom 1.
 ## Movers are also grouped in columns of [param column_width] pixels, so that
 ## only the columns on screen are drawn.
 func _init(
-		cell_maths: BatchCells, sprite_atlas: SpriteAtlas, world: Rect2, column_width: float = 960.0
+		cell_maths: BatchCells,
+		sprite_atlas: SpriteAtlas,
+		world: Rect2,
+		art_scale: float,
+		column_width: float = 960.0
 ) -> void:
 	cells = cell_maths
 	atlas = sprite_atlas
+	_pixel_scale = art_scale
+	_row_height = cells.row_height
 	_top_row = cells.band_at(world.position.y) - 1
 	_top_y = cells.row_y(_top_row)
 	_row_count = cells.band_at(world.end.y) + 2 - _top_row
 	_column_width = maxf(column_width, 1.0)
 	_left = world.position.x - _column_width
 	_columns = ceili(world.size.x / _column_width) + 2
+	# A mover band is one art pixel tall, or a little less when a row is not
+	# a whole number of art pixels.
+	_bands_per_row = float(maxi(ceili(_row_height / maxf(art_scale, 0.001) - 0.001), 1))
+	_band_height = _row_height / _bands_per_row
+	_band_count = _row_count * int(_bands_per_row)
 	for row in _row_count:
 		_row_blocks.append(PackedFloat32Array())
 		_row_ids.append(PackedInt32Array())
@@ -92,15 +117,15 @@ func _init(
 	_row_up.resize(_row_count)
 	_row_down.resize(_row_count)
 	_row_versions.resize(_row_count)
-	_band_counts.resize(_row_count)
-	for bucket in _row_count * _columns:
+	_band_counts.resize(_band_count)
+	for bucket in _band_count * _columns:
 		_bucket_blocks.append(PackedFloat32Array())
 		_bucket_movers.append(PackedInt32Array())
 
 
 ## Adds a thing that stands still on [param cell], and returns true when it
 ## went in. [param id] is the caller's own number for the thing. It must fit
-## in 32 bits.
+## in 32 bits and it cannot be -1, which means "no thing".
 ## [param offset] is in art pixels, from the cell to the middle of the sprite,
 ## like the offset of a Sprite2D. [param footprint] lists every cell the thing
 ## takes. Leave it empty for a thing that takes only its own cell.
@@ -115,7 +140,7 @@ func add_thing(
 ) -> bool:
 	var row := cells.row_of(cell) - _top_row
 	var fits := id >= -_INT32_MAX and id <= _INT32_MAX and row >= 0 and row < _row_count
-	if not fits or _thing_cells.has(id) or not atlas.has_sprite(sprite):
+	if not fits or id == NO_THING or _thing_cells.has(id) or not atlas.has_sprite(sprite):
 		push_error("BatchRows: thing %d cannot be added on cell %s" % [id, cell])
 		return false
 	var anchor := cells.position_of(cell)
@@ -186,7 +211,7 @@ func remove_thing(id: int) -> void:
 	_row_ids[row].remove_at(at)
 	_row_keys[row].remove_at(at)
 	var block: PackedFloat32Array = _row_blocks[row]
-	var line := _top_y + row * cells.row_height
+	var line := _top_y + row * _row_height
 	var half := block[at * FLOATS + _HEIGHT] * 0.5
 	var up := line - (block[at * FLOATS + _Y] - half)
 	var down := block[at * FLOATS + _Y] + half - line
@@ -234,8 +259,9 @@ func row_version(row: int) -> int:
 	return _row_versions[index] if index >= 0 and index < _row_count else 0
 
 
-## Returns a number that goes up with every change. The batch only sends a new
-## buffer when this number or the view has changed.
+## Returns a number that goes up with every change, and with every call of
+## [method move_movers]. The batch only sends a new buffer when this number or
+## the view has changed.
 func serial() -> int:
 	return _serial
 
@@ -283,14 +309,19 @@ func place_mover(index: int, spot: Vector2, tint: Color, data: Vector4) -> void:
 
 
 ## Moves every mover to its place in [param positions], one entry per mover.
-## Call it once a frame. A mover that stays in its band costs two writes here.
-## A mover outside the world area is drawn with the row at the edge.
+## Call it in every frame in which a mover moved. It marks the batch as
+## changed, so the buffer for the screen is put together and sent again.
+## A mover that stays in its band costs two writes here.
+## A mover outside the world area is kept in the band and column at the edge.
 func move_movers(positions: PackedVector2Array) -> void:
 	var count := mini(_mover_buckets.size(), positions.size())
-	var per_row := 1.0 / cells.row_height
-	var per_column := 1.0 / _column_width
+	if count == 0:
+		return
+	var bands := _bands_per_row
+	var row_height := _row_height
+	var column_width := _column_width
 	var columns := _columns
-	var bucket_count := _row_count * _columns
+	var bucket_count := _band_count * _columns
 	var top := _top_y
 	var left := _left
 	var right := _left + _columns * _column_width
@@ -301,7 +332,11 @@ func move_movers(positions: PackedVector2Array) -> void:
 	var blocks := _bucket_blocks
 	for index in count:
 		var spot := positions[index]
-		var bucket := int((spot.y - top) * per_row) * columns + int((spot.x - left) * per_column)
+		# The same two sums as in _bucket_at, so both always agree.
+		var bucket := (
+			int((spot.y - top) * bands / row_height) * columns
+			+ int((spot.x - left) / column_width)
+		)
 		if bucket == buckets[index]:
 			var block: PackedFloat32Array = blocks[bucket]
 			var at := slots[index] * FLOATS
@@ -349,16 +384,18 @@ func set_mover_number(index: int, which: int, value: float) -> void:
 ## Writes every sprite that can be seen in [param view] into [param into],
 ## back to front, and returns how many sprites that is. Rows and columns that
 ## are off screen are left out. Nothing is sorted: a row's things come first,
-## then the movers in the band below that row, then the next row.
+## then the mover bands below that row from top to bottom, then the next row.
 func assemble(view: Rect2, into: PackedFloat32Array) -> int:
 	into.clear()
 	var top := view.position.y
 	var bottom := view.end.y
-	var height := cells.row_height
+	var height := _row_height
+	var band_height := _band_height
+	var bands := int(_bands_per_row)
 	var mover_up := _mover_size.y * 0.5 - _mover_offset.y + _mover_slack
-	var mover_down := _mover_size.y * 0.5 + _mover_offset.y + _mover_slack + height
+	var mover_down := _mover_size.y * 0.5 + _mover_offset.y + _mover_slack + band_height
 	var mover_side := _mover_size.x * 0.5 + absf(_mover_offset.x) + _mover_slack
-	var first := floori((top - maxf(_max_down, mover_down) - _top_y) / height)
+	var first := floori((top - maxf(_max_down, mover_down) - _top_y) / height) - 1
 	var last := ceili((bottom + maxf(_max_up, mover_up) - _top_y) / height)
 	var low_key := -(view.end.x + _reach_x)
 	var high_key := -(view.position.x - _reach_x)
@@ -370,6 +407,7 @@ func assemble(view: Rect2, into: PackedFloat32Array) -> int:
 	# A mover outside the world is kept in the band at the edge. So the first
 	# band has no top and the last band has no bottom.
 	var last_row := _row_count - 1
+	var last_band := _band_count - 1
 	for row in range(clampi(first, 0, last_row), clampi(last, 0, last_row) + 1):
 		var line := _top_y + row * height
 		var keys: PackedFloat64Array = _row_keys[row]
@@ -380,9 +418,15 @@ func assemble(view: Rect2, into: PackedFloat32Array) -> int:
 				into.append_array(_row_blocks[row])
 			elif to > from:
 				into.append_array(_row_blocks[row].slice(from * FLOATS, to * FLOATS))
-		var below_top := row == last_row or line + mover_down > top
-		if _band_counts[row] > 0 and below_top and (row == 0 or line - mover_up < bottom):
-			var base := row * _columns
+		for band in range(row * bands, row * bands + bands):
+			if _band_counts[band] == 0:
+				continue
+			var band_line := _top_y + band * band_height
+			if band != last_band and band_line + mover_down <= top:
+				continue
+			if band != 0 and band_line - mover_up >= bottom:
+				continue
+			var base := band * _columns
 			for column in range(from_column, to_column + 1):
 				var block: PackedFloat32Array = _bucket_blocks[base + column]
 				if not block.is_empty():
@@ -396,6 +440,9 @@ func assemble(view: Rect2, into: PackedFloat32Array) -> int:
 ## The thing whose picture is in front at that point wins, so a tall sprite
 ## that sticks up over the row behind it is found. Only solid pixels count.
 ## Where no picture is hit, the thing that stands on the cell under the point wins.
+## That second step reads the batch's own list of what was added on which
+## cell. It is a stand-in until the village grid answers that question: a
+## view can then call [method pick_sprite] and ask the grid itself.
 func pick(point: Vector2) -> int:
 	var hit := pick_sprite(point)
 	return hit if hit != NO_THING else thing_on_cell(cells.cell_at(point))
@@ -404,7 +451,7 @@ func pick(point: Vector2) -> int:
 ## Returns the front-most thing that has a solid pixel at [param point], or
 ## [constant NO_THING].
 func pick_sprite(point: Vector2) -> int:
-	var height := cells.row_height
+	var height := _row_height
 	var front := mini(floori((point.y + _max_up - _top_y) / height), _row_count - 1)
 	var back := maxi(ceili((point.y - _max_down - _top_y) / height), 0)
 	for row in range(front, back - 1, -1):
@@ -434,8 +481,8 @@ func _is_solid_at(block: PackedFloat32Array, at: int, point: Vector2) -> bool:
 func _thing_record(
 		anchor: Vector2, sprite: int, offset: Vector2, tint: Color
 ) -> PackedFloat32Array:
-	var size := Vector2(atlas.size_of(sprite)) * pixel_scale
-	var middle := anchor + offset * pixel_scale
+	var size := Vector2(atlas.size_of(sprite)) * _pixel_scale
+	var middle := anchor + offset * _pixel_scale
 	_reach_x = maxf(_reach_x, absf(middle.x - anchor.x) + size.x * 0.5)
 	return PackedFloat32Array([
 		size.x, 0.0, 0.0, middle.x,
@@ -448,7 +495,7 @@ func _thing_record(
 ## Works out how far the things of one row reach above and below its line.
 func _measure_row(row: int) -> void:
 	var block: PackedFloat32Array = _row_blocks[row]
-	var line := _top_y + row * cells.row_height
+	var line := _top_y + row * _row_height
 	var up := 0.0
 	var down := 0.0
 	for at in range(0, block.size(), FLOATS):
@@ -501,10 +548,12 @@ func _touch_row(row: int) -> void:
 	_serial += 1
 
 
+## The bucket of a spot: its band and its column. The two sums are the same
+## as in move_movers, so a mover on a row line gets the same band from both.
 func _bucket_at(spot: Vector2) -> int:
-	var row := clampi(int((spot.y - _top_y) / cells.row_height), 0, _row_count - 1)
-	var column := clampi(int((spot.x - _left) / _column_width), 0, _columns - 1)
-	return row * _columns + column
+	var band := int((spot.y - _top_y) * _bands_per_row / _row_height)
+	var column := int((spot.x - _left) / _column_width)
+	return clampi(band, 0, _band_count - 1) * _columns + clampi(column, 0, _columns - 1)
 
 
 func _append_mover(index: int, bucket: int, record: PackedFloat32Array) -> void:
@@ -517,23 +566,22 @@ func _append_mover(index: int, bucket: int, record: PackedFloat32Array) -> void:
 	_band_counts[bucket / _columns] += 1
 
 
-## Takes a mover out of its bucket. The last mover of the bucket fills the gap.
+## Takes a mover out of its bucket. The movers behind it move up one place,
+## so the drawing order of the others stays as it was.
 func _drop_mover(index: int) -> void:
 	var bucket := _mover_buckets[index]
 	if bucket == _UNPLACED:
 		return
-	var block: PackedFloat32Array = _bucket_blocks[bucket]
-	var movers: PackedInt32Array = _bucket_movers[bucket]
 	var slot := _mover_slots[index]
-	var last := movers.size() - 1
-	if slot != last:
-		var moved := movers[last]
-		movers[slot] = moved
-		_mover_slots[moved] = slot
-		for number in FLOATS:
-			block[slot * FLOATS + number] = block[last * FLOATS + number]
-	movers.resize(last)
-	block.resize(last * FLOATS)
+	var movers: PackedInt32Array = _bucket_movers[bucket]
+	var block: PackedFloat32Array = _bucket_blocks[bucket]
+	movers.remove_at(slot)
+	if slot == movers.size():
+		block.resize(slot * FLOATS)
+	else:
+		_bucket_blocks[bucket] = block.slice(0, slot * FLOATS) + block.slice((slot + 1) * FLOATS)
+		for behind in range(slot, movers.size()):
+			_mover_slots[movers[behind]] = behind
 	@warning_ignore("integer_division")
 	_band_counts[bucket / _columns] -= 1
 	_mover_buckets[index] = _UNPLACED

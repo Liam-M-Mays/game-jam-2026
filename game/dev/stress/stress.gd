@@ -10,6 +10,12 @@ extends Node2D
 ## Other arguments: [code]churn=30[/code] sets how many drops are taken away
 ## and put back each frame, and [code]shot=/path.png[/code] saves a picture
 ## of the last run.
+##
+## "Run counts" is only yes for a 1920x1080 window with vsync off in which
+## every frame was drawn. "Holds 60" is only yes for a run that counts.
+## "Wander ms" is this scene's stand-in for the simulation, "Batch ms" is the
+## script time of the sprite batch, and "Render ms" is Godot's drawing time on
+## the processor. The rest of a frame is spent handing the picture to the screen.
 
 ## The area the meeples wander in. At zoom 0.25 it fills a 1920x1080 window.
 const AREA := Vector2(7680.0, 4320.0)
@@ -29,6 +35,7 @@ const COLUMNS: Dictionary[String, String] = {
 	"p95_ms": "95th ms",
 	"worst_ms": "Worst ms",
 	"fps": "Frames a second",
+	"run_counts": "Run counts",
 	"holds_60": "Holds 60",
 	"every_frame_drawn": "Every frame drawn",
 	"wander_ms": "Wander ms",
@@ -46,7 +53,7 @@ var _rng := RandomNumberGenerator.new()
 
 var _art := StressArt.new()
 var _look := MeepleLook.new()
-var _cells := BatchCells.new()
+var _cells := JamGrid.cells()
 var _rows: BatchRows
 var _batch: SpriteBatch
 var _crowd: WanderCrowd
@@ -57,6 +64,7 @@ var _free_cells: Array[Vector2i] = []
 var _drops: Array[int] = []
 var _drop_cells: Dictionary[int, Vector2i] = {}
 var _drop_kinds: Dictionary[int, StringName] = {}
+var _warnings := PackedStringArray()
 
 
 func _ready() -> void:
@@ -118,7 +126,7 @@ func _build_batch() -> void:
 	_art.add_to(atlas)
 	_look.add_to(atlas)
 	atlas.build()
-	_rows = BatchRows.new(_cells, atlas, Rect2(Vector2.ZERO, AREA))
+	_rows = BatchRows.new(_cells, atlas, Rect2(Vector2.ZERO, AREA), JamGrid.ART_SCALE)
 	_look.shape(_rows)
 	_batch = SpriteBatch.new()
 	_batch.setup(_rows, MeepleLook.SHADER)
@@ -134,6 +142,8 @@ func _place_statics() -> void:
 		var last := floori((AREA.x - row * _cells.slant_x) / _cells.step_x)
 		for column in range(first, last + 1):
 			_free_cells.append(Vector2i(column, row))
+	if _statics > _free_cells.size():
+		_warn("only %d static things fit in view, not %d" % [_free_cells.size(), _statics])
 	for id in mini(_statics, _free_cells.size()):
 		var kind := _pick_kind()
 		var cell := _take_free_cell()
@@ -142,6 +152,13 @@ func _place_statics() -> void:
 			_drops.append(id)
 			_drop_cells[id] = cell
 			_drop_kinds[id] = kind
+	if _drops.is_empty() or _free_cells.is_empty() or _churn <= 0:
+		_warn("no drops come and go in this run, so no row is rebuilt while it measures")
+
+
+func _warn(text: String) -> void:
+	_warnings.append(text)
+	print("STRESS_WARNING ", text)
 
 
 func _pick_kind() -> StringName:
@@ -179,6 +196,10 @@ func _churn_drops() -> void:
 func _run() -> void:
 	var results: Array[Dictionary] = []
 	_label.visible = false
+	var screen := "STRESS_SCREEN the screen refreshes %s times a second, vsync is %s" % [
+		snappedf(_meter.screen_refresh_rate(), 0.1), "off" if _meter.vsync_is_off() else "ON",
+	]
+	print(screen)
 	for count in _counts:
 		_crowd.grow_to(count)
 		var result := await _meter.measure()
@@ -194,7 +215,10 @@ func _run() -> void:
 		RenderingServer.force_draw(false)
 		get_viewport().get_texture().get_image().save_png(_shot)
 		print("STRESS_SHOT ", _shot)
-	_label.text = table.replace("|", "  ")
+	var lines := PackedStringArray([table.replace("|", "  "), screen.trim_prefix("STRESS_SCREEN ")])
+	for warning in _warnings:
+		lines.append("Warning: " + warning)
+	_label.text = "\n".join(lines)
 	_label.visible = true
 	print("STRESS_DONE")
 	if _quit:

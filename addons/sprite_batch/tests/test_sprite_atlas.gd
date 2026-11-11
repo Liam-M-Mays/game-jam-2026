@@ -65,6 +65,23 @@ func test_a_name_gets_one_number() -> void:
 	check(not atlas.has_sprite(1), "a number that was never given out is not known")
 
 
+func test_a_name_cannot_be_given_to_another_picture() -> void:
+	var atlas := SpriteAtlas.new()
+	var sheet := Image.create_empty(8, 8, false, Image.FORMAT_RGBA8)
+	var other := Image.create_empty(4, 4, false, Image.FORMAT_RGBA8)
+	var first := atlas.add_image(&"wood", sheet, Rect2i(0, 0, 3, 1))
+	# The same picture again: the same number.
+	check_eq(atlas.add_image(&"wood", sheet, Rect2i(0, 0, 3, 1)), first)
+	# Another region, or another image, under the same name: refused. Each
+	# refusal also logs an error, which shows as a warning in the test run.
+	check_eq(atlas.add_image(&"wood", sheet, Rect2i(0, 0, 2, 2)), SpriteAtlas.NO_SPRITE)
+	check_eq(atlas.add_image(&"wood", other), SpriteAtlas.NO_SPRITE)
+	check_eq(atlas.sprite_count(), 1)
+	check_eq(atlas.find(&"wood"), first)
+	atlas.build()
+	check_eq(atlas.size_of(first), Vector2i(3, 1))
+
+
 func test_only_solid_pixels_are_solid() -> void:
 	var atlas := SpriteAtlas.new()
 	var image := Image.create_empty(3, 2, false, Image.FORMAT_RGBA8)

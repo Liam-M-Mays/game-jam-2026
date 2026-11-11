@@ -1,7 +1,16 @@
 class_name BatchTestKit
 extends RefCounted
-## Helpers the sprite batch tests share: an atlas made in code, so no test
-## needs an art file, and a reader for the buffer that [BatchRows] assembles.
+## Helpers the sprite batch tests share: a grid and an atlas made in code, so
+## no test needs the game's numbers or an art file, and a reader for the
+## buffer that [BatchRows] assembles.
+
+## The grid of the tests. The numbers are the tests' own: a cell is 70 wide,
+## each row starts 50 further right and is 50 tall, and one art pixel is 10.
+const STEP := 70.0
+const SLANT := 50.0
+const ROW_HEIGHT := 50.0
+const MIDDLE := Vector2(-5.0, 0.0)
+const ART_SCALE := 10.0
 
 ## A 4 by 4 solid sprite. With [constant SMALL_OFFSET] it is lower than one row.
 const SMALL := &"small"
@@ -13,6 +22,11 @@ const WIDE := &"wide"
 const SMALL_OFFSET := Vector2(0.0, -1.0)
 ## The offset that stands a tall sprite on its cell.
 const TALL_OFFSET := Vector2(-1.0, -14.0)
+
+
+## Returns the cell maths of the test grid, with cell (0, 0) at [param origin].
+static func cells(origin: Vector2 = Vector2.ZERO) -> BatchCells:
+	return BatchCells.new(STEP, SLANT, ROW_HEIGHT, MIDDLE, origin)
 
 
 ## Returns a built atlas with the three test sprites.

@@ -10,7 +10,7 @@ const WIDE_RIGHT := 4
 const HOUSE := 5
 
 var _rows: BatchRows
-var _cells := BatchCells.new()
+var _cells := BatchTestKit.cells()
 
 
 ## The scene, in pixels:
@@ -24,7 +24,7 @@ func before_each() -> void:
 	var small := atlas.find(BatchTestKit.SMALL)
 	var tall := atlas.find(BatchTestKit.TALL)
 	var wide := atlas.find(BatchTestKit.WIDE)
-	_rows = BatchRows.new(_cells, atlas, Rect2(0.0, 0.0, 3000.0, 1000.0))
+	_rows = BatchRows.new(_cells, atlas, Rect2(0.0, 0.0, 3000.0, 1000.0), BatchTestKit.ART_SCALE)
 	_rows.add_thing(ROCK, Vector2i(6, 3), small, BatchTestKit.SMALL_OFFSET)
 	_rows.add_thing(TOWER, Vector2i(5, 5), tall, BatchTestKit.TALL_OFFSET)
 	_rows.add_thing(WIDE_LEFT, Vector2i(20, 3), wide, BatchTestKit.SMALL_OFFSET)
@@ -94,10 +94,10 @@ func test_a_thing_that_was_taken_away_is_not_found() -> void:
 
 func test_the_cell_maths_can_be_swapped() -> void:
 	# The same scene on a grid that starts somewhere else: every pick moves with it.
-	var moved := BatchCells.new()
-	moved.origin = Vector2(4000.0, 3000.0)
+	var moved := BatchTestKit.cells(Vector2(4000.0, 3000.0))
 	var atlas := BatchTestKit.atlas()
-	var rows := BatchRows.new(moved, atlas, Rect2(4000.0, 3000.0, 3000.0, 1000.0))
+	var world := Rect2(4000.0, 3000.0, 3000.0, 1000.0)
+	var rows := BatchRows.new(moved, atlas, world, BatchTestKit.ART_SCALE)
 	rows.add_thing(ROCK, Vector2i(6, 3), atlas.find(BatchTestKit.SMALL), BatchTestKit.SMALL_OFFSET)
 	rows.add_thing(TOWER, Vector2i(5, 5), atlas.find(BatchTestKit.TALL), BatchTestKit.TALL_OFFSET)
 	check_eq(rows.pick(moved.origin + Vector2(555.0, 140.0)), ROCK)

@@ -5,12 +5,12 @@ extends GameTest
 var _rows: BatchRows
 var _batch: SpriteBatch
 var _camera: Camera2D
-var _cells := BatchCells.new()
+var _cells := BatchTestKit.cells()
 
 
 func before_each() -> void:
 	var atlas := BatchTestKit.atlas()
-	_rows = BatchRows.new(_cells, atlas, Rect2(0.0, 0.0, 4000.0, 3000.0))
+	_rows = BatchRows.new(_cells, atlas, Rect2(0.0, 0.0, 4000.0, 3000.0), BatchTestKit.ART_SCALE)
 	for row in 40:
 		for column in 40:
 			var cell := Vector2i(column, row)
@@ -34,12 +34,9 @@ func after_each() -> void:
 	_batch.free()
 
 
-func test_art_is_drawn_with_crisp_pixels_on_the_opengl_renderer() -> void:
+func test_the_batch_draws_with_crisp_pixels_and_its_own_material() -> void:
 	var drawer := _batch.get_child(0) as MultiMeshInstance2D
 	check_eq(drawer.texture_filter, CanvasItem.TEXTURE_FILTER_NEAREST)
-	var filter_setting := "rendering/textures/canvas_textures/default_texture_filter"
-	check_eq(ProjectSettings.get_setting(filter_setting), 0)
-	check_eq(ProjectSettings.get_setting("rendering/renderer/rendering_method"), "gl_compatibility")
 	check_eq(drawer.material, _batch.material())
 	check_eq(_batch.material().shader, SpriteBatch.PLAIN_SHADER)
 
@@ -82,6 +79,36 @@ func test_nothing_is_sent_again_while_nothing_changes() -> void:
 	_camera.force_update_scroll()
 	_batch.prepare_frame()
 	check_eq(_batch.sends(), 3, "a camera move is sent")
+
+
+func test_moving_movers_sends_the_screen_again() -> void:
+	_rows.shape_movers(Vector2(30.0, 60.0), Vector2(0.0, -20.0), 10.0)
+	_rows.resize_movers(1)
+	_rows.place_mover(0, Vector2(2000.0, 1000.0), Color.WHITE, Vector4(0.0, 0.0, 0.0, 1.0))
+	_batch.prepare_frame()
+	var sends := _batch.sends()
+	_batch.prepare_frame()
+	check_eq(_batch.sends(), sends, "nothing moved, so nothing is sent")
+	_rows.move_movers(PackedVector2Array([Vector2(2001.0, 1000.0)]))
+	_batch.prepare_frame()
+	check_eq(_batch.sends(), sends + 1, "a call of move_movers is sent")
+	# Moving nobody marks nothing.
+	_rows.resize_movers(0)
+	_batch.prepare_frame()
+	sends = _batch.sends()
+	_rows.move_movers(PackedVector2Array())
+	_batch.prepare_frame()
+	check_eq(_batch.sends(), sends, "moving no mover sends nothing")
+
+
+func test_the_shader_gets_a_small_clock_however_late_it_is() -> void:
+	_batch.clock_frozen = true
+	_batch.clock_wrap = 1.5
+	_batch.clock = 3000.4
+	_batch.prepare_frame()
+	var sent: float = _batch.material().get_shader_parameter(&"batch_clock")
+	check_near(sent, fmod(3000.4, 1.5), 0.000001)
+	check(sent < 1.5, "the clock the shader gets is below the wrap")
 
 
 func test_a_screen_position_finds_the_thing_under_it() -> void:
