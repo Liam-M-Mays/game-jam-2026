@@ -27,11 +27,13 @@ func _init(cells: Array[Vector2i]) -> void:
 	_cells = cells
 
 
+## Sets the two timers this part sleeps on.
 func start(village: Village) -> void:
 	village.timers.wake_after(village.ticks_for(GROW_SECONDS), _grow.bind(village))
 	village.timers.wake_after(village.ticks_for(CLEAR_SECONDS), _clear.bind(village))
 
 
+## The things, the drop count and the cells that carry drops, as plain data.
 func snapshot() -> Dictionary:
 	return {
 		"things": things.duplicate(),

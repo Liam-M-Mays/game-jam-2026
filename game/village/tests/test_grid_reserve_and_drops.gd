@@ -12,6 +12,7 @@ const OTHER_BARN := 22
 var _grid: VillageGrid
 
 
+## Lays a block of 10 by 10 cells for every test.
 func before_each() -> void:
 	_grid = VillageGrid.new()
 	for cell in GridLayout.block(Vector2i(0, 0), Vector2i(10, 10)):

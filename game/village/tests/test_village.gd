@@ -19,12 +19,15 @@ class Sprout:
 	var wakes: int = 0
 	var ticks_seen: int = 0
 
+	## Goes to sleep for the first time.
 	func start(village: Village) -> void:
 		_sleep(village)
 
+	## Counts the ticks it was stepped on.
 	func tick(_village: Village) -> void:
 		ticks_seen += 1
 
+	## What stands planted, and how often it woke and was stepped.
 	func snapshot() -> Dictionary:
 		return {"planted": planted.duplicate(), "wakes": wakes, "ticks_seen": ticks_seen}
 
@@ -57,12 +60,15 @@ class Recorder:
 		tag = start_tag
 		log = start_log
 
+	## Writes down that it was hung on a village.
 	func start(_village: Village) -> void:
 		log.append("start " + tag)
 
+	## Writes down the tick it was stepped on.
 	func tick(village: Village) -> void:
 		log.append("tick %d %s" % [village.now, tag])
 
+	## Writes down that it was closed.
 	func close() -> void:
 		log.append("close " + tag)
 
@@ -80,6 +86,7 @@ class PlaceThing:
 		width = start_width
 		depth = start_depth
 
+	## Places a new thing. Refused when the footprint is not free.
 	func apply(village: Village) -> bool:
 		var thing := village.new_id()
 		if not village.grid.place(thing, anchor, width, depth):
@@ -96,6 +103,7 @@ class ClearCell:
 	func _init(start_cell: Vector2i) -> void:
 		cell = start_cell
 
+	## Removes the thing on the cell. Refused when the cell is empty.
 	func apply(village: Village) -> bool:
 		return not village.grid.remove(village.grid.occupant(cell)).is_empty()
 
@@ -110,10 +118,12 @@ class DropWood:
 		cell = start_cell
 		count = start_count
 
+	## Adds the wood. Refused when the cell does not exist.
 	func apply(village: Village) -> bool:
 		return village.grid.drops.add(cell, WOOD, count)
 
 
+## Closes every village a test made, and ends the session of the real Game.
 func after_each() -> void:
 	for village in _made:
 		village.close()

@@ -10,6 +10,7 @@ var _game: GameService
 var _news: Array[String] = []
 
 
+## Makes a fresh Game and listens to every event it sends.
 func before_each() -> void:
 	_game = GameService.new()
 	Events.speed_changed.connect(_on_speed_changed)
@@ -19,6 +20,7 @@ func before_each() -> void:
 	Events.village_removed.connect(_on_village_removed)
 
 
+## Stops listening, ends the session and frees the Game.
 func after_each() -> void:
 	Events.speed_changed.disconnect(_on_speed_changed)
 	Events.paused_changed.disconnect(_on_paused_changed)
