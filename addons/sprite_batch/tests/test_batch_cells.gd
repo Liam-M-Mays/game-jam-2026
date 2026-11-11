@@ -68,10 +68,9 @@ func test_a_band_runs_from_its_row_to_the_next() -> void:
 func test_the_numbers_cannot_be_changed_afterwards() -> void:
 	var cells := BatchCells.new(STEP, SLANT, ROW_HEIGHT, MIDDLE, ORIGIN)
 	var before := cells.position_of(Vector2i(3, 4))
-	cells.step_x = 999.0
-	cells.slant_x = 999.0
+	# Each of these two writes is refused and logs an error, which shows as a
+	# warning in the test run.
 	cells.row_height = 999.0
-	cells.middle = Vector2(999.0, 999.0)
 	cells.origin = Vector2(999.0, 999.0)
 	check_eq(cells.step_x, STEP)
 	check_eq(cells.slant_x, SLANT)

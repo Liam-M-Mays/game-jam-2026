@@ -11,6 +11,10 @@ uniform sampler2D batch_rects : filter_nearest, repeat_disable;
 uniform vec2 batch_atlas_size = vec2(1.0, 1.0);
 // Seconds on the batch clock. It starts again at 0 after SpriteBatch.clock_wrap
 // seconds, and it stands still while the game is paused.
+// This is the only clock a batch shader has. The meeple look sets the wrap to
+// one full bounce, 1.508 seconds (MeepleLook.CLOCK_WRAP). Everything in the
+// village shader that reads this clock must repeat in that time, or it jumps
+// at every wrap. An effect that runs longer needs its own time value.
 uniform float batch_clock = 0.0;
 
 // Where the sprite with this number sits on the atlas.

@@ -60,7 +60,9 @@ The scene prints a `STRESS_WARNING` when it could not place as many static thing
 - Six meeples cover every carry state: nothing, wood, two wood, stone, two stone, nothing.
 - Each pose is a 1920x1080 picture at zoom 8. It is compared with the jam scene's picture of the same pose.
 - `pictures/meeple_<pose>_reference.png` is the jam scene's picture. It is the reference, so the batch can still be checked after the jam scene is gone.
-- The script holds the number of pixels each pose is expected to differ in. It ends with exit code 0 when no pose differs in more, and with 1 when one does. It prints both numbers.
+- The script holds the number of pixels each pose is expected to differ in. It prints both numbers, and "MORE THAN EXPECTED" for a pose that differs in more.
+- It also checks that the jam scene's own picture still matches the saved reference. On another graphics card it may not. Then the pose line says "REFERENCE DOES NOT MATCH", and that is not the batch's fault.
+- It ends with exit code 0 when both checks pass for every pose, and with 1 when one does not. The last line says which of the two failed.
 - A normal run writes no file. `save=1` writes the batch pictures and the difference pictures. `update=1` also writes the reference pictures again from the jam scene.
 - The jam meeple's script is taken off for the picture, because it needs the old globals. Its numbers are read from it, and its bounce formula is applied by hand.
 
@@ -71,10 +73,11 @@ The scene prints a `STRESS_WARNING` when it could not place as many static thing
 | `walking` | Walking at 0.31 s | 15 |
 | `walking_2` | Walking at 0.9 s | 7 |
 | `walking_late` | Walking at 3,000.4 s, to check the bounce stays exact late in a game | 5 |
-| `same_band` | Two overlapping pairs between the same two row lines | 12,800 |
+| `same_band` | Two overlapping pairs between the same two row lines | 0 |
 
 - The walking poses differ in single pixels on tilted edges. The batch works the tilt out on the graphics card and the jam game on the processor, and the two round a tilted edge a tiny bit differently.
-- `same_band` has one pair 35 pixels apart in height and one pair 4 pixels apart. The first pair matches the jam game. The second pair does not: the two are closer than one art pixel in height, and the batch draws such a pair in the order they came, not by height. The 12,800 pixels are one stone, 1 by 2 art pixels, at zoom 8.
+- `same_band` has one pair 35 pixels apart in height and one pair 4 pixels apart, which is less than one art pixel. In both pairs the lower meeple is put into the batch first. Both pairs match the jam game, because a meeple is put into its band by height.
+- What no picture here shows: two meeples closer than one art pixel in height can be in the wrong order for a while after one of them changed height inside its band, or when they stand on two sides of a column line. See "Limits" in the [addon README](../../../addons/sprite_batch/README.md).
 - The tests in `game/meeples/tests/` check the numbers and a copy of the bounce formula. Only these pictures prove what the shader really draws.
 
 ## The other files

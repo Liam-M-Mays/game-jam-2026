@@ -114,6 +114,18 @@ func test_a_thing_is_found_by_any_cell_it_takes() -> void:
 		check_eq(_rows.thing_on_cell(cell), BatchRows.NO_THING)
 
 
+func test_the_cell_maths_and_the_art_scale_cannot_be_swapped_afterwards() -> void:
+	# Each of these two writes is refused and logs an error, which shows as a
+	# warning in the test run.
+	_rows.cells = BatchTestKit.cells(Vector2(500.0, 500.0))
+	_rows.pixel_scale = 3.0
+	check_eq(_rows.cells, _cells)
+	check_eq(_rows.pixel_scale, BatchTestKit.ART_SCALE)
+	_rows.add_thing(1, Vector2i(2, 2), _small)
+	check_eq(BatchTestKit.read(_assembled())[0]["middle"], _cells.position_of(Vector2i(2, 2)))
+	check_eq(BatchTestKit.read(_assembled())[0]["size"], Vector2(40.0, 40.0))
+
+
 func test_a_thing_cannot_have_the_number_that_means_no_thing() -> void:
 	# The refusal also logs an error, which shows as a warning in the test run.
 	check(not _rows.add_thing(BatchRows.NO_THING, Vector2i(3, 3), _small), "-1 is refused")

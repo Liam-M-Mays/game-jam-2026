@@ -5,7 +5,9 @@ extends RefCounted
 ## It answers two questions: where is a cell, and which cell is a point in.
 ## The batch has no grid numbers of its own. The game hands them in when it
 ## makes this object, and they cannot be changed afterwards: the batch works
-## the places of its sprites out once, from these numbers.
+## the places of its sprites out once, from these numbers. A write to one of
+## them logs an error and changes nothing. To move a village, move its
+## [SpriteBatch] node.
 ##
 ## The grid is slanted: every row starts a bit further right than the row
 ## above it. All numbers are in pixels at zoom 1.
@@ -18,22 +20,32 @@ extends RefCounted
 var step_x: float:
 	get:
 		return _step_x
+	set(_value):
+		push_error("BatchCells: step_x cannot be changed. Make a new BatchCells.")
 ## How far one step to the next row moves a cell sideways. This is the slant.
 var slant_x: float:
 	get:
 		return _slant_x
+	set(_value):
+		push_error("BatchCells: slant_x cannot be changed. Make a new BatchCells.")
 ## The distance between two rows.
 var row_height: float:
 	get:
 		return _row_height
+	set(_value):
+		push_error("BatchCells: row_height cannot be changed. Make a new BatchCells.")
 ## From a cell's position to the middle of the area that counts as that cell.
 var middle: Vector2:
 	get:
 		return _middle
+	set(_value):
+		push_error("BatchCells: middle cannot be changed. Make a new BatchCells.")
 ## Where cell (0, 0) is.
 var origin: Vector2:
 	get:
 		return _origin
+	set(_value):
+		push_error("BatchCells: origin cannot be changed. Make a new BatchCells.")
 
 var _step_x: float
 var _slant_x: float

@@ -45,7 +45,8 @@ func test_a_mover_on_a_row_line_is_in_front_of_that_row() -> void:
 
 
 func test_a_row_line_gives_the_same_band_when_placing_and_when_moving() -> void:
-	# Row heights where dividing and multiplying by the inverse disagree.
+	# Row heights where dividing and multiplying by the inverse disagree. The
+	# other grid numbers here are sample values.
 	var atlas := BatchTestKit.atlas()
 	for height: float in [49.0, 98.0, 103.0, 107.0, 161.0]:
 		var cells := BatchCells.new(70.0, 50.0, height, Vector2.ZERO, Vector2.ZERO)
@@ -83,6 +84,55 @@ func test_a_lower_mover_is_in_front_of_a_higher_one_in_the_same_row_band() -> vo
 	check_eq(_drawing_order(), ["mover 1", "mover 0"])
 	_rows.move_movers(PackedVector2Array([Vector2(501.0, line + 12.0), Vector2(499.0, line + 22.0)]))
 	check_eq(_drawing_order(), ["mover 0", "mover 1"])
+
+
+func test_a_pair_that_walks_down_or_up_together_keeps_the_lower_one_in_front() -> void:
+	# Two overlapping movers, 8 pixels apart sideways and 4 pixels apart in
+	# height: less than one art pixel. Mover 1 is the lower one. They walk
+	# 200 pixels down and 200 pixels back up, at 100 pixels a second and 60
+	# frames a second, through twenty thin bands each way.
+	_rows.resize_movers(2)
+	var spots := PackedVector2Array([Vector2(300.0, 203.0), Vector2(308.0, 207.0)])
+	_rows.place_mover(0, spots[0], Color.WHITE, _numbers(0))
+	_rows.place_mover(1, spots[1], Color.WHITE, _numbers(1))
+	var step := Vector2(0.0, 100.0 / 60.0)
+	var wrong_down := 0
+	var wrong_up := 0
+	for frame in 120:
+		spots[0] += step
+		spots[1] += step
+		_rows.move_movers(spots)
+		if _drawing_order() != ["mover 0", "mover 1"]:
+			wrong_down += 1
+	for frame in 120:
+		spots[0] -= step
+		spots[1] -= step
+		_rows.move_movers(spots)
+		if _drawing_order() != ["mover 0", "mover 1"]:
+			wrong_up += 1
+	check_eq(wrong_down, 0, "frames with the higher mover in front while walking down")
+	check_eq(wrong_up, 0, "frames with the higher mover in front while walking up")
+
+
+func test_a_standing_pair_is_drawn_by_height_whichever_was_placed_first() -> void:
+	# The right-hand pair of the same_band picture: 4 pixels apart in height,
+	# in one thin band. Mover 0 is the lower one.
+	_rows.resize_movers(2)
+	var line := _cells.row_y(2)
+	var lower := Vector2(320.0, line + 16.0)
+	var higher := Vector2(330.0, line + 12.0)
+	_rows.place_mover(0, lower, Color.WHITE, _numbers(0))
+	_rows.place_mover(1, higher, Color.WHITE, _numbers(1))
+	check_eq(_drawing_order(), ["mover 1", "mover 0"], "the lower one was placed first")
+	_rows.resize_movers(0)
+	_rows.resize_movers(2)
+	_rows.place_mover(1, higher, Color.WHITE, _numbers(1))
+	_rows.place_mover(0, lower, Color.WHITE, _numbers(0))
+	check_eq(_drawing_order(), ["mover 1", "mover 0"], "the higher one was placed first")
+	# A third one goes between them, by height.
+	_rows.resize_movers(3)
+	_rows.place_mover(2, Vector2(325.0, line + 14.0), Color.WHITE, _numbers(2))
+	check_eq(_drawing_order(), ["mover 1", "mover 2", "mover 0"])
 
 
 func test_two_movers_keep_their_order_when_a_third_leaves() -> void:

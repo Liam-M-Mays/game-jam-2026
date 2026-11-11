@@ -12,7 +12,9 @@ extends Control
 ## godot --path . --rendering-driver opengl3 "res://game/dev/stress/meeple_compare.tscn" -- quit=1
 ## [/codeblock]
 ## It ends with exit code 0 when no pose differs in more pixels than
-## [constant EXPECTED] says. A normal run writes no file.
+## [constant EXPECTED] says, and the jam scene's own picture still matches the
+## saved reference. Each of the two has its own verdict in the output.
+## A normal run writes no file.
 ## [code]save=1[/code] writes the batch pictures and the difference pictures.
 ## [code]update=1[/code] also writes the reference pictures again from the jam scene.
 
@@ -42,9 +44,8 @@ const LINE: Array[Vector2] = [
 ## - Meeples 1 and 5 overlap, 35 pixels apart in height. The lower one is put
 ##   into the batch first. The batch must still draw it in front.
 ## - Meeples 2 and 3 overlap, only 4 pixels apart in height, which is less than
-##   one art pixel. The lower one is put in first. The jam game draws the lower
-##   one in front. The batch draws them in the order they came. This pair is
-##   the difference that is left.
+##   one art pixel. The lower one is put in first. The batch puts a mover into
+##   its band by height, so it draws the lower one in front, as the jam game does.
 const PAIRS: Array[Vector2] = [
 	Vector2(90.0, 20.0), Vector2(-60.0, 40.0), Vector2(20.0, 16.0),
 	Vector2(30.0, 12.0), Vector2(-100.0, 20.0), Vector2(-50.0, 5.0),
@@ -62,16 +63,15 @@ const POSES: Array[Dictionary] = [
 ## How many pixels of each pose differ from the jam scene's picture, measured
 ## on an Apple M3. A run fails when a pose differs in more. Another graphics
 ## card may round a tilted edge another way and give other small numbers.
-## - The walking poses differ in a few single pixels on tilted edges.
-## - "same_band" differs where meeples 2 and 3 overlap: 12,800 pixels is one
-##   stone, 1 by 2 art pixels, at zoom 8. The other overlapping pair matches.
+## The walking poses differ in a few single pixels on tilted edges. Every
+## other pose matches.
 const EXPECTED: Dictionary[String, int] = {
 	"standing": 0,
 	"breathing": 0,
 	"walking": 15,
 	"walking_2": 7,
 	"walking_late": 5,
-	"same_band": 12800,
+	"same_band": 0,
 }
 
 var _update := false
@@ -85,7 +85,8 @@ var _batch: SpriteBatch
 var _look := MeepleLook.new()
 var _report := Label.new()
 var _lines := PackedStringArray()
-var _failed := false
+var _batch_failed := false
+var _reference_failed := false
 
 
 func _ready() -> void:
@@ -102,11 +103,18 @@ func _ready() -> void:
 	_build_batch()
 	for pose in POSES:
 		await _compare(pose)
-	_lines.append("RESULT: %s" % ("a pose differs more than expected" if _failed else "as expected"))
+	var result := PackedStringArray()
+	if _batch_failed:
+		result.append("the batch differs from the reference more than expected")
+	if _reference_failed:
+		result.append("the jam scene no longer matches the saved reference pictures")
+	var failed := not result.is_empty()
+	_lines.append("RESULT: %s" % (". ".join(result) if failed else "as expected"))
 	_report.text = "\n".join(_lines)
-	print("COMPARE DONE ", "FAILED" if _failed else "OK")
+	print("COMPARE ", _lines[_lines.size() - 1])
+	print("COMPARE DONE ", "FAILED" if failed else "OK")
 	if _quit:
-		get_tree().quit(1 if _failed else 0)
+		get_tree().quit(1 if failed else 0)
 
 
 func _build_screen() -> void:
@@ -179,9 +187,12 @@ func _compare(pose: Dictionary) -> void:
 		if _update:
 			jam_picture.save_png(reference_path)
 			notes.append("reference written")
+		# The reference is the jam scene's picture from an Apple M3. When the
+		# jam scene itself draws another picture here, that is not the batch's fault.
 		var drift := _differences(jam_picture, _load_picture(reference_path), "")
-		notes.append("jam scene against reference: %s" % _count_text(drift))
-		_failed = _failed or drift != 0
+		var jam_verdict := "OK" if drift == 0 else "REFERENCE DOES NOT MATCH"
+		notes.append("jam scene against reference: %s, %s" % [_count_text(drift), jam_verdict])
+		_reference_failed = _reference_failed or drift != 0
 	var saved := _load_picture(batch_path)
 	if saved != null:
 		var change := _differences(batch_picture, saved, "")
@@ -192,8 +203,8 @@ func _compare(pose: Dictionary) -> void:
 	var verdict := "OK"
 	if differ < 0 or differ > expected:
 		verdict = "MORE THAN EXPECTED"
-		_failed = true
-	var line := "%s: %s from the reference, expected at most %d. %s. (%s)" % [
+		_batch_failed = true
+	var line := "%s: batch %s from the reference, expected at most %d. %s. (%s)" % [
 		pose_name, _count_text(differ), expected, verdict, ", ".join(notes),
 	]
 	_lines.append(line)

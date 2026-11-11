@@ -4,8 +4,10 @@ extends RefCounted
 ## no test needs the game's numbers or an art file, and a reader for the
 ## buffer that [BatchRows] assembles.
 
-## The grid of the tests. The numbers are the tests' own: a cell is 70 wide,
-## each row starts 50 further right and is 50 tall, and one art pixel is 10.
+## The grid of the tests: a cell is 70 wide, each row starts 50 further right
+## and is 50 tall, and one art pixel is 10. These are sample values for the
+## tests. They are not the game's grid, and the addon does not use them. The
+## game's numbers are on the game side.
 const STEP := 70.0
 const SLANT := 50.0
 const ROW_HEIGHT := 50.0

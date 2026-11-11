@@ -153,13 +153,13 @@ Each village is drawn as one batch, in one draw call, in our own order.
 
 - **One image holds every sprite.** Bodies, heads, buildings, trees and drops sit on one atlas, built from the art files. In the jam game a meeple takes two draw calls, because its body and its head are in different files.
 - **A shader draws the meeple:** body colour, head, what it carries, bounce and tilt. It must look exactly like the meeple of the jam game.
-- **Our own order, with no sorting.** Things that stand still are grouped by grid row. Meeples are slotted into the band between two rows.
-- **Static things cost no script time per frame.** A row is only rebuilt when something in it changes.
+- **Our own order, with no sorting.** Things that stand still are grouped by grid row. Meeples are slotted in between two rows, in thin bands.
+- **No script runs per thing per frame.** A row is only rebuilt when something in it changes.
 - **Effects become values the shader reads:** hover outline, flash, squash and the blueprint ghost. This is the effects toolkit.
 - **Clicking uses maths.** The mouse position gives a cell, and the cell gives what stands on it. In the jam game 2,091 cells each carry their own click area.
 - **A picture in front wins the click.** A tall sprite sticks up over the row behind it, so the picture under the mouse is checked first, and only its solid pixels count. Where no picture is hit, the cell decides. Built this way in [#61](https://github.com/Liam-M-Mays/game-jam-2026/issues/61). Liam has not confirmed this rule yet.
 - **Only what is on screen is sent.** Rows off screen are left out, and so are the things and meeples left and right of the screen. While meeples move, what is on screen is put together and sent again every frame. Rows are copied as they are, not rebuilt.
-- **Meeples between two rows are kept in thin bands,** one art pixel tall, so a lower meeple is drawn in front of a higher one with no sorting. Two meeples closer than one art pixel in height are drawn in the order they came. Built this way in [#61](https://github.com/Liam-M-Mays/game-jam-2026/issues/61). Liam has not confirmed this rule yet.
+- **Meeples between two rows are kept in thin bands,** one art pixel tall, so a lower meeple is drawn in front of a higher one with no sorting. Inside one band meeples are drawn first by column, left to right, and inside a column by the height each had when it came into the band. So two meeples closer than one art pixel in height can be in the wrong order for a while. Built this way in [#61](https://github.com/Liam-M-Mays/game-jam-2026/issues/61). Liam has not confirmed this rule yet.
 
 Stress test on an Apple M3, 2026-11-10. Time per frame in milliseconds, with 6,000 static things. 16.7 ms is 60 frames per second.
 

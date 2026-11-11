@@ -29,7 +29,8 @@ Nothing is sorted. The order comes from where a sprite is kept.
 - Inside one row a thing is drawn behind everything to its left. A new thing is put in at its place.
 - Movers are slotted in between two rows. A mover is in front of the row above it and behind the row below it.
 - Between two rows the movers are kept in thin bands, one art pixel tall. A mover is in front of every mover in a band above it. So a lower mover is in front of a higher one, as when the jam game sorted them by height.
-- Two movers in the same thin band are less than one art pixel apart in height. They are drawn in the order they came into the band: first by column, left to right, then by arrival. That order only changes when one of the two moves to another band or column.
+- Two movers in the same thin band are less than one art pixel apart in height. They are drawn first by column, left to right. Inside a column a mover is put in by height when it comes into the band or is placed: behind the lower ones, in front of the higher ones. So a pair that walks down or up together keeps the lower one in front, and a standing pair is drawn by height whichever was placed first.
+- Nothing is sorted after that. Two movers in one band can be in the wrong order for a while when one of them changed height inside the band, or when they stand on two sides of a column line. The error is less than one art pixel deep.
 - A row is only rebuilt when one of its own things is added, changed or removed. No script runs per thing per frame.
 
 ## Only what is on screen
@@ -39,7 +40,7 @@ Nothing is sorted. The order comes from where a sprite is kept.
 - Movers are also grouped in columns, 960 pixels wide. Columns off screen are left out.
 - A row is still sent when one of its things is tall enough to reach the screen.
 - A mover band is sent when a mover in it could reach the screen. A meeple is a bit taller than one row, so its bands reach a little more than one row below the screen.
-- In a frame where no row changed, `move_movers` was not called and the camera did not move, nothing is sent.
+- In a frame where no row changed, `move_movers` was not called and the camera did not move, nothing is sent. A change to a mover's look, place or count is sent too.
 - In every other frame the sprites on screen are put together again and sent. Whole rows are copied as they are, so this costs little, but it does happen every frame while meeples move.
 
 ## Finding the thing under the mouse
@@ -61,6 +62,7 @@ var tree := atlas.add_file(&"tree", "res://path/to/sheet.png", Rect2i(37, 2, 6, 
 atlas.build()
 
 # The grid numbers come from the game: step, slant, row height, cell middle, origin.
+# The numbers in this example are sample values, not the game's grid.
 var cells := BatchCells.new(70.0, 50.0, 50.0, Vector2(-5.0, 0.0), Vector2.ZERO)
 var rows := BatchRows.new(cells, atlas, world_rect, 10.0)
 rows.add_thing(thing_id, Vector2i(4, 7), tree, Vector2(0, -3))
@@ -81,7 +83,8 @@ add_child(batch)
 
 The batch has no grid numbers of its own. `BatchCells` is all it knows about the grid, and the game hands the numbers in when it makes one.
 
-- The numbers cannot be changed afterwards. The batch works the places of its sprites out once.
+- The numbers cannot be changed afterwards. The batch works the places of its sprites out once. A write to one of them, or to `cells`, `atlas` or `pixel_scale` of a `BatchRows`, logs an error and changes nothing.
+- A village is moved by moving its `SpriteBatch` node. The view and the mouse position follow the node.
 - Each `BatchRows` needs cell maths that never changes. Do not share one `BatchCells` between two villages that could need different numbers.
 - A point exactly between two cells goes to the cell on the right, or to the cell below, on both sides of zero. That is the rule of the village grid of part #60.
 - For another kind of grid, extend `BatchCells` and override `position_of` and `cell_at`. Rows must stay level lines that are `row_height` apart.
@@ -95,4 +98,6 @@ The batch has no grid numbers of its own. `BatchCells` is all it knows about the
 - A mover outside the world area is still drawn. It is kept with the band and the column at the edge, so it is not left out as tightly.
 - When two things share a cell, such as two drops, the cell finds the newest one. Each is still found by its own picture.
 - The number of a thing must fit in 32 bits, and it cannot be -1.
-- Two movers closer than one art pixel in height are not sorted against each other.
+- Two movers closer than one art pixel in height are put in order once, when one comes into the band. They are not sorted again while they stay in it. A view that wants a meeple put in by height again when it stops can call `place_mover` for it.
+- `batch_clock` is the only clock of a batch shader. `MeepleLook` makes it start again every 1.508 seconds, which is one full bounce. So everything else in the village shader that reads `batch_clock` must also repeat every 1.508 seconds, or it jumps. An effect that runs longer, or at another pace, needs its own time value. Part #62 has to plan for that.
+- Making a `BatchRows` for the 100,000 cell world takes 1.5 ms and 1.4 MB (Apple M3). The table of mover buckets covers the whole world. A bucket itself is only made when its first mover comes.

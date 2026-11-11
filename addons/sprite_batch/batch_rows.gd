@@ -7,14 +7,17 @@ extends RefCounted
 ## things is added, changed or removed.
 ## A [b]mover[/b] walks around: a meeple. Movers are slotted in between two
 ## rows, into thin bands that are one art pixel tall. A mover is in front of
-## every mover in a band above it. Two movers in one band are drawn in the
-## order they came into it.
+## every mover in a band above it. Two movers in one band are drawn first by
+## column, left to right, and inside a column by the height each had when it
+## came into the band. Nothing is sorted afterwards, so two movers closer
+## than one art pixel in height can be in the wrong order for a while.
 ## [method assemble] writes what is on screen into one buffer, back to front,
 ## and [SpriteBatch] draws that buffer. [method pick] finds the thing under a
 ## point with maths.
 ##
 ## Nothing here needs a window, so all of it can be tested alone.
-## The cell maths and the art scale are given once and must not change later.
+## The cell maths, the atlas and the art scale are given once and cannot be
+## changed later. A village is moved by moving its [SpriteBatch] node.
 
 ## How many numbers one sprite takes in the buffer: 8 say where it is and how
 ## big, 4 are its colour and 4 are for the shader.
@@ -38,15 +41,27 @@ const _INT32_MAX := 2147483647
 ## The bucket of a mover that was not placed yet. No real bucket is this big.
 const _UNPLACED := _INT32_MAX
 
-## The cell maths: where a cell is and which cell a point is in.
-var cells: BatchCells
-## The image that holds every sprite.
-var atlas: SpriteAtlas
-## How many pixels one art pixel takes at zoom 1. It is given once, in the first call.
+## The cell maths: where a cell is and which cell a point is in. Read-only.
+var cells: BatchCells:
+	get:
+		return _cells
+	set(_value):
+		push_error("BatchRows: the cell maths cannot be changed. Make new rows.")
+## The image that holds every sprite. Read-only.
+var atlas: SpriteAtlas:
+	get:
+		return _atlas
+	set(_value):
+		push_error("BatchRows: the atlas cannot be changed. Make new rows.")
+## How many pixels one art pixel takes at zoom 1. Read-only.
 var pixel_scale: float:
 	get:
 		return _pixel_scale
+	set(_value):
+		push_error("BatchRows: the art scale cannot be changed. Make new rows.")
 
+var _cells: BatchCells
+var _atlas: SpriteAtlas
 var _pixel_scale := 1.0
 var _serial := 0
 
@@ -77,7 +92,8 @@ var _mover_slack := 0.0
 var _mover_buckets := PackedInt32Array()
 var _mover_slots := PackedInt32Array()
 var _bucket_blocks: Array[PackedFloat32Array] = []
-var _bucket_movers: Array[PackedInt32Array] = []
+var _bucket_movers: Dictionary[int, PackedInt32Array] = {}
+var _bucket_made := PackedByteArray()
 var _bands_per_row := 1.0
 var _band_height := 1.0
 var _band_count := 0
@@ -95,13 +111,13 @@ func _init(
 		art_scale: float,
 		column_width: float = 960.0
 ) -> void:
-	cells = cell_maths
-	atlas = sprite_atlas
+	_cells = cell_maths
+	_atlas = sprite_atlas
 	_pixel_scale = art_scale
-	_row_height = cells.row_height
-	_top_row = cells.band_at(world.position.y) - 1
-	_top_y = cells.row_y(_top_row)
-	_row_count = cells.band_at(world.end.y) + 2 - _top_row
+	_row_height = _cells.row_height
+	_top_row = _cells.band_at(world.position.y) - 1
+	_top_y = _cells.row_y(_top_row)
+	_row_count = _cells.band_at(world.end.y) + 2 - _top_row
 	_column_width = maxf(column_width, 1.0)
 	_left = world.position.x - _column_width
 	_columns = ceili(world.size.x / _column_width) + 2
@@ -118,9 +134,12 @@ func _init(
 	_row_down.resize(_row_count)
 	_row_versions.resize(_row_count)
 	_band_counts.resize(_band_count)
-	for bucket in _band_count * _columns:
-		_bucket_blocks.append(PackedFloat32Array())
-		_bucket_movers.append(PackedInt32Array())
+	# A bucket is one band in one column. The table covers the whole world, so
+	# a bucket is only made when its first mover comes. Until then every
+	# bucket shares one empty block.
+	_bucket_blocks.resize(_band_count * _columns)
+	_bucket_blocks.fill(PackedFloat32Array())
+	_bucket_made.resize(_band_count * _columns)
 
 
 ## Adds a thing that stands still on [param cell], and returns true when it
@@ -138,12 +157,12 @@ func add_thing(
 		tint: Color = Color.WHITE,
 		footprint: Array[Vector2i] = []
 ) -> bool:
-	var row := cells.row_of(cell) - _top_row
+	var row := _cells.row_of(cell) - _top_row
 	var fits := id >= -_INT32_MAX and id <= _INT32_MAX and row >= 0 and row < _row_count
-	if not fits or id == NO_THING or _thing_cells.has(id) or not atlas.has_sprite(sprite):
+	if not fits or id == NO_THING or _thing_cells.has(id) or not _atlas.has_sprite(sprite):
 		push_error("BatchRows: thing %d cannot be added on cell %s" % [id, cell])
 		return false
-	var anchor := cells.position_of(cell)
+	var anchor := _cells.position_of(cell)
 	var keys: PackedFloat64Array = _row_keys[row]
 	var at := keys.bsearch(-anchor.x, false)
 	keys.insert(at, -anchor.x)
@@ -173,13 +192,13 @@ func add_thing(
 func change_thing(
 		id: int, sprite: int, offset: Vector2 = Vector2.ZERO, tint: Color = Color.WHITE
 ) -> void:
-	if not _thing_cells.has(id) or not atlas.has_sprite(sprite):
+	if not _thing_cells.has(id) or not _atlas.has_sprite(sprite):
 		push_error("BatchRows: thing %d cannot be changed" % id)
 		return
 	var cell: Vector2i = _thing_cells[id]
-	var row := cells.row_of(cell) - _top_row
+	var row := _cells.row_of(cell) - _top_row
 	var at := _row_ids[row].find(id) * FLOATS
-	var record := _thing_record(cells.position_of(cell), sprite, offset, tint)
+	var record := _thing_record(_cells.position_of(cell), sprite, offset, tint)
 	var block: PackedFloat32Array = _row_blocks[row]
 	for index in FLOATS:
 		block[at + index] = record[index]
@@ -191,7 +210,7 @@ func change_thing(
 func tint_thing(id: int, tint: Color) -> void:
 	if not _thing_cells.has(id):
 		return
-	var row := cells.row_of(_thing_cells[id]) - _top_row
+	var row := _cells.row_of(_thing_cells[id]) - _top_row
 	var at := _row_ids[row].find(id) * FLOATS + _COLOUR
 	var block: PackedFloat32Array = _row_blocks[row]
 	block[at] = tint.r
@@ -206,7 +225,7 @@ func remove_thing(id: int) -> void:
 	if not _thing_cells.has(id):
 		return
 	var cell: Vector2i = _thing_cells[id]
-	var row := cells.row_of(cell) - _top_row
+	var row := _cells.row_of(cell) - _top_row
 	var at := _row_ids[row].find(id)
 	_row_ids[row].remove_at(at)
 	_row_keys[row].remove_at(at)
@@ -296,6 +315,8 @@ func mover_count() -> int:
 
 ## Puts mover [param index] at [param spot] with a colour and the four numbers
 ## its shader reads. Use it for a new mover, and to move one a long way.
+## The mover goes into its band by height: in front of the movers that are
+## higher in the band and behind the lower ones.
 func place_mover(index: int, spot: Vector2, tint: Color, data: Vector4) -> void:
 	_drop_mover(index)
 	var record := PackedFloat32Array([
@@ -304,7 +325,7 @@ func place_mover(index: int, spot: Vector2, tint: Color, data: Vector4) -> void:
 		tint.r, tint.g, tint.b, tint.a,
 		data.x, data.y, data.z, data.w,
 	])
-	_append_mover(index, _bucket_at(spot), record)
+	_insert_mover(index, _bucket_at(spot), record)
 	_serial += 1
 
 
@@ -445,7 +466,7 @@ func assemble(view: Rect2, into: PackedFloat32Array) -> int:
 ## view can then call [method pick_sprite] and ask the grid itself.
 func pick(point: Vector2) -> int:
 	var hit := pick_sprite(point)
-	return hit if hit != NO_THING else thing_on_cell(cells.cell_at(point))
+	return hit if hit != NO_THING else thing_on_cell(_cells.cell_at(point))
 
 
 ## Returns the front-most thing that has a solid pixel at [param point], or
@@ -474,14 +495,14 @@ func _is_solid_at(block: PackedFloat32Array, at: int, point: Vector2) -> bool:
 	if across < 0.0 or across >= 1.0 or down < 0.0 or down >= 1.0:
 		return false
 	var sprite := int(block[at + _DATA])
-	var size := atlas.size_of(sprite)
-	return atlas.is_solid(sprite, Vector2i(int(across * size.x), int(down * size.y)))
+	var size := _atlas.size_of(sprite)
+	return _atlas.is_solid(sprite, Vector2i(int(across * size.x), int(down * size.y)))
 
 
 func _thing_record(
 		anchor: Vector2, sprite: int, offset: Vector2, tint: Color
 ) -> PackedFloat32Array:
-	var size := Vector2(atlas.size_of(sprite)) * _pixel_scale
+	var size := Vector2(_atlas.size_of(sprite)) * _pixel_scale
 	var middle := anchor + offset * _pixel_scale
 	_reach_x = maxf(_reach_x, absf(middle.x - anchor.x) + size.x * 0.5)
 	return PackedFloat32Array([
@@ -556,12 +577,34 @@ func _bucket_at(spot: Vector2) -> int:
 	return clampi(band, 0, _band_count - 1) * _columns + clampi(column, 0, _columns - 1)
 
 
-func _append_mover(index: int, bucket: int, record: PackedFloat32Array) -> void:
+## Puts a mover into a bucket by height: in front of the movers that are
+## higher in the band, behind the lower ones. A mover that walks down into a
+## band is the highest one there, so it goes to the back. One that walks up
+## into a band goes to the front. This happens once, when the mover comes in.
+func _insert_mover(index: int, bucket: int, record: PackedFloat32Array) -> void:
+	if _bucket_made[bucket] == 0:
+		_bucket_made[bucket] = 1
+		_bucket_blocks[bucket] = PackedFloat32Array()
+		_bucket_movers[bucket] = PackedInt32Array()
 	var movers: PackedInt32Array = _bucket_movers[bucket]
-	_mover_slots[index] = movers.size()
+	var block: PackedFloat32Array = _bucket_blocks[bucket]
+	var height := record[_Y]
+	var count := movers.size()
+	var slot := count
+	if count > 0 and block[(count - 1) * FLOATS + _Y] > height:
+		slot = 0
+		while block[slot * FLOATS + _Y] <= height:
+			slot += 1
+	if slot == count:
+		movers.append(index)
+		block.append_array(record)
+	else:
+		movers.insert(slot, index)
+		_bucket_blocks[bucket] = block.slice(0, slot * FLOATS) + record + block.slice(slot * FLOATS)
+		for behind in range(slot + 1, count + 1):
+			_mover_slots[movers[behind]] = behind
+	_mover_slots[index] = slot
 	_mover_buckets[index] = bucket
-	movers.append(index)
-	_bucket_blocks[bucket].append_array(record)
 	@warning_ignore("integer_division")
 	_band_counts[bucket / _columns] += 1
 
@@ -600,4 +643,4 @@ func _rebucket(index: int, bucket: int, spot: Vector2) -> void:
 	record[_X] = spot.x + _mover_offset.x
 	record[_Y] = spot.y + _mover_offset.y
 	_drop_mover(index)
-	_append_mover(index, bucket, record)
+	_insert_mover(index, bucket, record)
