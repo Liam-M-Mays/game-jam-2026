@@ -49,8 +49,8 @@ You are reading the copy of this file on the branch `core-rewrite`. The core of 
 - `master` and `core-rewrite` cannot be pushed to, force-pushed or deleted. Changes arrive through pull requests only.
 - A pull request needs **1 approval** from someone other than its author.
 - The repo owner can merge their own pull requests after reviewing them, but still only through a pull request.
-- Two checks run on every pull request: **Repo checks** and **Godot checks**. See [docs/ci.md](docs/ci.md).
-- The checks do not run on a push to your own branch. Run both yourself before every push.
+- Three checks run on every pull request: **Repo checks**, **Godot checks** and **Lint**. See [docs/ci.md](docs/ci.md).
+- The checks do not run on a push to your own branch. Run them yourself before every push.
 
 ## Commit messages
 
@@ -100,7 +100,11 @@ python3 .github/ci/checks.py repo
 GODOT="/path/to/Godot" bash .github/ci/run_godot_checks.sh
 ```
 
-The first one takes a second. The second one takes a few minutes and needs Godot 4.7.2.
+```bash
+bash .github/ci/run_lint.sh
+```
+
+The first one takes a second. The second one takes a few minutes and needs Godot 4.7.2. Its last step runs the tests of the new game. The third one needs `gdlint`. How to install it, and how to write a test: [docs/testing.md](docs/testing.md).
 
 ## If your push to core-rewrite was rejected
 

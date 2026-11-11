@@ -1,6 +1,6 @@
 # How the automatic checks work
 
-**In one line:** every pull request runs two checks, and both have to be green before it can merge.
+**In one line:** every pull request runs three checks, and all of them have to be green before it can merge.
 
 They also run on `master` and on `core-rewrite` after each merge, so a broken branch shows up as a red mark on the commit.
 
@@ -17,18 +17,24 @@ Looks at files and references. It does not need Godot.
 | `broken-ref` | A scene, resource or script that points at a `res://` path that does not exist | Fix the path or remove the reference |
 | `cache-ref` | A file that points into `res://.godot/`, Godot's private cache | Point it at the source file |
 | `art-boundary` | A game file that uses something under `ART/` | Move the file into `assets/`, see [art-folders.md](art-folders.md) |
+| `sim-boundary` | A script in a `sim/` folder that names the camera, the mouse or keyboard, the viewport, a sprite, a tween or the audio service | Move that part into a `view/` file, or send an event. See [testing.md](testing.md#the-simulation-rule) |
 | `conflict-marker` | Leftover `<<<<<<<` or `>>>>>>>` lines from a merge | Resolve the conflict properly |
 | `large-file` | A file over 20 MB (it warns from 5 MB) | Compress it, or talk to the team about Git LFS |
 | `codeowners` | `.github/CODEOWNERS` is missing or has no `*` line | Restore it |
 
 ## Godot checks (a few minutes)
 
-Runs the real engine, with no window, in four steps:
+Runs the real engine, with no window, in five steps:
 
 1. **Import twice.** The first pass builds Godot's class cache and is allowed to print errors. The second pass has to be clean.
 2. **Load everything.** Every script, scene, resource and shader is loaded, and every scene is instantiated. A script that does not compile or a scene with a missing piece fails here.
 3. **Boot the entry scenes.** The scenes listed in `.github/ci/entry-scenes.txt` run for a few seconds. Any script error fails the check.
-4. **Read the logs.** `checks.py` turns Godot's log files into a pass or a fail. The logs are attached to the run as `godot-logs`.
+4. **Run the tests.** Every test script of the new game runs. A failed test fails the check and is named. See [testing.md](testing.md).
+5. **Read the logs.** `checks.py` turns Godot's log files into a pass or a fail. The logs are attached to the run as `godot-logs`.
+
+## Lint (a few seconds)
+
+Runs `gdlint` over the GDScript in `game/` and `addons/`. It checks names, line length and the order of a class. The old jam game is not linted. See [testing.md](testing.md#the-linter).
 
 ## The known-problems list
 
@@ -50,6 +56,16 @@ python3 .github/ci/checks.py repo
 GODOT="/path/to/Godot" bash .github/ci/run_godot_checks.sh
 ```
 
+```bash
+bash .github/ci/run_lint.sh
+```
+
+Only the tests, which is quicker while you work:
+
+```bash
+GODOT="/path/to/Godot" bash .github/ci/run_tests.sh
+```
+
 ## What the checks do not catch
 
 They catch broken files. They do **not** catch a game that loads fine but plays wrong.
@@ -57,7 +73,7 @@ They catch broken files. They do **not** catch a game that loads fine but plays 
 - A button that was hidden by accident still loads without errors.
 - A balance change, a wrong sprite or a job that never finishes all pass.
 
-So a human still plays the change before approving. Automated gameplay tests are the next step and are not set up yet.
+So a human still plays the change before approving. The tests of the new game prove its rules, not how it feels.
 
 ## Other automation
 
