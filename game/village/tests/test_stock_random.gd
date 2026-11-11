@@ -6,6 +6,9 @@ extends GameTest
 ## many units there should be, how many lie loose, how many sit free in the
 ## piles, and what each site has reserved. After every step it compares the
 ## two. Every few hundred steps it also counts the rows of each cell.
+##
+## Two kinds of step take a drop off the ground without the stock: a loose
+## one, and one a hauler has claimed, taken with the id of that hauler.
 
 const TICKS_PER_SECOND := 20
 const STEPS := 10000
@@ -84,6 +87,10 @@ func test_10000_random_steps_never_go_below_zero_or_hand_a_unit_out_twice() -> v
 	check(_done.get("from_pile", 0) >= 20, "claims on a pile: %d" % _done.get("from_pile", 0))
 	var lost: int = _done.get("reservation_lost", 0)
 	check(lost >= 20, "reservations that went with a taken drop: %d" % lost)
+	var taken: int = _done.get("claimed_drop_taken", 0)
+	check(taken >= 20, "claimed drops taken off the ground: %d" % taken)
+	var ended: int = _done.get("lost_claim_ended", 0)
+	check(ended >= 20, "hauls that found their drop gone: %d" % ended)
 	check_eq(_village.now, STEPS)
 	print("STOCK_RANDOM %s" % [_done])
 
@@ -115,8 +122,10 @@ func _one_step() -> void:
 		_hand_over(haul)
 	elif roll < 95:
 		_release(haul)
-	else:
+	elif roll < 98:
 		_take_off_the_ground(kind)
+	else:
+		_take_a_claimed_drop(haul)
 
 
 func _drop(kind: int) -> void:
@@ -167,6 +176,48 @@ func _take_off_the_ground(kind: int) -> void:
 		while _free_to_promise(kind) < 0 and _reserved[SITES[at]][kind] > 0:
 			_reserved[SITES[at]][kind] -= 1
 			_count("reservation_lost")
+
+
+## A drop that a hauler has claimed is taken off the ground with the id of
+## that hauler, without the stock being asked. It is the drop of
+## [param first], or of the next hauler that has one on the ground. The claim
+## stays until that hauler tries to pick up or to release.
+func _take_a_claimed_drop(first: int) -> void:
+	for offset in HAULS:
+		var haul := FIRST_HAUL + (first - FIRST_HAUL + offset) % HAULS
+		var held: Dictionary = _held.get(haul, {})
+		if held.get("drop", GridDrops.NO_DROP) == GridDrops.NO_DROP:
+			continue
+		if not _drops.remove(held["drop"], haul):
+			_wrong_count += 1
+		_count("claimed_drop_taken")
+		_expected[held["kind"]] -= 1
+		_holder_of_drop.erase(held["drop"])
+		held["drop"] = GridDrops.NO_DROP
+		held["lost"] = true
+		return
+
+
+## A haul whose drop was taken finds that out when a pick up or a release is
+## refused: its claim has ended, and no unit and no reservation came back.
+func _end_when_lost(haul: int) -> void:
+	if not _held.has(haul) or not _held[haul].get("lost", false):
+		return
+	if _claims.has(haul):
+		_wrong_promise += 1
+	_count("lost_claim_ended")
+	_held.erase(haul)
+
+
+## True when a step worked for [param haul] that the book says holds
+## nothing, or whose drop is gone. Then it worked on the unit of somebody
+## else. The book lets go of the haul, so the run goes on to its end.
+func _took_what_is_not_its_own(haul: int) -> bool:
+	if _held.has(haul) and not _held[haul].get("lost", false):
+		return false
+	_handed_out_twice += 1
+	_held.erase(haul)
+	return true
 
 
 func _add_storage() -> void:
@@ -229,6 +280,9 @@ func _start_trip(haul: int) -> void:
 
 func _pick_up(haul: int) -> void:
 	if not _claims.pick_up(haul):
+		_end_when_lost(haul)
+		return
+	if _took_what_is_not_its_own(haul):
 		return
 	_count("pick_up")
 	_let_go_of_the_source(haul)
@@ -236,7 +290,7 @@ func _pick_up(haul: int) -> void:
 
 
 func _hand_over(haul: int) -> void:
-	if not _claims.hand_over(haul):
+	if not _claims.hand_over(haul) or _took_what_is_not_its_own(haul):
 		return
 	if _held[haul]["to_pile"]:
 		_count("store")
@@ -250,6 +304,9 @@ func _hand_over(haul: int) -> void:
 func _release(haul: int) -> void:
 	var spot := _random_spot() if _rng.randf() < 0.8 else Vector2(-900.0, -900.0)
 	if not _claims.release(haul, spot):
+		_end_when_lost(haul)
+		return
+	if _took_what_is_not_its_own(haul):
 		return
 	_count("release")
 	# The unit is free again: put down or unclaimed on the ground, or still in

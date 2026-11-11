@@ -149,9 +149,9 @@ claims.release(haul_id, where_the_hauler_stands)          # abort: the unit is f
 
 A trip to a pile: `claims.claim_for_storage(haul_id, pile_id, drop)`, then `pick_up`, then `hand_over`. The drop is locked from the claim until it lands: it counts, but it cannot be promised to a site.
 
-- **A site that ends: release its hauls first, then unreserve.** `release` always gives the reservation back to the site. `unreserve` only gives back what no hauler has claimed yet. In the other order the site is left with one reservation, until it calls `unreserve` again.
+- **A site that ends: release its hauls first, then unreserve.** `release` gives the reservation back to the site, unless the drop was taken off the ground (see the third bullet). `unreserve` only gives back what no hauler has claimed yet. In the other order the site is left with one reservation, until it calls `unreserve` again.
 - **A reserved drop that is taken off the ground takes a reservation along.** That is a loose drop taken with `grid.drops.take` or `remove`. When more is reserved than is left, the site with the highest id, which is the newest, loses first. That site reads `reserved_by` when `stock.changed` comes, and asks again. So `available(kind)` does not go below zero then. A unit that a hauler has already claimed is not taken back, so an older site can lose its reservation before a newer one.
-- **A claimed drop that is taken off the ground ends its claim.** The ground lets a claimed drop go for the id that claimed it (`grid.drops.remove(drop, haul_id)`). The stock finds that out at the next step of the haul: `pick_up` and `release` answer false, the claim is gone, and nothing is carried. The site gets no reservation back, because the unit is gone. It has to reserve again.
+- **A claimed drop that is taken off the ground ends its claim.** The ground lets a claimed drop go for the id that claimed it (`grid.drops.remove(drop, haul_id)`). The stock finds that out at the next step of the haul: `pick_up` and `release` answer false, the claim is gone, and nothing is carried. The site gets no reservation back, because the unit is gone. It has to reserve again. The stock tells nothing when a haul for a site is lost. Whoever called `pick_up` or `release` gets false and has to tell the site. A lost trip to a pile tells `changed` once, because its kept place is free again.
 
 ### Drawing the drops
 
@@ -176,10 +176,9 @@ view.watch(village.grid.drops)
 - **A lookup with few drops reads more cells.** With 1,000 drops spread on the big world it reads up to 972 cells to look at 3 drops. Across an empty area it reads far more: 5,502 in the clearing test. Reading a cell is one array read. The 2,000 cells in `test_closest_drop.gd` are a check of two tests, not a limit of the lookup.
 - **The lookup numbers are for a point on the map.** From off the map a lookup looks at more, and the number grows with the distance. From straight above the patch of the test it looked at 104 drops from 3,000 art pixels away, 152 from 10,000, 320 from 100,000 and 824 from a million. These were measured by hand, no test holds them.
 - **The ground does not know the kinds.** Food laid with `grid.drops.add` counts above the cap. `stock.drop` refuses it.
-- **The ground does not know the reservations.** A claim made with `grid.drops.claim` is not known to them.
-- **`available(kind)` can be below zero in two cases.**
-    - A unit taken out of a pile with `stock.storages.change(pile, -1, 0, 0)` is not heard by the reservations. After it, the next drop that leaves the ground costs the newest site a reservation, also when a hauler picks that drop up.
-    - A listener put on `grid.drops.removed` before the stock was hung on the village hears a taken drop before the reservations are settled. Listen to `stock.changed` instead.
+- **A raw call is not known to the reservations.** A raw call on the ground or the storages (`grid.drops.claim`, `storages.change`, `storages.clear`) is not known to the reservations, so `available(kind)` can go below zero after it. The next drop that leaves the ground then costs the newest site a reservation, also when a hauler picks that drop up.
+- **An early listener can read a number below zero.** A listener put on `grid.drops.removed` before the stock was hung on the village hears a taken drop before the reservations are settled. Listen to `stock.changed` instead.
+- **`pick_up` of a unit claimed in a pile does not check that the unit is still there.** A raw `storages.change(pile, -1, -1, 0)` gets through. To be guarded when storages can be removed (#6).
 - **A listener of `stock.changed` runs on every change.** With thousands of changes a tick, a listener should only set a flag and do its work once a frame.
 - **Storages are looked at one by one** when the closest pile is asked for. That is fine while piles are few.
 
@@ -202,9 +201,9 @@ The stock and the drops:
 | `test_closest_drop.gd` | The closest loose drop, and how many drops a lookup looks at: spread evenly, in a heap, on a wide patch, round a clearing and after a pile took the closest thousands of times |
 | `test_village_stock.gd` | Add, spend, the food cap, what counts, and that every change is told once |
 | `test_stock_claims.gd` | Reserve, claim, pick up, hand over, release, and trips to a pile |
-| `test_stock_claims_edges.gd` | A reserved or claimed drop that is taken off the ground, which site loses its reservation, a site that ends, a drop that is claimed already, a tie between a drop and a pile, and the snapshot |
+| `test_stock_claims_edges.gd` | A reserved or claimed drop that is taken off the ground, a new drop on the row of a taken one, which site loses its reservation, a site that ends, a drop that is claimed already, a tie between a drop and a pile, and the snapshot |
 | `test_stock_storages.gd` | The counts of a storage, and what `change` refuses |
-| `test_stock_random.gd` | 10,000 random steps with a book beside the stock: nothing below zero, nothing handed out twice, every promise and every cell count right |
+| `test_stock_random.gd` | 10,000 random steps with a book beside the stock, with loose and claimed drops taken off the ground: nothing below zero, nothing handed out twice, every promise and every cell count right |
 | `test_stock_in_village.gd` | The same seed gives the same village, drops never expire, a closed village lets go |
 | `test_drop_view.gd` | One sprite for each drop, on its spot |
 

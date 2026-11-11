@@ -173,6 +173,44 @@ func test_a_haul_does_not_pick_up_a_drop_of_another_kind_claimed_with_its_id() -
 	check(not _claims.has(HAUL), "the claim ended")
 
 
+func test_a_haul_does_not_pick_up_a_new_drop_of_its_kind_that_got_its_row() -> void:
+	var drop := _stock.drop(_wood, LEFT)
+	_claims.reserve(SITE, _wood)
+	_claims.claim_closest(HAUL, SITE, _wood, LEFT)
+	_drops.remove(drop, HAUL)
+	# The row is used again by a wood, the kind the haul was for. It is not the
+	# wood of the haul: another site has reserved it.
+	var new_wood := _stock.drop(_wood, MIDDLE)
+	check_eq(new_wood, drop, "the new wood got the row of the taken wood")
+	check(_claims.reserve(OTHER_SITE, _wood), "another site reserves it")
+	check(not _claims.pick_up(HAUL), "the haul does not pick up the new wood")
+	check(_drops.has(new_wood), "the new wood still lies there")
+	check_eq(_drops.loose(_wood), 1, "and it is still loose")
+	check_eq(_claims.reserved_by(OTHER_SITE, _wood), 1, "the other site keeps its reservation")
+	check_eq(_claims.carried(_wood), 0, "nothing is carried")
+	check_eq(_stock.count(_wood), 1)
+	check(not _claims.has(HAUL), "the claim ended")
+
+
+func test_releasing_a_lost_haul_leaves_a_new_drop_on_its_row_to_its_own_hauler() -> void:
+	var drop := _stock.drop(_wood, LEFT)
+	_claims.reserve(SITE, _wood)
+	_claims.claim_closest(HAUL, SITE, _wood, LEFT)
+	_drops.remove(drop, HAUL)
+	# The row is used again by a wood that another hauler claims for its site.
+	var new_wood := _stock.drop(_wood, MIDDLE)
+	check_eq(new_wood, drop, "the new wood got the row of the taken wood")
+	check(_claims.reserve(OTHER_SITE, _wood), "another site reserves it")
+	check(_claims.claim_closest(OTHER_HAUL, OTHER_SITE, _wood, MIDDLE), "and its hauler claims it")
+	check(not _claims.release(HAUL, LEFT), "the lost haul has nothing to give back")
+	check_eq(_drops.claimer_of(new_wood), OTHER_HAUL, "the new wood keeps its claim")
+	check_eq(_claims.reserved_by(SITE, _wood), 0, "no reservation for a unit that is gone")
+	check_eq(_claims.available(_wood), 0)
+	check(_claims.pick_up(OTHER_HAUL), "the other hauler picks its wood up")
+	check(_claims.hand_over(OTHER_HAUL), "and delivers it")
+	check_eq(_stock.count(_wood), 0)
+
+
 func test_releasing_a_haul_whose_drop_was_taken_restores_nothing() -> void:
 	_stock.add_storage(WOOD_PILE, _wood, 2, RIGHT)
 	var first := _stock.drop(_wood, LEFT)
@@ -183,16 +221,22 @@ func test_releasing_a_haul_whose_drop_was_taken_restores_nothing() -> void:
 	check_eq(_stock.storages.room_in(WOOD_PILE), 1, "a place is kept for the trip")
 	_drops.remove(first, HAUL)
 	_drops.remove(second, OTHER_HAUL)
-	# The row of the first drop is used again, by a stone another trip claims.
+	# The row that was freed last is used again first. So the stone gets the
+	# row of the second drop, the one the trip had claimed. Another trip claims
+	# the stone.
 	var stone := _stock.drop(_stone, LEFT)
+	check_eq(stone, second, "the stone got the row of the second drop")
 	_stock.add_storage(STONE_PILE, _stone, 2, RIGHT)
 	_claims.claim_for_storage(THIRD_HAUL, STONE_PILE, stone)
+	_stock.changed.connect(_hear)
 	check(not _claims.release(HAUL, LEFT), "the haul has nothing to give back")
 	check(not _claims.has(HAUL), "its claim ended")
+	check_eq(_heard, [] as Array[int], "a lost haul for a site tells nothing")
 	check_eq(_claims.reserved_by(SITE, _wood), 0, "no reservation for a unit that is gone")
 	check_eq(_claims.available(_wood), 0, "and nothing below zero")
-	check_eq(_drops.claimer_of(stone), THIRD_HAUL, "the stone keeps its own claim")
 	check(not _claims.release(OTHER_HAUL, LEFT), "the trip has nothing to give back")
+	check_eq(_heard, [_wood] as Array[int], "a lost trip tells once: its place is free again")
+	check_eq(_drops.claimer_of(stone), THIRD_HAUL, "the stone keeps its own claim")
 	check_eq(_stock.storages.room_in(WOOD_PILE), 2, "its place in the pile is free again")
 	check_eq(_drops.total(_wood), 0, "no wood was laid")
 

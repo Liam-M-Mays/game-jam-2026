@@ -20,8 +20,9 @@ extends RefCounted
 ##
 ## A site that ends has to do it in this order: first [method release] every
 ## haul that works for it, then [method unreserve] what is left. A released
-## haul always gives its reservation back to the site, so the other order
-## leaves the site with a reservation it no longer wants.
+## haul gives its reservation back to the site, unless its drop was taken off
+## the ground: see [method release]. So the other order leaves the site with
+## a reservation it no longer wants.
 ##
 ## A loose drop can also be taken off the ground without the stock, with
 ## [method GridDrops.remove] or [method GridDrops.take]. The claims hear that.
@@ -69,13 +70,14 @@ func _init(drops: GridDrops, storages: StockStorages) -> void:
 ## A unit that a hauler has claimed already is not taken back, so an older
 ## site can lose its reservation before a newer one.
 ##
-## So this is not below zero, with two exceptions:
-## - A unit taken out of a pile with [method StockStorages.change] is not
-##   heard here. After such a call this can be below zero, until the next
-##   drop leaves the ground.
-## - A listener that was put on [signal GridDrops.removed] before the stock
-##   was hung on the village hears a taken drop before the claims do, and can
-##   read a number below zero. Listen to [signal VillageStock.changed].
+## So this does not go below zero then. A raw call on the ground or the
+## storages ([method GridDrops.claim], [method StockStorages.change],
+## [method StockStorages.clear]) is not known to the reservations, so this
+## can go below zero after it.
+##
+## A listener that was put on [signal GridDrops.removed] before the stock was
+## hung on the village hears a taken drop before the claims do, and can read
+## a number below zero. Listen to [signal VillageStock.changed].
 func available(kind: int) -> int:
 	if _drops == null:
 		return 0
@@ -175,6 +177,13 @@ func claim_for_storage(claimer: int, storage: int, drop: int) -> bool:
 ## for this claimer: somebody took it without the stock. Then the claim ends
 ## here, nothing is carried, and the site gets no reservation back, because
 ## the unit is gone. The site has to reserve again.
+##
+## The stock tells nothing when a haul for a site is lost. Whoever called
+## this gets false and has to tell the site. A lost trip to a pile tells
+## [signal changed] once, because its kept place is free again.
+##
+## A unit claimed in a pile is not checked that way: a raw
+## [method StockStorages.change] that takes it out of the pile gets through.
 func pick_up(claimer: int) -> bool:
 	if not _claims.has(claimer) or _claims[claimer][_CARRIED] == 1:
 		return false
@@ -225,6 +234,10 @@ func hand_over(claimer: int) -> bool:
 ## It also returns false when the claimed drop no longer lies on the ground
 ## for this claimer: somebody took it without the stock. Then the claim ends,
 ## and no reservation is restored, because the unit is gone.
+##
+## The stock tells nothing when a haul for a site is lost. Whoever called
+## this gets false and has to tell the site. A lost trip to a pile tells
+## [signal changed] once, because its kept place is free again.
 func release(claimer: int, spot: Vector2) -> bool:
 	if not _claims.has(claimer):
 		return false
