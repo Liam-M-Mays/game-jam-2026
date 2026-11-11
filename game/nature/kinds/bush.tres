@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="NatureKind" format=3 uid="uid://blqaf6tlycben"]
+
+[ext_resource type="Script" path="res://game/nature/nature_kind.gd" id="1_pa40p"]
+[ext_resource type="Texture2D" path="res://game/nature/art/bush.png" id="2_5nnn8"]
+
+[resource]
+script = ExtResource("1_pa40p")
+kind_name = &"bush"
+width = 2
+sheet = ExtResource("2_5nnn8")
+region = Rect2i(0, 0, 16, 10)
+offset = Vector2(3, -1)

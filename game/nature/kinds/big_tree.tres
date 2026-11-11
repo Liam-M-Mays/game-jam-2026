@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="NatureKind" format=3 uid="uid://b1gwgjfe4rv73"]
+
+[ext_resource type="Script" path="res://game/nature/nature_kind.gd" id="1_msqcw"]
+[ext_resource type="Texture2D" path="res://assets/Art/Environment/Starter_sprites.png" id="2_t0s87"]
+
+[resource]
+script = ExtResource("1_msqcw")
+kind_name = &"big_tree"
+width = 2
+sheet = ExtResource("2_t0s87")
+region = Rect2i(18, 0, 10, 12)
+offset = Vector2(3, -5)

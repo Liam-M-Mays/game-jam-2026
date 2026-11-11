@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="NatureKind" format=3 uid="uid://d1oeww1rco8vf"]
+
+[ext_resource type="Script" path="res://game/nature/nature_kind.gd" id="1_7jcah"]
+[ext_resource type="Texture2D" path="res://assets/Art/Environment/Starter_sprites.png" id="2_2v21c"]
+
+[resource]
+script = ExtResource("1_7jcah")
+kind_name = &"rock"
+sheet = ExtResource("2_2v21c")
+region = Rect2i(54, 6, 4, 4)
+offset = Vector2(0, -1)

@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="NatureKind" format=3 uid="uid://brejxhnkbx0mw"]
+
+[ext_resource type="Script" path="res://game/nature/nature_kind.gd" id="1_x8y5f"]
+[ext_resource type="Texture2D" path="res://assets/Art/Environment/Starter_sprites.png" id="2_d42hn"]
+
+[resource]
+script = ExtResource("1_x8y5f")
+kind_name = &"big_rock"
+width = 2
+sheet = ExtResource("2_d42hn")
+region = Rect2i(67, 5, 10, 6)
+offset = Vector2(3, -2)
