@@ -178,7 +178,7 @@ func test_the_offsets_within_one_step_are_the_cell_and_its_six_neighbours() -> v
 	check_eq(GridLayout.offsets_within(3).size(), 37)
 
 
-func test_the_offsets_are_worked_out_once_and_cannot_be_changed() -> void:
+func test_short_offset_lists_are_worked_out_once_and_cannot_be_changed() -> void:
 	var first := GridLayout.offsets_within(2)
 	check(is_same(first, GridLayout.offsets_within(2)), "the same list is handed out again")
 	check(first.is_read_only(), "nobody can change the shared list")
@@ -186,6 +186,19 @@ func test_the_offsets_are_worked_out_once_and_cannot_be_changed() -> void:
 	copy.append(Vector2i(9, 9))
 	check_eq(copy.size(), 20, "a copy can be changed")
 	check_eq(GridLayout.offsets_within(2).size(), 19)
+	var longest_kept := GridLayout.offsets_within(GridLayout.MOST_KEPT_STEPS)
+	check(is_same(longest_kept, GridLayout.offsets_within(8)), "8 steps is still kept")
+
+
+func test_long_offset_lists_are_built_fresh_and_not_kept() -> void:
+	var first := GridLayout.offsets_within(9)
+	var second := GridLayout.offsets_within(9)
+	check_eq(first.size(), 271)
+	check_eq(first, second)
+	check(not is_same(first, second), "a long list is built again each time")
+	check(first.is_read_only(), "it cannot be changed either, like a short one")
+	check_eq(GridLayout.offsets_within(-3).size(), 0, "a step count below zero gives nothing")
+	check(not is_same(GridLayout.offsets_within(-3), GridLayout.offsets_within(-3)), "not kept")
 
 
 ## The point lookup of the jam game, copied from grid.gd lines 121 to 125,

@@ -1,9 +1,8 @@
 extends GameTest
 ## Checks the Game service: the session, pause, speed and the village in view.
 ##
-## Each test makes its own Game, so the tests do not share a session. Pause
-## and speed news goes through the real global Events. News about villages
-## comes from the Game itself.
+## Each test makes its own Game, so the tests do not share a session. All the
+## news of the session comes from the Game itself.
 
 const FRAMES := 60
 const WOOD := 1
@@ -19,14 +18,19 @@ class Busy:
 	extends VillagePart
 	var wakes: int = 0
 	var placed: int = 0
+	var ticks_seen: int = 0
 
 	## Goes to sleep for the first time.
 	func start(village: Village) -> void:
 		village.timers.wake_after(village.rng.randi_range(2, 4), _wake)
 
-	## How often it woke and how many things it placed.
+	## Counts the ticks it was stepped on.
+	func tick(_village: Village) -> void:
+		ticks_seen += 1
+
+	## How often it woke, how many things it placed and how many ticks it saw.
 	func snapshot() -> Dictionary:
-		return {"wakes": wakes, "placed": placed}
+		return {"wakes": wakes, "placed": placed, "ticks_seen": ticks_seen}
 
 	func _wake(village: Village) -> void:
 		wakes += 1
@@ -40,8 +44,8 @@ class Busy:
 ## Makes a fresh Game and listens to every event it sends.
 func before_each() -> void:
 	_game = GameService.new()
-	Events.speed_changed.connect(_on_speed_changed)
-	Events.paused_changed.connect(_on_paused_changed)
+	_game.speed_changed.connect(_on_speed_changed)
+	_game.paused_changed.connect(_on_paused_changed)
 	_game.village_in_view_changed.connect(_on_village_in_view_changed)
 	_game.village_added.connect(_on_village_added)
 	_game.village_removed.connect(_on_village_removed)
@@ -49,8 +53,8 @@ func before_each() -> void:
 
 ## Stops listening, ends the session and frees the Game.
 func after_each() -> void:
-	Events.speed_changed.disconnect(_on_speed_changed)
-	Events.paused_changed.disconnect(_on_paused_changed)
+	_game.speed_changed.disconnect(_on_speed_changed)
+	_game.paused_changed.disconnect(_on_paused_changed)
 	_game.village_in_view_changed.disconnect(_on_village_in_view_changed)
 	_game.village_added.disconnect(_on_village_added)
 	_game.village_removed.disconnect(_on_village_removed)
@@ -105,6 +109,7 @@ func test_a_village_that_is_not_in_view_ticks_the_same() -> void:
 	_game.clock.ticks_per_second = 20
 	var shown := _busy_village(7)
 	var hidden := _busy_village(7)
+	var other_seed := _busy_village(8)
 	_game.show_village(shown)
 	var ticks := _run_one_second()
 	check_eq(_game.village_in_view, shown)
@@ -112,12 +117,13 @@ func test_a_village_that_is_not_in_view_ticks_the_same() -> void:
 	check_eq(shown.now, ticks)
 	check_eq(hidden.now, ticks)
 	var hidden_part: Busy = hidden.part(&"busy")
+	check_eq(hidden_part.ticks_seen, ticks, "the part of the hidden village was stepped every tick")
 	check(hidden_part.wakes >= 4, "the hidden village woke its timers: %d" % hidden_part.wakes)
 	check(hidden_part.placed >= 1, "and its part placed things on its grid")
 	check_eq(hidden.snapshot(), shown.snapshot())
-	var other_seed := _busy_village(8)
-	_run_one_second()
-	check(hidden.snapshot()["grid"] != other_seed.snapshot()["grid"], "the compare can fail")
+	check_eq(other_seed.now, ticks)
+	var same_grid: bool = hidden.snapshot()["grid"] == other_seed.snapshot()["grid"]
+	check(not same_grid, "the compare can fail: only the seed differs, and the grid does")
 
 
 func test_a_pause_set_during_a_tick_stops_the_rest_of_the_frame() -> void:
@@ -181,7 +187,9 @@ func test_a_new_session_leaves_nothing_of_the_old_one() -> void:
 	var village := _game.new_village(1)
 	village.grid.add_cell(cell)
 	village.grid.drops.add(cell, WOOD, 3)
-	village.timers.wake_at(1000, _on_timer)
+	village.timers.wake_at(2, _on_timer)
+	check_eq(village.grid.drops.count_at(cell, WOOD), 3, "the old village has wood on the cell")
+	check_eq(village.timers.sleeping(), 1, "and a timer that is due on tick 2")
 	_game.show_village(village)
 	_game.speed = 3.0
 	_game.clock.advance(0.01)
@@ -200,7 +208,7 @@ func test_a_new_session_leaves_nothing_of_the_old_one() -> void:
 	check_eq(fresh.timers.sleeping(), 0, "a new village starts with no timer")
 	check(not fresh.grid.drops.has_any(cell), "and with no drop of the old one")
 	check_eq(fresh.grid.drops.count_at(cell, WOOD), 0)
-	_run_one_second()
+	check(_run_one_second() >= 2, "the new session ran past tick 2")
 	check_eq(_news.count("timer"), 0, "no timer of the old session woke in the new one")
 
 

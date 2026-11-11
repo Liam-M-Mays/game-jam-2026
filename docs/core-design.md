@@ -76,6 +76,7 @@ flowchart TD
 - **The UI** talks to Game and to the village in view.
 - **Game is the session.** It sits on top of the villages: it creates, holds, ticks and closes them, and it owns pause and speed. See Decision 33.
 - **The World** is the villages themselves, on the ground or on a giant's back. A village never names Game.
+- **The news of a village comes from the village itself**, never through Events. The UI listens to the village in view, and Game tells it which village that is.
 - **The Core** is the bottom layer. It is only what knows nothing about villages: the clock, the timers, Events, Settings, Audio and Data. Everything may use it.
 - A lower layer never calls a higher one: it sends an event, and whoever cares listens.
 
@@ -252,7 +253,7 @@ The UI stays normal Godot scenes, and only five things remain global.
 | Service | What it owns |
 | --- | --- |
 | Game | The session: new game, pause, speed, and which village is in view. It creates, holds, ticks and closes the villages, and sits above them (Decision 33) |
-| Events | Toasts and notifications. It knows nothing about villages |
+| Events | Toasts and notifications. It knows nothing about villages, and the news of the session comes from Game |
 | Settings | Options, saved to disk |
 | Audio | Music and sound effects |
 | Data | The data files for resources and buildings |

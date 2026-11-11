@@ -6,7 +6,8 @@ extends Object
 ## is shifted sideways from the row above, so the grid leans like the 3/4 art.
 ## Positions are in art pixels. The jam game multiplied by 10 for its cell
 ## scale and by 0.1 for the giant's back, which cancel out.
-## Nothing here holds data: every function is static.
+## It holds no data of a village. Every function is static, and the only
+## thing kept is a small cache of offset lists for short step counts.
 
 ## How far apart two cells of one row are, in art pixels.
 const CELL_WIDTH := 7
@@ -32,6 +33,9 @@ const MIN_FOOTPRINT := 1
 const MAX_FOOTPRINT := 4
 ## The answer when there is no cell.
 const NO_CELL := Vector2i(-2147483648, -2147483648)
+## The offset lists up to this many steps are worked out once and kept. A
+## longer list is built fresh each time, so a big one is not kept for ever.
+const MOST_KEPT_STEPS := 8
 
 static var _offsets_within: Dictionary[int, Array] = {}
 
@@ -85,10 +89,11 @@ static func footprint(anchor: Vector2i, width: int = 1, depth: int = 1) -> Array
 
 
 ## Every offset that is at most [param steps] steps long, the zero offset too.
-## The list is worked out once per step count and then shared, so it cannot
-## be changed. Copy it with [code]duplicate()[/code] to change it.
+## The list cannot be changed: a short one is shared by everyone who asks.
+## Copy it with [code]duplicate()[/code] to change it.
 static func offsets_within(steps: int) -> Array[Vector2i]:
-	if _offsets_within.has(steps):
+	var kept := steps >= 0 and steps <= MOST_KEPT_STEPS
+	if kept and _offsets_within.has(steps):
 		return _offsets_within[steps]
 	var offsets: Array[Vector2i] = []
 	for dx in range(-steps, steps + 1):
@@ -97,7 +102,8 @@ static func offsets_within(steps: int) -> Array[Vector2i]:
 			if steps_of(offset) <= steps:
 				offsets.append(offset)
 	offsets.make_read_only()
-	_offsets_within[steps] = offsets
+	if kept:
+		_offsets_within[steps] = offsets
 	return offsets
 
 

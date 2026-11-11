@@ -5,7 +5,8 @@ extends Node
 ## It is loaded as the global [code]Game[/code]. Game is the session and sits
 ## above the villages: it creates, holds, ticks and closes them, shown or not
 ## (Decision 33 in docs/core-design.md). It is the one service that knows the
-## villages. It holds no rule and no data of a village: those are in
+## villages, and it sends all the news of the session itself: villages, pause
+## and speed. It holds no rule and no data of a village: those are in
 ## [Village], and a village never names Game. With no village it does
 ## nothing, so it stays quiet in the old jam game and in the menu.
 
@@ -15,6 +16,10 @@ signal village_added(village: Village)
 signal village_removed(village: Village)
 ## Another village is in view now. [param village] is null when none is.
 signal village_in_view_changed(village: Village)
+## The game was paused or started again.
+signal paused_changed(paused: bool)
+## The game speed changed. 3.0 means x3.
+signal speed_changed(speed: float)
 
 ## Turns the seconds of a frame into ticks. Its tick rate comes from [DevSettings].
 var clock: TickClock
@@ -28,7 +33,7 @@ var paused: bool:
 		if value == clock.paused:
 			return
 		clock.paused = value
-		Events.paused_changed.emit(value)
+		paused_changed.emit(value)
 
 ## Game speed. 3.0 means three times the ticks per second. It never changes
 ## the engine's time scale.
@@ -40,7 +45,7 @@ var speed: float:
 		if is_equal_approx(next, clock.speed):
 			return
 		clock.speed = next
-		Events.speed_changed.emit(next)
+		speed_changed.emit(next)
 
 ## The village the player is looking at, or null. Change it with [method show_village].
 var village_in_view: Village = null
