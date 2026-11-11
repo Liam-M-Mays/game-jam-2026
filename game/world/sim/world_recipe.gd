@@ -17,9 +17,11 @@ const MAX_BANDS := 8
 const MOST_EDGE_WOBBLE := 0.25
 ## The roughest [member edge_bumps] may be. A rough edge that moves far makes
 ## thin spikes, and a spike thinner than a cell cuts cells off from the rest
-## of the world. Up to these two numbers every world that was tried stayed in
-## one piece. Try many seeds again before you raise one of them: the test
-## [code]test_a_world_is_one_piece_up_to_the_roughest_edge[/code] does that.
+## of the world, or leaves a hole in it. Up to these two numbers every world
+## that was tried stayed in one piece with no hole. The test
+## [code]test_a_world_is_one_piece_up_to_the_roughest_edge[/code] is only a
+## quick check of 80 worlds, and it stays green a little past these numbers.
+## Run a sweep of a few thousand seeds before you raise one of them.
 const MOST_EDGE_BUMPS := 2.0
 
 ## The band table, from the darkest band of the noise to the lightest.

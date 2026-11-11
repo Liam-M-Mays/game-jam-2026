@@ -30,6 +30,10 @@ func _ready() -> void:
 			runs = int(arg.trim_prefix("runs="))
 		elif arg.begins_with("seed="):
 			first_seed = int(arg.trim_prefix("seed="))
+	if cells < 1:
+		push_error("WorldgenTiming: no world can be made. cells is %d" % cells)
+		get_tree().quit(1)
+		return
 	var slowest := 0.0
 	for run in runs:
 		slowest = maxf(slowest, _time_one(first_seed + run, cells, run + 1))

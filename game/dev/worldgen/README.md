@@ -20,8 +20,9 @@ Built by #48.
 - It prints one `WORLDGEN` line per run, with the time of each step, then the slowest run, then the time to build the picture.
 - The bar of issue #48 is under 500 ms for 100,000 cells on an Apple M3.
 - `-- cells=2000 runs=5 seed=7` changes the size, the number of runs and the first seed.
+- A size below 1 makes no world. Then this scene and `world_look.tscn` report one error line with the size and stop.
 
-Apple M3, 2026-11-11. **On a quiet Mac a world of 100,000 cells took 207.0 to 212.0 ms in nine runs.** No other session was working, and the Mac was on battery in Low Power Mode, so the numbers are on the slow side.
+Apple M3, 2026-11-11. **On a quiet Mac a world of 100,000 cells took 207.0 to 212.0 ms in nine runs.** No other session was working, and the Mac was on battery in Low Power Mode, so the numbers are on the slow side. Three more runs on the same quiet Mac, after the review fixes: 287.1, 211.4 and 211.4 ms. The 287.1 is one slow run of seed 1, where the shape step took 106.8 ms.
 
 The table shows the time of each step. It is one set of three runs, taken while other sessions were running Godot on the same Mac. Times in milliseconds:
 
@@ -32,7 +33,7 @@ The table shows the time of each step. It is one set of three runs, taken while 
 | 3 | 3 | 100,010 | 9,805 | 209.3 | 48.0 | 24.9 | 43.9 | 11.3 | 81.2 |
 
 - The load matters. With two other Godot runs at full load, an earlier and slower version of the generator took 434 to 513 ms where it took 314 ms a few minutes before.
-- The last line of the output is the time to build the picture of one such world: the atlas, the ground map and 9,805 things put into the batch. It took about 193 ms on the quiet Mac. That is not part of making the world, and it has no bar.
+- The last line of the output is the time to build the picture of one such world: the atlas, the ground map and 9,805 things put into the batch. It took 193 to 195 ms on the quiet Mac. That is not part of making the world, and it has no bar.
 
 ## Looking at a world
 

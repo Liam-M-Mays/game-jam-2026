@@ -85,7 +85,12 @@ func _ready() -> void:
 	_label.add_theme_color_override(&"font_outline_color", Color.BLACK)
 	_label.add_theme_constant_override(&"outline_size", 6)
 	layer.add_child(_label)
-	_make_world()
+	if not _make_world():
+		_marks.hide()
+		set_process_unhandled_input(false)
+		if shot != "":
+			get_tree().quit(1)
+		return
 	if shot != "":
 		get_window().set_flag(Window.FLAG_ALWAYS_ON_TOP, true)
 		_save_picture.call_deferred(shot)
@@ -125,14 +130,20 @@ func _unhandled_input(event: InputEvent) -> void:
 			_aim()
 
 
-## Makes the world of the seed anew, with its picture.
-func _make_world() -> void:
+## Makes the world of the seed anew, with its picture. False when no world
+## was made, as for a size below 1: then it reports one line with the size.
+func _make_world() -> bool:
 	if _view != null:
 		_view.detach()
 		_view.free()
 		_village.close()
 	_village = Village.new(_seed)
 	_world = WorldGenerator.generate(_village, _cells)
+	if _world == null:
+		_village.close()
+		_label.text = "No world was made. cells is %d." % _cells
+		push_error("WorldLook: no world was made. cells is %d" % _cells)
+		return false
 	print(WorldSeed.line(_seed))
 	_view = VillageView.new()
 	add_child(_view)
@@ -143,6 +154,7 @@ func _make_world() -> void:
 			_ground = layer
 	_show()
 	_aim()
+	return true
 
 
 ## Applies the band and map switches, and writes the label.

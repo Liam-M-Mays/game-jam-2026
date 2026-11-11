@@ -205,7 +205,7 @@ The grid becomes data in chunks, and walking uses the cheapest method that works
 - It is round, not square. The grid is slanted, so a square of cells would look like a leaning box.
 - A band is a share of the cells: the darkest quarter of the noise is the dark band, the rest is the light band. So every world has room for its big trees and rocks. Built this way in [#48](https://github.com/Liam-M-Mays/game-jam-2026/issues/48). Liam has not confirmed this rule yet.
 - The start cell is the lightest cell that fits within a third of the radius from the middle. Its own cells and the ring round them are on light ground and are kept clear. Built this way in #48. Liam has not confirmed this rule yet.
-- The edge is a circle that moves in and out with a second noise. The noise is read once per direction, so the world has no holes. How far and how rough the edge may be is limited in the recipe. Inside those limits every world that was tried was one piece. Built this way in #48. Liam has not confirmed this rule yet.
+- The edge is a circle that moves in and out with a second noise. The noise is read once per direction. How far and how rough the edge may be is limited in the recipe. Inside those limits every world that was tried was one piece, and no hole was found. Built this way in #48. Liam has not confirmed this rule yet.
 
 **The giant's back**
 

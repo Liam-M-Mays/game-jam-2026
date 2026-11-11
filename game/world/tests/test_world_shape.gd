@@ -1,7 +1,7 @@
 extends GameTest
 ## Checks the shape of a generated world: the same seed gives the same world,
 ## it has about the cells that were asked for, it is round with an uneven
-## edge, and it is in one piece.
+## edge, and it is in one piece with no hole in it.
 
 ## How many slices the world is cut into to measure how far its edge reaches.
 const SLICES := 24
@@ -99,6 +99,7 @@ func test_a_world_is_one_piece_up_to_the_roughest_edge() -> void:
 			var made := WorldTestKit.village(world_seed, cells, recipe)
 			var cut_off := _cells_cut_off(made)
 			check_eq(cut_off, 0, "seed %d, %d cells: cells cut off from the start" % [world_seed, cells])
+			check_eq(_holes(made), 0, "seed %d, %d cells: holes of one cell" % [world_seed, cells])
 
 
 func test_a_village_gets_one_world_only() -> void:
@@ -153,6 +154,23 @@ func _cells_cut_off(made: Village) -> int:
 				queue.append(near)
 		next += 1
 	return world.cells - seen.size()
+
+
+## How many holes of one cell [param made] has: a place with no cell whose
+## six neighbours all exist. A hole of two or more cells is not counted.
+func _holes(made: Village) -> int:
+	var first := Vector2i.ZERO
+	var last := Vector2i.ZERO
+	for cell in WorldTestKit.cells_of(made):
+		first = first.min(cell)
+		last = last.max(cell)
+	var holes := 0
+	for y in range(first.y, last.y + 1):
+		for x in range(first.x, last.x + 1):
+			var cell := Vector2i(x, y)
+			if not made.grid.has_cell(cell) and made.grid.neighbours(cell).size() == 6:
+				holes += 1
+	return holes
 
 
 ## How much further the edge reaches in its longest slice than in its
