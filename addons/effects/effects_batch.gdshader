@@ -29,5 +29,5 @@ void vertex() {
 
 void fragment() {
 	vec4 colour = texture(TEXTURE, batch_uv(v_rect, v_local * v_rect.zw)) * v_tint;
-	COLOR = effects_colour(colour, v_local, fwidth(v_local));
+	COLOR = effects_colour(colour, v_local);
 }

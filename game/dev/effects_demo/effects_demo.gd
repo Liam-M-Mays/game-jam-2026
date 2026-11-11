@@ -12,7 +12,8 @@ extends Node2D
 ##
 ## From a terminal, [code]-- shot=/path.png keys=H,O at=0.05[/code] presses
 ## those keys, waits that many seconds of game time, saves a picture and
-## closes the scene.
+## closes the scene. [code]mouse=30,-20[/code] puts the mouse of that picture
+## at a place in the world, without moving the real one.
 
 ## The game speeds of the jam game, on the keys 1 to 4.
 const SPEEDS: Array[float] = [1.0, 1.5, 2.0, 3.0]
@@ -76,6 +77,7 @@ var _label := Label.new()
 var _shot := ""
 var _shot_keys := PackedStringArray()
 var _shot_at := 0.0
+var _shot_mouse := Vector2.INF
 
 
 func _ready() -> void:
@@ -125,8 +127,9 @@ func _process(delta: float) -> void:
 	if not Game.paused:
 		_walk(delta * Game.speed)
 	if _shot == "":
-		_hover()
-		_show_placing()
+		var mouse := _batch.to_world(get_viewport().get_mouse_position())
+		_hover(mouse)
+		_show_placing(mouse)
 	_label.text = "%s\n\nSpeed x%s%s     Effect clock %.2f s     Sprites with an effect: %d" % [
 		HELP, Game.speed, "   PAUSED" if Game.paused else "", _effects.clock(),
 		_effects.active_count(),
@@ -147,6 +150,9 @@ func _read_arguments() -> void:
 			_shot_keys = arg.trim_prefix("keys=").split(",", false)
 		elif arg.begins_with("at="):
 			_shot_at = float(arg.trim_prefix("at="))
+		elif arg.begins_with("mouse="):
+			var parts := arg.trim_prefix("mouse=").split_floats(",")
+			_shot_mouse = Vector2(parts[0], parts[1])
 
 
 func _add_actors() -> void:
@@ -269,10 +275,10 @@ func _walk(seconds: float) -> void:
 
 
 ## The actor under the mouse glows, and the cells it stands on light up.
-func _hover() -> void:
+## [param mouse] is where the mouse is in the world.
+func _hover(mouse: Vector2) -> void:
 	if _glow_all:
 		return
-	var mouse := _batch.to_world(get_viewport().get_mouse_position())
 	var found := -1
 	var thing := _rows.pick(mouse)
 	if thing != BatchRows.NO_THING:
@@ -297,13 +303,12 @@ func _hover() -> void:
 
 ## In placing mode the cells round the mouse light up grey, and a plot area
 ## shows in pale yellow with white under the mouse.
-func _show_placing() -> void:
+func _show_placing(mouse: Vector2) -> void:
 	if not _placing:
 		_lit.clear(&"cursor")
 		_lit.clear(&"area")
 		_lit.clear(&"area_hover")
 		return
-	var mouse := _batch.to_world(get_viewport().get_mouse_position())
 	var corners := JamEffects.cell_corners(_rows.pixel_scale)
 	var radius := JamEffects.CURSOR_RADIUS * _rows.pixel_scale
 	var round_mouse := CellHighlights.cells_in_circle(_cells, corners, mouse, radius)
@@ -330,6 +335,9 @@ func _take_shot() -> void:
 		await get_tree().process_frame
 	for key in _shot_keys:
 		_press(key)
+	if _shot_mouse != Vector2.INF:
+		_hover(_shot_mouse)
+		_show_placing(_shot_mouse)
 	_effects.advance(_shot_at)
 	_walk(_shot_at)
 	_batch.clock_frozen = true

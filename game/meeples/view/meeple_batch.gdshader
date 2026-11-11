@@ -113,5 +113,5 @@ void fragment() {
 		colour = vec4(mix(body.rgb, head.rgb, head.a), max(body.a, head.a));
 		colour.a *= v_tint.a;
 	}
-	COLOR = effects_colour(colour, v_local, fwidth(v_local));
+	COLOR = effects_colour(colour, v_local);
 }

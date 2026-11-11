@@ -166,11 +166,12 @@ func ghost_under(target: int, sprite: int, blocked: bool = false) -> void:
 ## Turns [param target] one solid colour, which fades back to normal. With
 ## [param hold] it stays solid for that many seconds first.
 func flash(target: int, colour: Color = Color.WHITE, hold: float = 0.0) -> void:
-	var state := _state(target, true)
+	var held := clampf(hold, 0.0, CLOCK_WRAP * 0.25)
+	var state := _timed_state(target, held + _style.flash_seconds)
 	if state == null:
 		return
 	state.flash_colour = colour
-	state.flash_hold = minf(hold, CLOCK_WRAP * 0.25)
+	state.flash_hold = held
 	state.flash_fade = _style.flash_seconds
 	state.start(EffectState.FLASH, _now, state.flash_hold + state.flash_fade)
 	_refresh(target, state)
@@ -178,7 +179,7 @@ func flash(target: int, colour: Color = Color.WHITE, hold: float = 0.0) -> void:
 
 ## Shakes [param target] left and right.
 func shake(target: int) -> void:
-	var state := _state(target, true)
+	var state := _timed_state(target, _style.shake_seconds)
 	if state == null:
 		return
 	state.shake_seconds = _style.shake_seconds
@@ -208,7 +209,7 @@ func grow_in(target: int) -> void:
 ## Rocks [param target] to one side, to the other and back. [param degrees]
 ## is how far: leave it out for the angle of the style.
 func wobble(target: int, degrees: float = NAN) -> void:
-	var state := _state(target, true)
+	var state := _timed_state(target, _style.wobble_seconds)
 	if state == null:
 		return
 	state.wobble_radians = deg_to_rad(_style.wobble_degrees if is_nan(degrees) else degrees)
@@ -220,7 +221,7 @@ func wobble(target: int, degrees: float = NAN) -> void:
 ## Gives [param target] a quick little bounce. [param amount] is how much
 ## bigger it gets: leave it out for the amount of the style.
 func pop(target: int, amount: float = NAN) -> void:
-	var state := _state(target, true)
+	var state := _timed_state(target, _style.pop_rise_seconds + _style.pop_fall_seconds)
 	if state == null:
 		return
 	state.pop_amount = _style.pop_amount if is_nan(amount) else amount
@@ -269,8 +270,14 @@ func pose(target: int) -> Dictionary:
 	return result
 
 
+## The state of a target for a timed effect of [param seconds]. Returns null
+## when the effect takes no time, as in a style where it is switched off.
+func _timed_state(target: int, seconds: float) -> EffectState:
+	return _state(target, true) if seconds > 0.0 else null
+
+
 func _start_squash(target: int, from: Vector2, seconds: float) -> void:
-	var state := _state(target, true)
+	var state := _timed_state(target, seconds)
 	if state == null:
 		return
 	state.squash_from = from

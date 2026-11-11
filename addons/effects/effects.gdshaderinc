@@ -12,7 +12,7 @@
 //      `size` is the size of the sprite in art pixels, and `local` is the
 //      varying that carries UV to fragment().
 //   5. In fragment(), as the last step:
-//          COLOR = effects_colour(colour, local, fwidth(local));
+//          COLOR = effects_colour(colour, local);
 //
 // A sprite with no effect has the extra number 0. For it effects_vertex
 // changes nothing and effects_colour hands the colour back as it is.
@@ -237,12 +237,14 @@ float effects_outline(float dist, vec4 colour, float width, float glow_size,
 }
 
 // The fragment part. `colour` is what the shader would draw with no effect,
-// `local` is 0 to 1 across the sprite, and `pixel` is fwidth(local): how far
-// one screen pixel is in `local`. Returns the colour to draw.
-vec4 effects_colour(vec4 colour, vec2 local, vec2 pixel) {
+// and `local` is 0 to 1 across the sprite. Returns the colour to draw.
+// Only call it from fragment().
+vec4 effects_colour(vec4 colour, vec2 local) {
 	if (v_effects[3].x < 0.5) {
 		return colour;
 	}
+	// How far one screen pixel is in `local`.
+	vec2 pixel = fwidth(local);
 	// The margin of an outlined sprite is outside the picture.
 	bool inside = all(greaterThanEqual(local, vec2(0.0))) && all(lessThan(local, vec2(1.0)));
 	vec4 base = inside ? colour : vec4(0.0);

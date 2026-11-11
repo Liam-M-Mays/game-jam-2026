@@ -165,7 +165,7 @@ Each village is drawn as one batch, in one draw call, in our own order.
 - **A shader draws the meeple:** body colour, head, what it carries, bounce and tilt. It must look exactly like the meeple of the jam game.
 - **Our own order, with no sorting.** Things that stand still are grouped by grid row. Meeples are slotted in between two rows, in thin bands.
 - **No script runs per thing per frame.** A row is only rebuilt when something in it changes.
-- **Effects become values the shader reads:** hover outline, flash, squash and the blueprint ghost. This is the effects toolkit.
+- **Effects become values the shader reads:** hover outline, flash, squash and the blueprint ghost. This is the effects toolkit. A sprite with an effect carries one extra number, the line of a small table that the shader reads. The effects run on game time. Built this way in [#62](https://github.com/Liam-M-Mays/game-jam-2026/issues/62).
 - **Clicking uses maths.** The mouse position gives a cell, and the cell gives what stands on it. In the jam game 2,091 cells each carry their own click area.
 - **A picture in front wins the click.** A tall sprite sticks up over the row behind it, so the picture under the mouse is checked first, and only its solid pixels count. Where no picture is hit, the cell decides. Built this way in [#61](https://github.com/Liam-M-Mays/game-jam-2026/issues/61). Liam has not confirmed this rule yet.
 - **Only what is on screen is sent.** Rows off screen are left out, and so are the things and meeples left and right of the screen. While meeples move, what is on screen is put together and sent again every frame. Rows are copied as they are, not rebuilt.
@@ -307,7 +307,7 @@ New code goes into by-feature folders next to the old game, so the old game stay
 | Real jobs in place of wandering | Not measured |
 | A world bigger than the screen | Not measured |
 | Several villages ticking at once | Not measured |
-| Hover outline, flash and squash inside the batch shader | Not built |
+| Hover outline, flash and squash inside the batch shader | Built. Measured by comparing pixels with the jam game |
 | Time spent on the graphics card | Godot could not report it in the test |
 
 Test setup: Apple M3, a 1920 by 1080 window, vsync off, Godot 4.7.2, GL Compatibility. Every meeple was on screen and wandering.

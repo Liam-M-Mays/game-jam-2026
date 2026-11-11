@@ -3,7 +3,7 @@
 **What lives here:** meeples as rows of data, the rules that move them, and the meeple shader.
 
 - `view/meeple_look.gd`: `MeepleLook`, how a meeple is drawn. It holds the jam game's numbers: the body and head pictures, what the head shows for each load, the shirt colour, and the bounce and tilt.
-- `view/meeple_batch.gdshader`: the shader that draws a village batch. It draws plain sprites, and it draws a meeple: body colour, head, what it carries, bounce and tilt.
+- `view/meeple_batch.gdshader`: the shader that draws a village batch. It draws plain sprites, and it draws a meeple: body colour, head, what it carries, bounce and tilt. It includes the [effects toolkit](../../addons/effects/README.md), so a meeple gets every effect a tree gets.
 - `art/`: the meeple art, copied from the jam game. `meeple.png` is the body and the bare head. `meeple_holding.png` and `meeple_holding_more.png` are the heads with a load.
 - `tests/`: the tests of the numbers. They check `MeepleLook` and its copy of the bounce formula. The shader itself is proven by pictures: see [game/dev/stress/README.md](../dev/stress/README.md).
 - The rules that move meeples are not here yet.

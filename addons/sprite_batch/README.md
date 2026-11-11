@@ -11,6 +11,7 @@ Built by #61. Design: the "Drawing" part of [docs/core-design.md](../../docs/cor
 | `sprite_atlas.gd` | `SpriteAtlas`: one image that holds every sprite, built from the art files when the game loads |
 | `batch_cells.gd` | `BatchCells`: the cell maths. Where a cell is, and which cell a point is in. The game hands the numbers in |
 | `batch_rows.gd` | `BatchRows`: the sprites, kept in drawing order. Also finds the thing under a point. Needs no window |
+| `batch_store.gd` | `BatchStore`: what a `BatchRows` keeps, and the functions that look one sprite up: its extra number, its cells, and the decor layers. `BatchRows` extends it, so all of it is called on the rows |
 | `sprite_batch.gd` | `SpriteBatch`: the node that draws a `BatchRows` |
 | `sprite_batch.gdshader` | The plain shader: a picture from the atlas, times a colour |
 | `sprite_batch.gdshaderinc` | What every batch shader shares. A game shader includes it. The meeple shader is in `game/meeples/view/` |
@@ -77,7 +78,41 @@ add_child(batch)
 - A thing is known by the caller's own number. The batch gives that number back from `pick`.
 - Movers: `shape_movers` once, `resize_movers`, `place_mover` for each new one, then `move_movers(positions)` in every frame in which a mover moved.
 - Each sprite carries a colour and four numbers for the shader. The first number is the sprite. The fourth picks how it is drawn: 0 is a plain sprite.
+- Each sprite also carries one extra number. See "The extra number" below.
 - A sprite name belongs to one picture. Adding the same name from another file or region is refused with an error.
+
+## The extra number
+
+Every sprite has one more number, next to its colour and its four shader numbers.
+
+- `rows.set_thing_extra(id, value)` and `rows.set_mover_extra(index, value)` set it. It starts at 0.
+- It is 32-bit, so whole numbers stay exact up to 16 million. The colour and the four shader numbers are only 16-bit.
+- It has a path of its own. It takes nothing from the colour or the four numbers, so a meeple keeps all four.
+- A shader reads it with `batch_extra(MODEL_MATRIX)` in `vertex()`.
+- `change_thing`, `place_mover`, `look_mover` and `move_movers` keep it.
+- The batch itself does not use it. The [effects toolkit](../effects/README.md) keeps its effect number there.
+- How it works: a sprite's place is 8 numbers, and Godot uses 6 of them to place a flat sprite. The third one moves nothing on screen and carries the extra number. See "Limits".
+
+## Decor
+
+A decor sprite is only drawn. It is never found by `pick`, and it stands on no cell.
+
+```gdscript
+var id := rows.add_decor(cell, sprite, offset, tint, BatchRows.UNDER)
+rows.tint_decor(id, Color(0.4, 0.4, 0.4, 0.5))
+rows.remove_decor(id)
+```
+
+| Layer | Where it is drawn | Used for |
+| --- | --- | --- |
+| `BatchRows.UNDER` | Under everything | A lit cell |
+| `BatchRows.FRONT` | In front of every thing of its own row, behind the movers below that row and behind the next row | A spark |
+| `BatchRows.OVER` | Over everything | A dust cloud |
+
+- The place is given like the place of a thing: a cell and an offset in art pixels.
+- Inside a layer a newer decor sprite is in front of an older one.
+- `add_decor` hands out the number. Decor numbers are counted apart from thing numbers.
+- Decor under and over everything is always sent, on screen or not. Keep it to a few sprites.
 
 ## The grid
 
@@ -99,5 +134,7 @@ The batch has no grid numbers of its own. `BatchCells` is all it knows about the
 - When two things share a cell, such as two drops, the cell finds the newest one. Each is still found by its own picture.
 - The number of a thing must fit in 32 bits, and it cannot be -1.
 - Two movers closer than one art pixel in height are put in order once, when one comes into the band. They are not sorted again while they stay in it. A view that wants a meeple put in by height again when it stops can call `place_mover` for it.
-- `batch_clock` is the only clock of a batch shader. `MeepleLook` makes it start again every 1.508 seconds, which is one full bounce. So everything else in the village shader that reads `batch_clock` must also repeat every 1.508 seconds, or it jumps. An effect that runs longer, or at another pace, needs its own time value. Part #62 has to plan for that.
+- `batch_clock` is the clock of the meeple bounce. `MeepleLook` makes it start again every 1.508 seconds, which is one full bounce. So everything in the village shader that reads `batch_clock` must also repeat every 1.508 seconds, or it jumps. The effects toolkit has a clock of its own, `effects_clock`, which runs on game time.
+- The extra number rides in a place number that Godot calls padding. Godot hands it to the shader in the third column of the sprite's matrix. Checked on Godot 4.7.2 with the OpenGL renderer. If a later Godot stops handing it on, every extra number reads as 0. The effects comparison in `game/dev/effects_demo/` fails then.
+- A class may have 20 public functions at most (the linter's rule), and `BatchRows` has 20. A new batch function goes into `BatchStore`.
 - Making a `BatchRows` for the 100,000 cell world takes 1.5 ms and 1.4 MB (Apple M3). The table of mover buckets covers the whole world. A bucket itself is only made when its first mover comes.

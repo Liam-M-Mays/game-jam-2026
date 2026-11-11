@@ -30,7 +30,7 @@ var _sent := 0
 var _sends := 0
 var _seen_serial := -1
 var _seen_view := Rect2()
-var _seen_turn := Transform2D(0.0, Vector2.ZERO)
+var _seen_turn := Transform2D(Vector2.ZERO, Vector2.ZERO, Vector2.ZERO)
 var _prepare_usec := 0
 
 
@@ -51,6 +51,7 @@ func _process(delta: float) -> void:
 ## [code]sprite_batch.gdshaderinc[/code]. Leave it out for plain sprites.
 func setup(batch_rows: BatchRows, shader: Shader = null) -> void:
 	rows = batch_rows
+	_seen_turn = Transform2D(Vector2.ZERO, Vector2.ZERO, Vector2.ZERO)
 	_material = ShaderMaterial.new()
 	_material.shader = shader if shader != null else PLAIN_SHADER
 	_multimesh = MultiMesh.new()

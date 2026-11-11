@@ -119,6 +119,21 @@ func test_a_tree_a_building_and_a_meeple_are_called_the_same_way() -> void:
 	check(lines[0] != lines[1] and lines[1] != lines[2] and lines[0] != lines[2], "of its own")
 
 
+func test_with_a_style_that_is_all_off_no_effect_starts() -> void:
+	# A new EffectStyle has every time at 0. The toolkit has no numbers of its own.
+	var plain := SpriteEffects.new(_rows, EffectStyle.new())
+	for effect: String in ["flash", "shake", "reject", "squash", "grow_in", "wobble", "pop"]:
+		plain.call(effect, _tree)
+	check_eq(plain.active_count(), 0)
+	check_eq(_rows.thing_extra(TREE), 0.0)
+	check_eq(plain.pose(_tree)["scale"], Vector2.ONE)
+	plain.flash(_tree, Color.RED, 0.5)
+	check_eq(plain.pose(_tree)["flash"], 1.0, "a held flash still shows, for as long as it is held")
+	plain.advance(0.5)
+	check_eq(plain.active_count(), 0)
+	plain.close()
+
+
 func _run(frames: int, speed: float) -> void:
 	for frame in frames:
 		_effects.advance(STEP, speed)
