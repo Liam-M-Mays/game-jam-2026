@@ -35,7 +35,7 @@ You are reading the copy of this file on the branch `core-rewrite`. The core of 
    git push -u origin feature/village-tick
    ```
 
-4. Open a pull request on GitHub with `core-rewrite` as the base, and fill in the template. Write "Part of #60" to link the issue.
+4. Open a pull request on GitHub with `core-rewrite` as the base, and fill in the template. Write "Part of #60" to link the issue. For the "Inventory" section, paste what `python3 .github/ci/pr_inventory.py` prints. It counts the scripts, the scenes and the lines of code, without the scene files and sidecar files that git also counts.
 
    ```bash
    gh pr create --base core-rewrite

@@ -27,6 +27,7 @@ Mighty Meeple is a Godot 4.7.2 game (GDScript, GL Compatibility renderer). Three
 - Read the diff of every `.tscn` and `.tres` you are committing. Revert any scene you did not mean to change.
 - Commit the `.uid` and `.import` files Godot creates next to new scripts and assets.
 - Fill in the pull request template. List every "done" line of the issue that the pull request claims, each with the test or the picture that proves it.
+- Every pull request has an inventory: how many scripts and scenes it holds, and how many lines of code it adds. Run `python3 .github/ci/pr_inventory.py` after your last commit and paste what it prints into the "Inventory" section. Liam asked for this on 2026-11-11. Run it again and update the text whenever you push more commits.
 
 ## Where code goes
 

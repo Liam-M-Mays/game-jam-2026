@@ -2,6 +2,11 @@
 
 <!-- One or two lines. Link the issue: "Part of #60". No closing keyword: the issue is closed by hand after the merge. -->
 
+## Inventory
+
+<!-- Paste what this prints: python3 .github/ci/pr_inventory.py
+     It counts the scripts, the scenes and the lines of code. Run it again after your last commit. -->
+
 ## Done lines this claims
 
 <!-- Copy each "done" line of the issue that this pull request finishes. Next to it, name the test or the picture that proves it. -->
@@ -20,6 +25,7 @@
 - [ ] Every scene (`.tscn`) in this pull request is changed on purpose, with no stray moves or hidden nodes
 - [ ] New scripts and assets include their `.uid` or `.import` file
 - [ ] The base of this pull request is `core-rewrite`
+- [ ] The inventory above is from my last commit
 - [ ] I ran the repo checks, the Godot checks and the linter myself before pushing
 - [ ] New rules in `game/` or `addons/` have a test
 - [ ] Every new class and public function has a `##` doc comment, and the folder's `README.md` is up to date

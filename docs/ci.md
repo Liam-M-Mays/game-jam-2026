@@ -66,6 +66,14 @@ Only the tests, which is quicker while you work:
 GODOT="/path/to/Godot" bash .github/ci/run_tests.sh
 ```
 
+## The inventory of a pull request
+
+```bash
+python3 .github/ci/pr_inventory.py
+```
+
+It prints a short table for the pull request text: how many scripts, tests and scenes changed, and how many lines of code were added. A code line is a line in a script or shader that is not blank and not only a comment. Git's own count is higher, because it also counts scenes, docs and the sidecar files Godot writes.
+
 ## What the checks do not catch
 
 They catch broken files. They do **not** catch a game that loads fine but plays wrong.

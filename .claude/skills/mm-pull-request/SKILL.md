@@ -27,7 +27,8 @@ The rules behind these steps are in `CONTRIBUTING.md` and `CLAUDE.md`.
 6. Commit the `.uid` and `.import` files that Godot made next to new files.
 7. Write a commit message that says what changed and why, in one line.
 8. Push the branch and open the pull request with `gh pr create --base core-rewrite`. Fill in the template: what changed, the "done" lines of the issue it claims with the proof for each, how a person tests it, and the checklist. Name the issue with "Part of #N". Do not write a closing keyword: the issue is closed by hand after the merge.
-9. Stop there. A person reviews and merges. Never approve or merge a pull request yourself.
+9. Put the inventory in the pull request. Run `python3 .github/ci/pr_inventory.py` after your last commit and paste what it prints under "Inventory". It counts scripts, scenes and lines of code. Update it whenever you push more commits.
+10. Stop there. A person reviews and merges. Never approve or merge a pull request yourself.
 
 ## Leave people to the person you work for
 
