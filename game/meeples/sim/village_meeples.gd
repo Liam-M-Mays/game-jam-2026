@@ -25,7 +25,10 @@ signal meeple_added(row: int)
 ## another row, the meeple that was there is in [param row] now.
 signal meeple_removed(meeple: int, row: int, moved_from: int)
 ## The look of the meeple in [param row] changed: it started or stopped
-## walking, its load changed, or it started to die.
+## walking, its load changed, or it started to die. This one is for the
+## picture. A job listens to [signal meeple_arrived]. A listener here may
+## send, let go or kill the meeple too. When it does that as a walk ends,
+## that walk sends no [signal meeple_arrived].
 signal meeple_changed(row: int)
 ## [param meeple] started to die at [param spot]. The hurt sound listens here.
 signal meeple_died(meeple: int, spot: Vector2)
@@ -361,7 +364,9 @@ func _step_walkers(village: Village) -> void:
 ## Deals with the walks that ended on this tick, after all the stepping, so
 ## nothing a listener does can disturb the stepping. A listener of
 ## [signal meeple_arrived] may send, let go or kill any meeple, also one whose
-## own arrival is still to come in this loop.
+## own arrival is still to come in this loop. A meeple that a listener lets
+## go, sends on or kills inside another arrival does not send its own
+## [signal meeple_arrived] for that tick.
 func _handle_arrivals(village: Village) -> void:
 	if _arrivals.is_empty():
 		return
@@ -372,8 +377,14 @@ func _handle_arrivals(village: Village) -> void:
 		if row == NO_ROW or _slots[row] != _NO_SLOT:
 			continue
 		if walking[row] == 1:
+			var state := states[row]
 			walking[row] = 0
 			meeple_changed.emit(row)
+			# A listener of that signal may have sent, let go or killed this
+			# meeple. Then it has been dealt with, and its arrival is dropped.
+			row = row_of(meeple)
+			if row == NO_ROW or _slots[row] != _NO_SLOT or states[row] != state:
+				continue
 		if states[row] == ON_JOB:
 			meeple_arrived.emit(meeple)
 		elif states[row] == FREED:

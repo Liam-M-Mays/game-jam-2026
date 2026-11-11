@@ -64,6 +64,7 @@ village.send(MeepleCommands.Kill.new(meeple))    # it tips over, fades and is ta
 - **A walk is over one tick after its last step.** The picture needs that tick to glide the last step in. `meeple_arrived` is sent then.
 - After that the meeple waits for its job. `release` lets it go.
 - A listener of `meeple_arrived` may send, let go or kill any meeple, also one that arrives on the same tick.
+- A meeple that a listener lets go, sends on or kills inside another arrival does not send its own `meeple_arrived` for that tick.
 
 ### Waiting costs nothing
 
@@ -103,10 +104,13 @@ A meeple with nothing to do wanders. These are the jam game's rules.
 | --- | --- |
 | `meeple_added(row)` | A meeple was added |
 | `meeple_removed(meeple, row, moved_from)` | A meeple was taken out. The meeple from `moved_from` is in `row` now |
-| `meeple_changed(row)` | Its look changed: walking or standing, its load, or it started to die |
+| `meeple_changed(row)` | Its look changed: walking or standing, its load, or it started to die. This one is for the picture |
 | `meeple_died(meeple, spot)` | It started to die |
 | `meeple_arrived(meeple)` | It reached the place its job sent it to |
 | `closed` | The village was closed |
+
+- A job listens to `meeple_arrived`, not to `meeple_changed`.
+- A listener of `meeple_changed` may send, let go or kill the meeple too. When it does that as a walk ends, that walk sends no `meeple_arrived`.
 
 ## The picture, in `view/`
 
@@ -148,6 +152,7 @@ add_child(view)
 | `test_meeple_walk.gd` | The two speeds, the straight line, the aim, stopping on a thing, the tick a walk is over, a listener that acts inside an arrival |
 | `test_meeple_wander.gd` | The wander rules asked by hand: the pause, the stroll around home, hangouts, the spot near a hangout, the 8 points, the 15 percent and the reach |
 | `test_meeple_strolls.gd` | The same rules on a meeple that ticks: the 15 percent, where a stroll ends, the home and the hangout after a job |
+| `test_meeple_listeners.gd` | A listener of `meeple_changed` that kills, sends on or lets go of a meeple as its walk ends |
 | `test_meeple_dying.gd` | The topple and the fade tick by tick, the side, the freeze, the event |
 | `test_meeple_same_seed.gd` | The same seed and commands give the same village, with the picture or without |
 | `test_meeple_view.gd` | One mover per row, the glide, the poses, the load, the topple and the fade in the batch |

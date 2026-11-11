@@ -46,21 +46,32 @@ func test_a_ticking_meeple_picks_its_hangout_again_on_15_percent_of_its_strolls(
 	var places: Array[Vector2] = []
 	for hut in huts:
 		places.append(_village.grid.thing_position(hut))
-	var strolls := _watch_strolls(60000)
-	check(strolls.size() > 250, "the meeple went on %d strolls" % strolls.size())
+	var strolls := _watch_strolls(120000)
+	check(strolls.size() > 500, "the meeple went on %d strolls" % strolls.size())
+	var kept := _village.rng.state
 	var twin := RandomNumberGenerator.new()
 	var picked_again := 0
 	var changed := 0
 	var wrong := 0
+	var other_numbers := 0
+	var just_under := 0
+	var just_over := 0
 	for stroll in strolls:
 		var spot: Vector2 = stroll["spot"]
+		var home: Vector2 = stroll["home"]
 		var had: int = stroll["hangout"]
 		var got: int = stroll["hangout_after"]
 		var state: int = stroll["state"]
+		var state_after: int = stroll["state_after"]
 		# The same random numbers as the village had when the meeple woke.
 		twin.state = state
 		var want := had
-		if twin.randf() < 0.15:
+		var chance := twin.randf()
+		if chance >= 0.145 and chance < 0.15:
+			just_under += 1
+		elif chance >= 0.15 and chance < 0.155:
+			just_over += 1
+		if chance < 0.15:
 			picked_again += 1
 			# The weights count from where the meeple stands, not from its home.
 			var weights: Array[float] = []
@@ -73,9 +84,21 @@ func test_a_ticking_meeple_picks_its_hangout_again_on_15_percent_of_its_strolls(
 			wrong += 1
 		if got != had:
 			changed += 1
+		# The twin has used one number, or two with a new pick. The search for
+		# the spot goes on from there, and must end where the village ended. A
+		# meeple that rolled the chance another way would be a number off.
+		_village.rng.state = twin.state
+		_wander.next_spot(_village, spot, home, want)
+		if _village.rng.state != state_after:
+			other_numbers += 1
+	_village.rng.state = kept
 	check_eq(wrong, 0, "strolls on which the hangout is not what the 15 percent rule gives")
-	check(picked_again > 20, "it picked again on %d strolls" % picked_again)
-	check(changed > 5, "it changed its hangout %d times" % changed)
+	check_eq(other_numbers, 0, "strolls on which the meeple used other random numbers")
+	check(picked_again > 40, "it picked again on %d strolls" % picked_again)
+	check(changed > 10, "it changed its hangout %d times" % changed)
+	# So a chance of 14.5 or of 15.5 percent would be noticed too.
+	check(just_under > 0, "%d rolls fell between 14.5 and 15 percent" % just_under)
+	check(just_over > 0, "%d rolls fell between 15 and 15.5 percent" % just_over)
 
 
 func test_a_stroll_of_a_ticking_meeple_ends_where_the_wander_rules_say() -> void:

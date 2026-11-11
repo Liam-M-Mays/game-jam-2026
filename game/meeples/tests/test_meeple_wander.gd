@@ -278,8 +278,25 @@ func test_a_near_hangout_is_much_more_likely_to_be_picked_than_a_far_one() -> vo
 	check_near(weights[1], 0.5101, 0.0001, "98 art pixels away: about a half")
 	check_near(weights[2], 0.2065, 0.0001, "196 art pixels away: about a fifth")
 	var picks: Dictionary[int, int] = {things[0]: 0, things[1]: 0, things[2]: 0}
+	# A twin of the village's random numbers says what each pick must be. So
+	# a reach of 101 art pixels fails too, not only one that is far off.
+	var twin := RandomNumberGenerator.new()
+	twin.state = _village.rng.state
+	var kept := PackedFloat32Array(weights)
+	var wrong := 0
 	for index in 20000:
-		picks[_wander.pick_hangout(_village, from)] += 1
+		var roll := twin.randf() * total
+		var want := things[2]
+		for slot in 2:
+			roll -= kept[slot]
+			if roll <= 0.0:
+				want = things[slot]
+				break
+		var got := _wander.pick_hangout(_village, from)
+		picks[got] += 1
+		if got != want:
+			wrong += 1
+	check_eq(wrong, 0, "picks that are not what a reach of 100 art pixels gives")
 	check_near(picks[things[0]], 20000.0 * weights[0] / total, 300.0, "11,651 are expected")
 	check_near(picks[things[1]], 20000.0 * weights[1] / total, 300.0, "5,943 are expected")
 	check_near(picks[things[2]], 20000.0 * weights[2] / total, 300.0, "2,406 are expected")
