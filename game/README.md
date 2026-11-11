@@ -16,6 +16,15 @@ The old jam game is in `assets/` and in the scripts of the project root. Nothing
 | `ui/` | HUD, build menu, building panel, menus |
 | `dev/` | Stress tests, debug overlay, preset villages. Nothing here goes into the export |
 
+## The game scene
+
+`game.tscn` is the new game scene, and `game_scene.gd` is its script. Open it in Godot and press F6.
+
+- It starts a session, picks the world seed, makes one village on a generated ground world, and shows it.
+- Later parts add to it: meeples, buildings, the HUD.
+- The main scene of the project is still the old menu. It changes at the switch.
+- Its test is `tests/test_game_scene.gd`, and CI boots it with no window on every pull request.
+
 ## Simulation and picture
 
 Inside a feature folder there are two kinds of code, each in its own folder.

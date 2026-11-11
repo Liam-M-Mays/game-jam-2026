@@ -2,3 +2,4 @@
 # One per line: a short name, the scene path ("main" means the project's main scene), and how many frames to run.
 menu main 180
 game res://assets/Scenes/Levels/game.tscn 900
+new-game res://game/game.tscn 300

@@ -28,7 +28,7 @@ Runs the real engine, with no window, in five steps:
 
 1. **Import twice.** The first pass builds Godot's class cache and is allowed to print errors. The second pass has to be clean.
 2. **Load everything.** Every script, scene, resource and shader is loaded, and every scene is instantiated. A script that does not compile or a scene with a missing piece fails here.
-3. **Boot the entry scenes.** The scenes listed in `.github/ci/entry-scenes.txt` run for a few seconds. Any script error fails the check.
+3. **Boot the entry scenes.** The scenes listed in `.github/ci/entry-scenes.txt` run for a few seconds. Any script error fails the check. Three scenes are on the list: the old menu, the old game scene, and the new game scene `game/game.tscn`, which makes a ground world of the size in the dev settings on every boot.
 4. **Run the tests.** Every test script of the new game runs. A failed test fails the check and is named. See [testing.md](testing.md).
 5. **Read the logs.** `checks.py` turns Godot's log files into a pass or a fail. The logs are attached to the run as `godot-logs`.
 
