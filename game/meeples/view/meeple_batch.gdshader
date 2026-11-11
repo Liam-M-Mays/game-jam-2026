@@ -72,9 +72,9 @@ void vertex() {
 	v_data = INSTANCE_CUSTOM;
 	v_tint = COLOR;
 	v_local = UV;
-	v_body = vec4(0.0);
 	vec2 art_size = INSTANCE_CUSTOM.w > 0.5 ? BOX : v_rect.zw;
 	v_effects = effects_vertex(MODEL_MATRIX, CANVAS_MATRIX, art_size, VERTEX, v_local);
+	v_body = vec4(0.0);
 	if (INSTANCE_CUSTOM.w > 0.5) {
 		v_body = batch_rect(meeple_body);
 		float walking = INSTANCE_CUSTOM.w - 1.0;
