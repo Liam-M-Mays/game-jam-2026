@@ -113,21 +113,6 @@ func test_a_claim_needs_a_reservation_and_a_hauler_holds_one_claim() -> void:
 	check_eq(_claims.reserved_by(SITE, _wood), 1)
 
 
-func test_a_hauler_with_no_unit_left_is_refused_and_nothing_breaks() -> void:
-	var drop := _stock.drop(_wood, LEFT)
-	_claims.reserve(SITE, _wood)
-	# The drop leaves the world behind the back of the stock. Now the
-	# reservation and the drops disagree, which crashed the jam game.
-	_drops.remove(drop)
-	check(not _claims.claim_closest(HAUL, SITE, _wood, LEFT), "there is no unit to claim")
-	check(not _claims.has(HAUL), "the hauler holds nothing")
-	check_eq(_claims.reserved_by(SITE, _wood), 1, "the reservation was not used up")
-	check(not _claims.pick_up(HAUL), "nothing to pick up")
-	check(not _claims.hand_over(HAUL), "nothing to hand over")
-	check(not _claims.release(HAUL, LEFT), "nothing to release")
-	check_eq(_stock.count(_wood), 0)
-
-
 func test_the_closest_unit_can_sit_in_a_pile() -> void:
 	_fill_pile(WOOD_PILE, _wood, MIDDLE, 2)
 	var far_drop := _stock.drop(_wood, RIGHT)
@@ -258,7 +243,6 @@ func test_a_pile_only_takes_what_fits_and_what_is_not_reserved() -> void:
 	check(_claims.claim_for_storage(HAUL, WOOD_PILE, first), "the pile has room for one")
 	check_eq(_stock.storages.room_in(WOOD_PILE), 0, "the unit on its way takes the place")
 	check(not _claims.claim_for_storage(OTHER_HAUL, WOOD_PILE, second), "the pile is full")
-	check(not _claims.claim_for_storage(OTHER_HAUL, WOOD_PILE, first), "and the drop is taken")
 	_claims.reserve(SITE, _stone)
 	check(not _claims.claim_for_storage(OTHER_HAUL, STONE_PILE, stone), "a reserved unit is left")
 	check_eq(_drops.claimer_of(stone), GridDrops.NOBODY)

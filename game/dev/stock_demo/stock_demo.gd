@@ -337,8 +337,11 @@ func _status() -> String:
 		full = "  FULL: the bush was not picked %d times." % _work.bush_refused
 	lines.append("Food: %d / %d.%s" % [_stock.count(food), _stock.cap(food), full])
 	lines.append(
-		"The last haul looked at %d drops (cells read: %d) to find the closest of %d loose ones."
-		% [_work.last_lookup.x, _work.last_lookup.y, drops.loose(1) + drops.loose(2)]
+		(
+			"The last haul looked at %d drops (cells read: %d)"
+			+ " to find the closest of %d loose ones of its kind."
+		)
+		% [_work.last_lookup.x, _work.last_lookup.y, _work.last_lookup_loose]
 	)
 	lines.append(
 		"Left click: wood.  Right click: stone.  B: 1,000 drops.  H: hauling off or on."

@@ -2,8 +2,10 @@ extends GameTest
 ## The random test of issue #63: 10,000 random steps on one stock. No number
 ## may go below zero, and no unit may be handed out twice.
 ##
-## The test keeps its own book beside the stock: who holds which drop, and
-## how many units there should be. After every step it compares the two.
+## The test keeps its own book beside the stock: who holds which drop, how
+## many units there should be, how many lie loose, how many sit free in the
+## piles, and what each site has reserved. After every step it compares the
+## two. Every few hundred steps it also counts the rows of each cell.
 
 const TICKS_PER_SECOND := 20
 const STEPS := 10000
@@ -13,6 +15,7 @@ const FIRST_HAUL := 701
 const FIRST_STORAGE := 501
 const MOST_STORAGES := 9
 const MAP := Vector2i(30, 30)
+const COUNT_THE_CELLS_EVERY := 250
 
 var _village: Village
 var _stock: VillageStock
@@ -27,6 +30,9 @@ var _expected: Dictionary[int, int] = {}
 var _holder_of_drop: Dictionary[int, int] = {}
 var _claims_on_pile: Dictionary[int, int] = {}
 var _held: Dictionary[int, Dictionary] = {}
+var _loose: Dictionary[int, int] = {}
+var _free_in_piles: Dictionary[int, int] = {}
+var _reserved: Dictionary[int, Dictionary] = {}
 var _piles: Array[int] = []
 var _silos := 0
 
@@ -34,6 +40,8 @@ var _silos := 0
 var _below_zero := 0
 var _handed_out_twice := 0
 var _wrong_count := 0
+var _wrong_promise := 0
+var _wrong_cells := 0
 var _done: Dictionary[String, int] = {}
 
 
@@ -50,6 +58,10 @@ func before_each() -> void:
 	_items = [_stock.number_of(&"wood"), _stock.number_of(&"stone")]
 	_food = _stock.number_of(&"food")
 	_expected = {_items[0]: 0, _items[1]: 0, _food: 10}
+	_loose = {_items[0]: 0, _items[1]: 0}
+	_free_in_piles = {_items[0]: 0, _items[1]: 0}
+	for site in SITES:
+		_reserved[site] = {_items[0]: 0, _items[1]: 0}
 
 
 func test_10000_random_steps_never_go_below_zero_or_hand_a_unit_out_twice() -> void:
@@ -57,14 +69,21 @@ func test_10000_random_steps_never_go_below_zero_or_hand_a_unit_out_twice() -> v
 		_one_step()
 		_village.tick()
 		_compare_with_the_book()
+		if step % COUNT_THE_CELLS_EVERY == 0:
+			_count_the_cells()
 	check_eq(_below_zero, 0, "numbers that went below zero")
 	check_eq(_handed_out_twice, 0, "units that were handed out twice")
 	check_eq(_wrong_count, 0, "steps after which the stock and the book disagreed")
+	check_eq(_wrong_promise, 0, "steps after which a promise and the book disagreed")
+	check_eq(_wrong_cells, 0, "cells whose count and rows disagreed")
 	# The run has to have done real work of every kind.
 	for what: String in ["drop", "reserve", "claim", "trip", "pick_up", "deliver", "store"]:
 		check(_done.get(what, 0) >= 100, "%s happened %d times" % [what, _done.get(what, 0)])
-	check(_done.get("release", 0) >= 100, "release happened %d times" % _done.get("release", 0))
+	for what: String in ["release", "taken_off_the_ground"]:
+		check(_done.get(what, 0) >= 100, "%s happened %d times" % [what, _done.get(what, 0)])
 	check(_done.get("from_pile", 0) >= 20, "claims on a pile: %d" % _done.get("from_pile", 0))
+	var lost: int = _done.get("reservation_lost", 0)
+	check(lost >= 20, "reservations that went with a taken drop: %d" % lost)
 	check_eq(_village.now, STEPS)
 	print("STOCK_RANDOM %s" % [_done])
 
@@ -74,35 +93,80 @@ func _one_step() -> void:
 	var kind := _items[_rng.randi_range(0, 1)]
 	var haul := FIRST_HAUL + _rng.randi_range(0, HAULS - 1)
 	var site := SITES[_rng.randi_range(0, SITES.size() - 1)]
-	if roll < 18:
+	if roll < 16:
 		_drop(kind)
-	elif roll < 23:
+	elif roll < 20:
 		_expected[_food] += _stock.add(_food, _rng.randi_range(1, 5))
-	elif roll < 28:
+	elif roll < 24:
 		_expected[_food] -= _stock.spend(_food, _rng.randi_range(1, 6))
-	elif roll < 31:
+	elif roll < 27:
 		_add_storage()
+	elif roll < 36:
+		_reserve(site, kind)
 	elif roll < 40:
-		if _claims.reserve(site, kind, _rng.randi_range(1, 3)):
-			_count("reserve")
-	elif roll < 44:
-		_claims.unreserve(site, kind, _rng.randi_range(1, 2))
-	elif roll < 58:
+		_unreserve(site, kind)
+	elif roll < 54:
 		_claim(haul, site, kind)
-	elif roll < 70:
+	elif roll < 66:
 		_start_trip(haul)
-	elif roll < 84:
+	elif roll < 80:
 		_pick_up(haul)
-	elif roll < 95:
+	elif roll < 91:
 		_hand_over(haul)
-	else:
+	elif roll < 95:
 		_release(haul)
+	else:
+		_take_off_the_ground(kind)
 
 
 func _drop(kind: int) -> void:
 	if _stock.drop(kind, _random_spot()) != GridDrops.NO_DROP:
 		_expected[kind] += 1
+		_loose[kind] += 1
 		_count("drop")
+
+
+## A site reserves 1 to 3 units. Every fourth time it asks for everything
+## that is left, so that the stock is often fully promised.
+func _reserve(site: int, kind: int) -> void:
+	var amount := _rng.randi_range(1, 3)
+	if _rng.randi_range(0, 3) == 0:
+		amount = maxi(_free_to_promise(kind), 1)
+	var should_work := amount <= _free_to_promise(kind)
+	if _claims.reserve(site, kind, amount) != should_work:
+		_wrong_promise += 1
+	if should_work:
+		_reserved[site][kind] += amount
+		_count("reserve")
+
+
+func _unreserve(site: int, kind: int) -> void:
+	var amount := _rng.randi_range(1, 2)
+	var should_give: int = mini(amount, _reserved[site][kind])
+	if _claims.unreserve(site, kind, amount) != should_give:
+		_wrong_promise += 1
+	_reserved[site][kind] -= should_give
+
+
+## A loose drop is taken off the ground without the stock being asked, with
+## one of the two plain calls of the ground. When every unit was reserved, the
+## newest site loses a reservation.
+func _take_off_the_ground(kind: int) -> void:
+	var drop := _drops.closest(kind, _random_spot())
+	if drop == GridDrops.NO_DROP:
+		return
+	if _rng.randi_range(0, 1) == 0:
+		if not _drops.remove(drop):
+			_wrong_count += 1
+	elif _drops.take(_drops.cell_of(drop), kind, 1) != 1:
+		_wrong_count += 1
+	_count("taken_off_the_ground")
+	_expected[kind] -= 1
+	_loose[kind] -= 1
+	for at in range(SITES.size() - 1, -1, -1):
+		while _free_to_promise(kind) < 0 and _reserved[SITES[at]][kind] > 0:
+			_reserved[SITES[at]][kind] -= 1
+			_count("reservation_lost")
 
 
 func _add_storage() -> void:
@@ -124,19 +188,27 @@ func _claim(haul: int, site: int, kind: int) -> void:
 	var from := _random_spot()
 	if not _piles.is_empty() and _rng.randi_range(0, 2) == 0:
 		from = _stock.storages.spot_of(_piles[_rng.randi_range(0, _piles.size() - 1)])
-	if not _claims.claim_closest(haul, site, kind, from):
+	var should_work: bool = not _held.has(haul) and _reserved[site][kind] > 0
+	if _claims.claim_closest(haul, site, kind, from) != should_work:
+		_wrong_promise += 1
+	if not _claims.has(haul) or not should_work:
 		return
 	_count("claim")
+	_reserved[site][kind] -= 1
 	var drop := _claims.drop_of(haul)
 	var pile := _claims.storage_of(haul)
 	if drop != GridDrops.NO_DROP:
 		_note_drop(drop, haul)
+		_loose[kind] -= 1
 	else:
 		_count("from_pile")
+		_free_in_piles[kind] -= 1
 		_claims_on_pile[pile] += 1
 		if _claims_on_pile[pile] > _stock.storages.stored_in(pile):
 			_handed_out_twice += 1
-	_held[haul] = {"kind": kind, "drop": drop, "pile": pile, "to_pile": false}
+	_held[haul] = {
+		"kind": kind, "site": site, "drop": drop, "pile": pile, "to_pile": false, "carried": false
+	}
 
 
 func _start_trip(haul: int) -> void:
@@ -149,7 +221,10 @@ func _start_trip(haul: int) -> void:
 		return
 	_count("trip")
 	_note_drop(drop, haul)
-	_held[haul] = {"kind": kind, "drop": drop, "pile": 0, "to_pile": true}
+	_loose[kind] -= 1
+	_held[haul] = {
+		"kind": kind, "site": 0, "drop": drop, "pile": 0, "to_pile": true, "carried": false
+	}
 
 
 func _pick_up(haul: int) -> void:
@@ -157,6 +232,7 @@ func _pick_up(haul: int) -> void:
 		return
 	_count("pick_up")
 	_let_go_of_the_source(haul)
+	_held[haul]["carried"] = true
 
 
 func _hand_over(haul: int) -> void:
@@ -164,6 +240,7 @@ func _hand_over(haul: int) -> void:
 		return
 	if _held[haul]["to_pile"]:
 		_count("store")
+		_free_in_piles[_held[haul]["kind"]] += 1
 	else:
 		_count("deliver")
 		_expected[_held[haul]["kind"]] -= 1
@@ -175,6 +252,15 @@ func _release(haul: int) -> void:
 	if not _claims.release(haul, spot):
 		return
 	_count("release")
+	# The unit is free again: put down or unclaimed on the ground, or still in
+	# its pile. A haul for a site gives the site its reservation back.
+	var held: Dictionary = _held[haul]
+	if held["carried"] or held["drop"] != GridDrops.NO_DROP:
+		_loose[held["kind"]] += 1
+	else:
+		_free_in_piles[held["kind"]] += 1
+	if not held["to_pile"]:
+		_reserved[held["site"]][held["kind"]] += 1
 	_let_go_of_the_source(haul)
 	_held.erase(haul)
 
@@ -217,10 +303,38 @@ func _compare_with_the_book() -> void:
 		var storages := _stock.storages
 		if mini(storages.stored_in(pile), mini(storages.free_in(pile), storages.room_in(pile))) < 0:
 			_below_zero += 1
+	for kind in _items:
+		var right := (
+			_drops.loose(kind) == _loose[kind]
+			and _stock.storages.free_total(kind) == _free_in_piles[kind]
+			and _claims.available(kind) == _free_to_promise(kind)
+		)
+		for site in SITES:
+			right = right and _claims.reserved_by(site, kind) == _reserved[site][kind]
+		if not right:
+			_wrong_promise += 1
+
+
+## What the book says can still be promised of [param kind].
+func _free_to_promise(kind: int) -> int:
+	var reserved := 0
 	for site in SITES:
+		reserved += _reserved[site][kind]
+	return _loose[kind] + _free_in_piles[kind] - reserved
+
+
+## Counts the rows of every cell and compares with the count the cell keeps.
+func _count_the_cells() -> void:
+	var from_rows: Dictionary[Vector3i, int] = {}
+	for drop in _drops.size():
+		if _drops.has(drop):
+			var cell := _drops.cell_of(drop)
+			var key := Vector3i(cell.x, cell.y, _drops.kind_of(drop))
+			from_rows[key] = from_rows.get(key, 0) + 1
+	for cell in GridLayout.block(Vector2i(0, 0), MAP):
 		for kind in _items:
-			if _claims.reserved_by(site, kind) < 0:
-				_below_zero += 1
+			if _drops.count_at(cell, kind) != from_rows.get(Vector3i(cell.x, cell.y, kind), 0):
+				_wrong_cells += 1
 
 
 func _random_spot() -> Vector2:

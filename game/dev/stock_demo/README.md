@@ -28,7 +28,7 @@ Open `stock_demo.tscn` in Godot and press F6.
 - **The orange cell** is a building site. It reserves a unit, and a haul claims the closest one, picks it up and hands it over.
 - **The two pale cells** are a wood pile and a stone pile. A storage worker carries loose drops to them. The text says how full each is.
 - **A white ring** is on a unit that a haul has claimed. **A round dot** walks to its unit. **A square** carries it.
-- **The text at the top** is the stock: have and room, what lies on the ground, what is claimed, in piles, carried and reserved, and what can still be promised. The last line says how many drops the last lookup looked at.
+- **The text at the top** is the stock: have and room, what lies on the ground, what is claimed, in piles, carried and reserved, and what can still be promised. The line that starts with "The last haul looked at" says how many drops the last lookup looked at, and how many loose drops of that kind lay on the ground.
 - Meeples, buildings and trees are not here yet. `demo_work.gd` stands in for them. It only calls the stock.
 
 ## The picture comparison

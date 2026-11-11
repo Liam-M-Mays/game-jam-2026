@@ -17,6 +17,16 @@ extends RefCounted
 ## [method hand_over]. A trip to a storage: [method claim_for_storage], then
 ## [method pick_up], then [method hand_over]. At any point [method release]
 ## gives the unit back.
+##
+## A site that ends has to do it in this order: first [method release] every
+## haul that works for it, then [method unreserve] what is left. A released
+## haul always gives its reservation back to the site, so the other order
+## leaves the site with a reservation it no longer wants.
+##
+## A loose drop can also be taken off the ground without the stock, with
+## [method GridDrops.remove] or [method GridDrops.take]. The claims hear that.
+## When more is reserved than is left, the newest site loses reservations
+## until the two agree again: see [method available].
 
 ## A number of a kind changed: what is free, reserved, claimed, carried or
 ## stored. A change on the ground is told by [GridDrops] instead.
@@ -44,10 +54,17 @@ var _carried: Dictionary[int, int] = {}
 func _init(drops: GridDrops, storages: StockStorages) -> void:
 	_drops = drops
 	_storages = storages
+	_drops.removed.connect(_on_drop_removed)
 
 
 ## How many units of [param kind] can still be promised: the loose drops and
-## the unclaimed units in piles, minus what is reserved. Never below zero.
+## the unclaimed units in piles, minus what is reserved.
+##
+## It is never below zero. [method reserve] refuses more than this. And when
+## a loose drop is taken off the ground without the stock while every unit is
+## reserved, a reservation goes with it: the site with the highest id, which
+## is the newest one, loses first. That site has to ask again: read
+## [method reserved_by] when [signal VillageStock.changed] comes.
 func available(kind: int) -> int:
 	if _drops == null:
 		return 0
@@ -66,7 +83,9 @@ func reserve(reserver: int, kind: int, amount: int = 1) -> bool:
 
 
 ## Gives back up to [param amount] units of [param kind] that
-## [param reserver] had reserved. Returns how many were given back.
+## [param reserver] had reserved. Returns how many were given back. A unit
+## that a hauler has claimed already is not given back by this: release the
+## haul first.
 func unreserve(reserver: int, kind: int, amount: int = 1) -> int:
 	var given := mini(amount, reserved_by(reserver, kind))
 	if given <= 0:
@@ -180,8 +199,9 @@ func hand_over(claimer: int) -> bool:
 ## Ends the claim of [param claimer] without a delivery. A unit that was not
 ## picked up yet is simply free again. A carried unit is put on the ground at
 ## [param spot], or where it was picked up when no cell is under the spot. On
-## a haul the reservation of the site is restored. Returns false when there
-## is no claim.
+## a haul the reservation of the site is restored, also when the site has
+## given back everything else in the meantime. Returns false when there is no
+## claim.
 func release(claimer: int, spot: Vector2) -> bool:
 	if not _claims.has(claimer):
 		return false
@@ -242,6 +262,8 @@ func carried(kind: int) -> int:
 
 ## Lets go of the ground, the storages and every promise.
 func close() -> void:
+	if _drops != null:
+		_drops.removed.disconnect(_on_drop_removed)
 	_drops = null
 	_storages = null
 	_reserved.clear()
@@ -262,6 +284,26 @@ func snapshot() -> Dictionary:
 		"spots": _spots.duplicate(),
 		"carried": _carried.duplicate(),
 	}
+
+
+## Runs when a drop left the ground. A drop that a hauler picks up changes
+## nothing here. A loose drop that was taken without the stock can leave more
+## reserved than there is: then the newest sites lose reservations until the
+## two agree. Nothing is told here, the stock tells that the drop left.
+func _on_drop_removed(_drop: int, kind: int) -> void:
+	var too_many := -available(kind)
+	if too_many <= 0:
+		return
+	var reservers := _reserved.keys()
+	reservers.sort()
+	reservers.reverse()
+	for reserver: int in reservers:
+		var lost := mini(too_many, reserved_by(reserver, kind))
+		if lost > 0:
+			_change_reserved(reserver, kind, -lost)
+			too_many -= lost
+		if too_many <= 0:
+			return
 
 
 func _change_reserved(reserver: int, kind: int, by: int) -> void:

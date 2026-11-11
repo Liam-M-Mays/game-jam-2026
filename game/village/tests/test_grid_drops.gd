@@ -161,6 +161,61 @@ func test_the_same_steps_give_the_same_snapshot() -> void:
 	check(_grid.snapshot() != other.snapshot(), "a taken drop shows in the snapshot")
 
 
+func test_the_snapshot_holds_every_field_of_a_row() -> void:
+	var first := _drops.add_at(Vector2(29.0, 9.0), WOOD)
+	_drops.add_at(Vector2(61.0, 40.0), STONE)
+	_drops.claim(first, HAULER)
+	var shot := _drops.snapshot()
+	var fields := ["kinds", "cells", "spots", "claimers", "next", "prev", "free_row", "totals"]
+	check_eq(shot.keys(), fields + ["loose"])
+	check_eq(shot.get("kinds"), PackedByteArray([WOOD, STONE]))
+	check_eq(shot.get("cells"), PackedInt32Array([3, 2, 3, 8]), "the cell of each row, x then y")
+	check_eq(shot.get("spots"), PackedVector2Array([Vector2(29.0, 9.0), Vector2(61.0, 40.0)]))
+	check_eq(shot.get("claimers"), PackedInt32Array([HAULER, GridDrops.NOBODY]))
+	check_eq(shot.get("totals"), {WOOD: 1, STONE: 1})
+	check_eq(shot.get("loose"), {WOOD: 0, STONE: 1})
+	check_eq(shot.get("free_row"), GridDrops.NO_DROP)
+	# Two grids that only differ in where a drop lies on its cell are not the same.
+	var other := VillageGrid.new()
+	for cell in GridLayout.block(Vector2i(0, 0), Vector2i(20, 20)):
+		other.add_cell(cell)
+	other.drops.claim(other.drops.add_at(Vector2(29.5, 9.0), WOOD), HAULER)
+	other.drops.add_at(Vector2(61.0, 40.0), STONE)
+	check_eq(other.drops.cell_of(0), _drops.cell_of(0), "the same cell")
+	check(_grid.snapshot() != other.snapshot(), "another spot on the cell shows in the snapshot")
+	# A snapshot is a copy: changing it does not change the ground.
+	if shot.has("spots"):
+		shot["spots"][0] = Vector2.ZERO
+	check_eq(_drops.spot_of(first), Vector2(29.0, 9.0))
+
+
+func test_the_old_add_lays_its_drops_at_the_position_of_the_cell() -> void:
+	var cell := Vector2i(4, 6)
+	check(_drops.add(cell, WOOD, 2), "two drops with the old call")
+	check_eq(_drops.count_at(cell, WOOD), 2)
+	check_eq(_drops.spot_of(0), GridLayout.position_of(cell))
+	check_eq(_drops.spot_of(1), GridLayout.position_of(cell))
+	check_eq(_drops.cell_of(1), cell)
+	check(not _drops.add(cell, WOOD, 0), "a count of 0")
+	check(not _drops.add(Vector2i(-90, -90), WOOD), "no such cell")
+	check(not _drops.add(cell, 0), "kind 0 is no kind")
+	check_eq(_drops.total(WOOD), 2)
+
+
+func test_a_drop_laid_while_another_is_being_taken_gets_another_row() -> void:
+	var first := _drops.add_at(Vector2(29.0, 9.0), WOOD)
+	_drops.removed.connect(_lay_a_stone_when_one_is_taken)
+	check(_drops.remove(first), "the first drop is taken")
+	_drops.removed.disconnect(_lay_a_stone_when_one_is_taken)
+	# The listener laid a stone while the removal was still being told.
+	check_eq(_heard, ["laid row 1"] as Array[String], "not the row that was being taken")
+	check(not _drops.has(first), "the taken row holds no drop")
+	check_eq(_drops.kind_of(1), STONE)
+	check_eq(_drops.total(STONE), 1)
+	check_eq(_drops.add_at(Vector2(40.0, 10.0), WOOD), first, "afterwards the row is used again")
+	check_eq(_drops.size(), 2)
+
+
 func test_drops_work_below_zero_and_across_chunk_edges() -> void:
 	for cell in GridLayout.block(Vector2i(-20, -20), Vector2i(20, 20)):
 		_grid.add_cell(cell)
@@ -170,6 +225,10 @@ func test_drops_work_below_zero_and_across_chunk_edges() -> void:
 	check_eq(_drops.count_at(Vector2i(-17, -1), WOOD), 1)
 	check_eq(_drops.count_at(Vector2i(-1, -1), WOOD), 0)
 	check_eq(_drops.count_at(Vector2i(15, 15), WOOD), 0)
+
+
+func _lay_a_stone_when_one_is_taken(_drop: int, _kind: int) -> void:
+	_heard.append("laid row %d" % _drops.add_at(Vector2(61.0, 40.0), STONE))
 
 
 func _hear(drop: int, kind: int, what: String) -> void:

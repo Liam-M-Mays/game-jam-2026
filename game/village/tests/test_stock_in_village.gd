@@ -138,14 +138,22 @@ func test_a_closed_village_lets_go_of_its_stock() -> void:
 	var village := _run(77, false)
 	var stock: VillageStock = village.part(Village.STOCK)
 	var drops := village.grid.drops
+	var claims := stock.claims
 	var heard: Array[int] = []
 	stock.changed.connect(heard.append)
 	check_eq(drops.added.get_connections().size(), 1, "the stock listens to the ground")
+	check_eq(drops.removed.get_connections().size(), 2, "and so do its claims")
+	check(claims.reserved_by(SITE, 1) > 0, "the site holds reservations before the close")
 	check(stock.count(1) > 0, "there is wood before the close")
 	village.close()
 	check_eq(village.part(Village.STOCK), null, "the village holds no stock")
 	check_eq(drops.added.get_connections().size(), 0, "the stock no longer listens for drops")
 	check_eq(drops.removed.get_connections().size(), 0, "nor for drops that are taken")
+	# Somebody may still hold the claims. They let go of the ground too.
+	check_eq(claims.available(1), 0, "closed claims promise nothing")
+	check_eq(claims.reserved_by(SITE, 1), 0)
+	check_eq(claims.snapshot()["reserved"], {})
+	check(not claims.reserve(SITE, 1), "and take no reservation")
 	check_eq(stock.changed.get_connections().size(), 0, "nobody listens to the stock")
 	check_eq(stock.storages, null)
 	check_eq(stock.claims, null)

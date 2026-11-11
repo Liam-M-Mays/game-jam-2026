@@ -10,16 +10,24 @@ extends RefCounted
 ##
 ## A drop is loose until somebody claims it. A claimed drop still lies on its
 ## spot, but [method closest] no longer finds it, so two haulers never go for
-## the same drop. Game code makes and takes drops through the stock of the
-## village, which also counts them: see [VillageStock]. This class is the
-## ground itself.
+## the same drop. This class is the ground itself: it does not know the
+## resource kinds or the reservations. The stock of the village counts the
+## drops and listens to this class: see [VillageStock].
+## - Lay a drop with [method VillageStock.drop]. [method add] and
+##   [method add_at] take any kind number, also one that should never lie on
+##   the ground, such as food.
+## - Claim a drop through [StockClaims]. A claim made here directly is not
+##   known to the reservations.
+## - A loose drop can be taken with [method remove] or [method take]. The
+##   stock hears it and keeps its reservations right.
 ##
 ## A row number is used again after its drop is taken. So do not keep a row
 ## number for later: claim the drop, and ask by the claimer.
 
 ## A drop came to lie on the ground. [param drop] is its row.
 signal added(drop: int, kind: int)
-## A drop was taken off the ground. Its row is free again by now.
+## A drop was taken off the ground. Its row is not used again before every
+## listener has heard this, so a drop that a listener lays gets another row.
 signal removed(drop: int, kind: int)
 
 ## The answer when there is no drop.
@@ -31,9 +39,21 @@ const NO_KIND := 0
 ## The highest kind number a row can store.
 const MAX_KIND := 255
 ## How many loose drops of one cell [method closest] looks at, newest first.
-## It keeps a lookup small next to a big heap. The drops of one cell lie less
-## than one cell apart, so the pick is never off by more than that.
+## It keeps a lookup small next to a big heap. Two drops of one cell lie at
+## most 8.61 art pixels apart, the corner to corner of a cell of 7 by 5, so
+## the pick is never further away than the closest drop plus that.
 const MOST_LOOKS_PER_CELL := 8
+
+# A cell that [method closest] found is kept as one whole number, so that the
+# cells can be sorted by how near they are: the near side of the cell, squared
+# and cut into sixteenths, and behind it the place of the cell in the list.
+# From a point more than 131,072 art pixels away, 50 times the width of the
+# big world, the near side no longer fits and loses its top. The number is
+# then too small, never too big: the cells are sorted badly and more drops
+# are looked at, but the answer is still the closest drop.
+const _KEY_STEPS := 16.0
+const _KEY_SHIFT := 24
+const _KEY_MASK := (1 << _KEY_SHIFT) - 1
 
 ## How many drops the last call of [method closest] looked at. The test that
 ## guards the cost of a lookup reads it.
@@ -57,6 +77,9 @@ var _low_key := Vector2i.ZERO
 var _high_key := Vector2i.ZERO
 var _best := NO_DROP
 var _best_distance := INF
+var _reach := INF
+var _found := PackedInt64Array()
+var _found_heads := PackedInt32Array()
 
 
 func _init(chunks: Dictionary[Vector2i, GridChunk]) -> void:
@@ -152,9 +175,11 @@ func remove(drop: int, claimer: int = NOBODY) -> bool:
 	_kinds[drop] = NO_KIND
 	_claimers[drop] = NOBODY
 	_prev[drop] = NO_DROP
+	_next[drop] = NO_DROP
+	# The listeners hear it first. Only then is the row free to be used again.
+	removed.emit(drop, kind)
 	_next[drop] = _free_row
 	_free_row = drop
-	removed.emit(drop, kind)
 	return true
 
 
@@ -186,6 +211,12 @@ func unclaim(drop: int) -> bool:
 ## cells around the point, not at every drop: [member looked_at] says how many.
 ## On a cell with more than [constant MOST_LOOKS_PER_CELL] loose drops of the
 ## kind, it looks at the newest ones only.
+##
+## It works in two steps. First it reads the cells around the point and keeps
+## the ones that hold a loose drop and can hold the closest one. No drop is
+## looked at for that: the far side of a cell says how far its drops can be at
+## most. Then it looks at the drops, nearest cell first, and stops at the
+## first cell that is too far away to hold a closer drop.
 func closest(kind: int, point: Vector2) -> int:
 	looked_at = 0
 	cells_read = 0
@@ -193,6 +224,9 @@ func closest(kind: int, point: Vector2) -> int:
 	_best_distance = INF
 	if _loose.get(kind, 0) <= 0:
 		return NO_DROP
+	_reach = INF
+	_found.clear()
+	_found_heads.clear()
 	var home_row := floori((point.y - GridLayout.CELL_MIDDLE.y) / GridLayout.ROW_HEIGHT + 0.5)
 	var home_band := floori(float(home_row) / GridChunk.SIZE)
 	var step := 0
@@ -204,6 +238,11 @@ func closest(kind: int, point: Vector2) -> int:
 		if above and step > 0:
 			above = _search_band(kind, point, home_band - step, -1)
 		step += 1
+	_found.sort()
+	for key in _found:
+		if (key >> _KEY_SHIFT) / _KEY_STEPS >= _best_distance:
+			break
+		_look(_found_heads[key & _KEY_MASK], point)
 	return _best
 
 
@@ -344,10 +383,10 @@ func _stretch_to(key: Vector2i) -> void:
 	_high_key = Vector2i(maxi(_high_key.x, key.x), maxi(_high_key.y, key.y))
 
 
-## Looks through one band of chunks: the chunks that share 16 rows. It starts
-## at the chunk under the point and walks left and right, as far as a chunk
-## can still hold a closer drop. Returns false when no band further that way
-## can hold a closer drop, so the caller stops going that way.
+## Reads one band of chunks: the chunks that share 16 rows. It starts at the
+## chunk under the point and walks left and right, as far as a chunk can still
+## hold the closest drop. Returns false when no band further that way can
+## hold it, so the caller stops going that way.
 func _search_band(kind: int, point: Vector2, band: int, way: int) -> bool:
 	if (way > 0 and band > _high_key.y) or (way < 0 and band < _low_key.y):
 		return false
@@ -358,7 +397,7 @@ func _search_band(kind: int, point: Vector2, band: int, way: int) -> bool:
 	top -= GridLayout.ROW_HEIGHT * 0.5
 	var bottom := top + GridChunk.SIZE * GridLayout.ROW_HEIGHT
 	var down := maxf(maxf(top - point.y, point.y - bottom), 0.0)
-	if down * down >= _best_distance:
+	if down * down >= _reach:
 		return false
 	# A chunk leans like the grid, so its box is wider than its 16 cells.
 	var chunk_step := float(GridChunk.SIZE * GridLayout.CELL_WIDTH)
@@ -369,22 +408,22 @@ func _search_band(kind: int, point: Vector2, band: int, way: int) -> bool:
 	var column := mini(start, _high_key.x)
 	while column >= _low_key.x:
 		var across := maxf(point.x - (left_of_first + column * chunk_step + chunk_width), 0.0)
-		if across * across + down * down >= _best_distance:
+		if across * across + down * down >= _reach:
 			break
 		_search_chunk(kind, point, Vector2i(column, band))
 		column -= 1
 	column = maxi(start + 1, _low_key.x)
 	while column <= _high_key.x:
 		var across := maxf(left_of_first + column * chunk_step - point.x, 0.0)
-		if across * across + down * down >= _best_distance:
+		if across * across + down * down >= _reach:
 			break
 		_search_chunk(kind, point, Vector2i(column, band))
 		column += 1
 	return true
 
 
-## Looks through the rows of one chunk, from the row nearest to the point
-## outwards, as far as a row can still hold a closer drop.
+## Reads the rows of one chunk, from the row nearest to the point outwards,
+## as far as a row can still hold the closest drop.
 func _search_chunk(kind: int, point: Vector2, key: Vector2i) -> void:
 	var chunk: GridChunk = _chunks.get(key)
 	if chunk == null or chunk.loose_totals.get(kind, 0) <= 0:
@@ -406,19 +445,23 @@ func _search_chunk(kind: int, point: Vector2, key: Vector2i) -> void:
 		step += 1
 
 
-## Looks through the cells of one row of a chunk, from the cell nearest to the
-## point outwards, as far as a cell can still hold a closer drop. Returns
-## false when the whole row is too far away.
+## Reads the cells of one row of a chunk, from the cell nearest to the point
+## outwards, as far as a cell can still hold the closest drop. A cell with a
+## loose drop is kept for the second step. Returns false when the whole row
+## is too far away.
 func _search_row(
 	heads: PackedInt32Array, point: Vector2, first_cell: Vector2i, local_row: int
 ) -> bool:
 	var row := first_cell.y + local_row
 	var row_middle := row * GridLayout.ROW_HEIGHT + GridLayout.CELL_MIDDLE.y
-	var down := maxf(absf(point.y - row_middle) - GridLayout.ROW_HEIGHT * 0.5, 0.0)
-	if down * down >= _best_distance:
+	var off_row := absf(point.y - row_middle)
+	var down := maxf(off_row - GridLayout.ROW_HEIGHT * 0.5, 0.0)
+	if down * down >= _reach:
 		return false
-	# The middle of the first cell of this chunk in this row.
-	var first_middle := first_cell.x * GridLayout.CELL_WIDTH + row * GridLayout.ROW_SHIFT
+	var far_down := off_row + GridLayout.ROW_HEIGHT * 0.5
+	# The middle of the first cell of this chunk in this row. It is a number
+	# with a half in it, so it must not be kept as a whole number.
+	var first_middle: float = first_cell.x * GridLayout.CELL_WIDTH + row * GridLayout.ROW_SHIFT
 	first_middle += GridLayout.CELL_MIDDLE.x
 	var from_first := (point.x - first_middle) / GridLayout.CELL_WIDTH
 	var near := clampi(floori(from_first + 0.5), 0, GridChunk.SIZE - 1)
@@ -426,23 +469,39 @@ func _search_row(
 	var half_cell := GridLayout.CELL_WIDTH * 0.5
 	var column := near
 	while column >= 0:
-		var middle := first_middle + column * GridLayout.CELL_WIDTH
-		var across := maxf(absf(point.x - middle) - half_cell, 0.0)
-		if across * across + down * down >= _best_distance:
+		var off := absf(point.x - (first_middle + column * GridLayout.CELL_WIDTH))
+		var across := maxf(off - half_cell, 0.0)
+		var near_side := across * across + down * down
+		if near_side >= _reach:
 			break
-		_look(heads[row_start + column], point)
+		if heads[row_start + column] != NO_DROP:
+			var far_across := off + half_cell
+			_keep(heads[row_start + column], near_side, far_across * far_across + far_down * far_down)
 		column -= 1
 	cells_read += near - column
 	column = near + 1
 	while column < GridChunk.SIZE:
-		var middle := first_middle + column * GridLayout.CELL_WIDTH
-		var across := maxf(absf(point.x - middle) - half_cell, 0.0)
-		if across * across + down * down >= _best_distance:
+		var off := absf(point.x - (first_middle + column * GridLayout.CELL_WIDTH))
+		var across := maxf(off - half_cell, 0.0)
+		var near_side := across * across + down * down
+		if near_side >= _reach:
 			break
-		_look(heads[row_start + column], point)
+		if heads[row_start + column] != NO_DROP:
+			var far_across := off + half_cell
+			_keep(heads[row_start + column], near_side, far_across * far_across + far_down * far_down)
 		column += 1
 	cells_read += column - near - 1
 	return true
+
+
+## Keeps a cell with a loose drop for the second step of [method closest].
+## [param near_side] and [param far_side] are how far the nearest and the
+## farthest corner of the cell are from the point, squared. Every drop of the
+## cell lies between the two, so no cell beyond the far side has to be read.
+func _keep(head: int, near_side: float, far_side: float) -> void:
+	_found.append((int(near_side * _KEY_STEPS) << _KEY_SHIFT) | _found_heads.size())
+	_found_heads.append(head)
+	_reach = minf(_reach, far_side)
 
 
 ## Looks at the loose drops of one cell, newest first, and keeps the closest.

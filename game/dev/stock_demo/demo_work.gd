@@ -43,6 +43,8 @@ var hauling: bool = true
 var bush_refused: int = 0
 ## What the last closest-drop lookup cost: drops looked at, cells read.
 var last_lookup := Vector2i.ZERO
+## How many loose drops of its kind lay on the ground for that lookup.
+var last_lookup_loose: int = 0
 
 var _cells: Array[Vector2i] = []
 var _wood: int = 0
@@ -124,10 +126,12 @@ func _site_asks(village: Village) -> void:
 		return
 	var haul := village.new_id()
 	var hauler_stands := _random_spot(village)
+	var loose := village.grid.drops.loose(kind)
 	if not stock.claims.claim_closest(haul, site, kind, hauler_stands):
 		stock.claims.unreserve(site, kind)
 		return
 	last_lookup = Vector2i(village.grid.drops.looked_at, village.grid.drops.cells_read)
+	last_lookup_loose = loose
 	_walk(village, haul, hauler_stands, stock.claims.spot_of(haul), kind, site_spot)
 
 

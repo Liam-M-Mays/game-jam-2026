@@ -8,11 +8,15 @@ const STONE := 2
 const ART_SCALE := 10.0
 const WORLD := Rect2(-200.0, -200.0, 3000.0, 2000.0)
 const TREE := 5
+const SITE := 601
+const HAUL := 701
+const OTHER_HAUL := 702
 
 var _grid: VillageGrid
 var _rows: BatchRows
 var _view: DropView
 var _sprites: Dictionary[int, int]
+var _stock: VillageStock
 
 
 ## A grid, and a batch that uses the numbers of that grid.
@@ -102,6 +106,35 @@ func test_a_stopped_view_takes_its_drops_out_and_no_longer_listens() -> void:
 	check_eq(_grid.drops.added.get_connections().size(), 0)
 
 
+func test_a_drop_laid_by_a_listener_while_another_is_picked_up_is_drawn() -> void:
+	var village := Village.new(63, 20)
+	for cell in GridLayout.block(Vector2i(0, 0), Vector2i(20, 20)):
+		village.grid.add_cell(cell)
+	_stock = VillageStock.new(ResourceKind.load_all())
+	village.add_part(Village.STOCK, _stock)
+	var drops := village.grid.drops
+	_view.watch(drops)
+	_stock.drop(WOOD, Vector2(31.0, 10.0))
+	_stock.drop(WOOD, Vector2(101.0, 10.0))
+	_stock.claims.reserve(SITE, WOOD, 2)
+	_stock.claims.claim_closest(OTHER_HAUL, SITE, WOOD, Vector2(101.0, 10.0))
+	_stock.claims.pick_up(OTHER_HAUL)
+	_stock.claims.claim_closest(HAUL, SITE, WOOD, Vector2(31.0, 10.0))
+	check_eq(_rows.thing_count(), 1, "one drop still lies there")
+	# While the stock tells that the first hauler picked its drop up, the
+	# listener makes the other hauler put its unit down.
+	_stock.changed.connect(_put_the_other_unit_down)
+	_stock.claims.pick_up(HAUL)
+	check_eq(drops.total(WOOD), 1, "the unit that was put down lies on the ground")
+	check_eq(_stock.count(WOOD), 2, "one on the ground, one carried")
+	var put_down := drops.closest(WOOD, Vector2(61.0, 40.0))
+	check_eq(drops.spot_of(put_down), Vector2(61.0, 40.0))
+	check_eq(_rows.thing_count(), 1, "and it is drawn")
+	check(_rows.has_thing(DropView.thing_of(put_down)), "under its own number")
+	_stock = null
+	village.close()
+
+
 func test_a_drop_number_never_clashes_with_a_thing_of_the_grid() -> void:
 	check_eq(DropView.thing_of(0), -2)
 	check_eq(DropView.thing_of(7), -9)
@@ -112,6 +145,11 @@ func test_a_drop_number_never_clashes_with_a_thing_of_the_grid() -> void:
 	for drop in 1000:
 		if DropView.thing_of(drop) >= BatchRows.NO_THING:
 			fail("drop %d got the number of a grid thing" % drop)
+
+
+func _put_the_other_unit_down(_kind: int) -> void:
+	if _stock.claims.is_carried(OTHER_HAUL):
+		_stock.claims.release(OTHER_HAUL, Vector2(61.0, 40.0))
 
 
 ## Every sprite the batch would draw for the whole world.

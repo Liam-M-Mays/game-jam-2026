@@ -140,7 +140,7 @@ The issue that checks this list at the end is [#75](https://github.com/Liam-M-Ma
 - [x] **Keep** · Wood and stone are never banked as a number. Each unit is a physical drop item until it is delivered to a building site, and only food is a banked number. `world-stock-wood-stone-are-items`
 - [x] **Keep** · What can be promised to a building is the number of drops of that kind not yet claimed, minus those already reserved. `world-stock-available`
 - [ ] **Keep** · A building site reserves one unit for every haul it asks for. Dropping the haul gives the reservation back. `world-stock-reserve`
-- [x] **Keep** · When a hauler starts, it claims the nearest unclaimed drop of the needed kind, whether on the ground or in a pile. That turns one reservation into a claim. `world-stock-claim-closest`
+- [ ] **Keep** · When a hauler starts, it claims the nearest unclaimed drop of the needed kind, whether on the ground or in a pile. That turns one reservation into a claim. `world-stock-claim-closest`
 - [x] **Keep** · If a haul is aborted, its drop is unclaimed again and the reservation is restored. `world-stock-release`
 - [ ] **Keep** · A loose drop is one lying on the ground: not claimed and not in a pile. Idle meeples storing things take the nearest loose drop of the pile's kind. *But:* Decision 9: storage workers store drops, not idle meeples. `world-stock-loose`
 - [x] **Changed** · Only 30 loose drops may lie around for long. When there are more, the oldest extra drops that no building has reserved start a 20 second timer and then expire, which lowers the stock. If the number falls back to 30 or less, the timers reset. *Now:* Decision 10: no 30-drop limit, drops stay where they fall. `world-stock-ground-limit`
