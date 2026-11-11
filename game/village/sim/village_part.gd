@@ -4,10 +4,10 @@ extends RefCounted
 ## meeples, the buildings.
 ##
 ## A part is hung on a village with [method Village.add_part]. It keeps no
-## pointer to its village: the village is handed to every call. A part that
-## sleeps on a timer binds the village into the timer instead. Closing the
-## village drops its timers, so nothing is held for ever. Override only what
-## the part needs.
+## pointer to its village: the village is handed to every call. A timer of the
+## village hands it over too, as the first argument of the function that
+## wakes, so a part never binds its village into a timer. Override what the
+## part needs, and always [method snapshot].
 
 
 ## Runs once, when the part is hung on [param _village].
@@ -27,5 +27,8 @@ func close() -> void:
 
 
 ## The part as plain data. Two parts with the same snapshot are the same.
+## Every part overrides this, or it is left out when two villages are
+## compared. A part with nothing to tell returns an empty dictionary on purpose.
 func snapshot() -> Dictionary:
+	push_error("A village part has no snapshot(): %s" % get_script().resource_path)
 	return {}

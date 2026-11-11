@@ -8,6 +8,8 @@ const WOOD := 1
 
 var _made: Array[Village] = []
 var _log: Array[String] = []
+var _ticked: int = 0
+var _freed: int = 0
 
 
 ## A small part for these tests. It sleeps on a timer, and each time it wakes
@@ -32,7 +34,7 @@ class Sprout:
 		return {"planted": planted.duplicate(), "wakes": wakes, "ticks_seen": ticks_seen}
 
 	func _sleep(village: Village) -> void:
-		village.timers.wake_after(village.rng.randi_range(3, 9), _wake.bind(village))
+		village.timers.wake_after(village.rng.randi_range(3, 9), _wake)
 
 	func _wake(village: Village) -> void:
 		wakes += 1
@@ -71,6 +73,33 @@ class Recorder:
 	## Writes down that it was closed.
 	func close() -> void:
 		log.append("close " + tag)
+
+	## Its tag. It has nothing else to tell.
+	func snapshot() -> Dictionary:
+		return {"tag": tag}
+
+
+## A careless part: its timer closes the village, and then sets itself again
+## on its last line.
+class Quitter:
+	extends VillagePart
+	var log: Array[String]
+
+	func _init(start_log: Array[String]) -> void:
+		log = start_log
+
+	## Goes to sleep for two ticks.
+	func start(village: Village) -> void:
+		village.timers.wake_after(2, _wake)
+
+	## It has nothing to tell.
+	func snapshot() -> Dictionary:
+		return {}
+
+	func _wake(village: Village) -> void:
+		village.close()
+		var timer := village.timers.wake_after(1, _wake)
+		log.append("set again: %d" % timer)
 
 
 ## A command that stands a new thing on a footprint.
@@ -151,7 +180,10 @@ func test_two_villages_tick_side_by_side_with_no_window() -> void:
 	check(first.grid != second.grid, "each village has its own grid")
 	check(first.timers != second.timers, "each village has its own timers")
 	check(first.rng != second.rng, "each village has its own random numbers")
-	check(first.snapshot() != second.snapshot(), "two seeds give two different villages")
+	var first_state := first.snapshot()
+	var second_state := second.snapshot()
+	check(first_state["grid"] != second_state["grid"], "two seeds grow two different grids")
+	check(first_state["parts"] != second_state["parts"], "and their parts did different work")
 	game.end_session()
 	game.free()
 
@@ -164,7 +196,7 @@ func test_what_happens_in_one_village_does_not_reach_the_other() -> void:
 	check(first.send(PlaceThing.new(Vector2i(3, 3), 2, 2)), "the command is done")
 	first.send(DropWood.new(Vector2i(8, 8), 4))
 	first.grid.reserve(GridLayout.block(Vector2i(10, 10), Vector2i(2, 2)), first.new_id())
-	first.timers.wake_after(5, _note.bind("first woke"))
+	first.timers.wake_after(5, _note_from.bind("first woke"))
 	for tick in 10:
 		first.tick()
 	check_eq(first.now, 10)
@@ -182,17 +214,60 @@ func test_a_village_is_made_ticked_and_freed_100_times_and_nothing_stays_in_a_gl
 	var listeners_before := _listeners()
 	_make_tick_and_free(0)
 	var objects_before := Performance.get_monitor(Performance.OBJECT_COUNT)
-	var freed := 0
+	_ticked = 0
+	_freed = 0
 	for turn in range(1, 101):
-		if _make_tick_and_free(turn):
-			freed += 1
-	check_eq(freed, 100, "every village ran its 10 ticks and was freed on leaving the session")
+		_make_tick_and_free(turn)
+	check_eq(_ticked, 100, "villages that ran every tick the Game handed out, and at least one")
+	check_eq(_freed, 100, "villages that were gone from memory after leaving the session")
 	check_eq(Game.village_count(), 0)
 	check(Game.villages().is_empty(), "the session holds no village")
 	check_eq(Game.village_in_view, null)
 	check_eq(_listeners(), listeners_before, "no listener was left on Events")
 	check_eq(Performance.get_monitor(Performance.OBJECT_COUNT), objects_before, "objects alive")
-	check_eq(_log.size(), 0, "no timer of a freed village woke")
+	check_eq(_log.size(), 0, "no timer of a removed village woke in a later turn")
+
+
+func test_a_village_that_is_dropped_without_close_is_freed() -> void:
+	var village := Village.new(3, TICKS_PER_SECOND)
+	_lay_map(village)
+	village.add_part(&"sprout", Sprout.new())
+	village.timers.wake_at(100000, _note_from.bind("never"))
+	for tick in 60:
+		village.tick()
+	var sprout: Sprout = village.part(&"sprout")
+	check(sprout.wakes > 0, "its part worked on timers")
+	check(village.timers.sleeping() >= 2, "and timers are still asleep")
+	check(not village.is_closed(), "it was never closed")
+	var part_ref: WeakRef = weakref(sprout)
+	var ref: WeakRef = weakref(village)
+	sprout = null
+	village = null
+	check(ref.get_ref() == null, "the village is gone from memory")
+	check(part_ref.get_ref() == null, "and its part went with it")
+
+
+func test_a_closed_village_takes_no_new_timer() -> void:
+	var village := _village(1)
+	village.close()
+	check(village.timers.is_closed(), "closing a village closes its timers")
+	check_eq(village.timers.wake_at(5, _note_from.bind("late")), TickTimers.NO_TIMER)
+	check_eq(village.timers.wake_after(1, _note_from.bind("late")), TickTimers.NO_TIMER)
+	check_eq(village.timers.sleeping(), 0)
+
+
+func test_a_timer_that_closes_its_village_cannot_set_itself_again() -> void:
+	var village := Village.new(1, TICKS_PER_SECOND)
+	village.add_part(&"quitter", Quitter.new(_log))
+	for tick in 5:
+		village.tick()
+	check(village.is_closed(), "the timer closed the village")
+	check_eq(village.now, 2, "and it stopped on that tick")
+	check_eq(_log, ["set again: %d" % TickTimers.NO_TIMER] as Array[String])
+	check_eq(village.timers.sleeping(), 0)
+	var ref: WeakRef = weakref(village)
+	village = null
+	check(ref.get_ref() == null, "the closed village is gone from memory")
 
 
 func test_the_same_seed_and_the_same_commands_give_the_same_village_after_1000_ticks() -> void:
@@ -205,15 +280,21 @@ func test_the_same_seed_and_the_same_commands_give_the_same_village_after_1000_t
 	var sprout: Sprout = first.part(&"sprout")
 	check(sprout.wakes > 100, "the run did real work: the part woke %d times" % sprout.wakes)
 	check(sprout.planted.size() > 5, "things stand on the grid at the end")
+	var parts: Dictionary = first.snapshot()["parts"]
+	check_eq(parts.size(), 1, "every hung part is in the snapshot")
+	for part_name: StringName in parts:
+		var told: Dictionary = parts[part_name]
+		check(not told.is_empty(), "the part %s tells its state, so it is compared" % part_name)
 
 
 func test_another_seed_or_other_commands_give_another_village() -> void:
-	var base := _run_1000_ticks(42, true)
-	var other_seed := _run_1000_ticks(43, true)
-	var no_commands := _run_1000_ticks(42, false)
-	check(base.snapshot() != other_seed.snapshot(), "seed 43 differs from seed 42")
-	check(base.state_hash() != other_seed.state_hash(), "and so does its hash")
-	check(base.snapshot() != no_commands.snapshot(), "leaving out the commands differs too")
+	var base := _run_1000_ticks(42, true).snapshot()
+	var other_seed := _run_1000_ticks(43, true).snapshot()
+	var no_commands := _run_1000_ticks(42, false).snapshot()
+	check(base["grid"] != other_seed["grid"], "seed 43 grows another grid than seed 42")
+	check(base["parts"] != other_seed["parts"], "and its part did other work")
+	check(base["grid"] != no_commands["grid"], "leaving out the commands gives another grid")
+	check(base["parts"] != no_commands["parts"], "and changes what the part could do after")
 
 
 func test_a_village_takes_its_random_numbers_from_its_own_seed() -> void:
@@ -236,7 +317,7 @@ func test_parts_are_stepped_every_tick_in_the_order_they_were_hung() -> void:
 	var village := _village(1)
 	village.add_part(Village.JOBS, Recorder.new("jobs", _log))
 	village.add_part(Village.STOCK, Recorder.new("stock", _log))
-	village.timers.wake_at(1, _note.bind("timer"))
+	village.timers.wake_at(1, _note_from.bind("timer"))
 	village.tick()
 	village.tick()
 	var want: Array[String] = [
@@ -273,7 +354,7 @@ func test_closing_a_village_closes_its_parts_and_drops_its_timers() -> void:
 	var village := _village(1)
 	village.add_part(Village.JOBS, Recorder.new("jobs", _log))
 	village.add_part(Village.STOCK, Recorder.new("stock", _log))
-	village.timers.wake_at(3, _note.bind("timer"))
+	village.timers.wake_at(3, _note_from.bind("timer"))
 	village.tick()
 	_log.clear()
 	village.close()
@@ -340,23 +421,29 @@ func _lay_map(village: Village) -> void:
 
 
 ## Makes a village in the real Game service, fills it, ticks it for half a
-## second and removes it. True when it ticked and is gone from memory.
-func _make_tick_and_free(village_seed: int) -> bool:
+## second and removes it. It counts the village in [member _ticked] when it
+## ran every tick the Game handed out, and in [member _freed] when it is gone
+## from memory. The last timer is due on the very next tick, so it would wake
+## in a later turn if the removed village were still ticked.
+func _make_tick_and_free(village_seed: int) -> void:
 	var village := Game.new_village(village_seed)
 	_lay_map(village)
 	village.add_part(&"sprout", Sprout.new())
 	village.send(PlaceThing.new(Vector2i(3, 3), 2, 2))
 	village.grid.reserve(GridLayout.block(Vector2i(10, 10), Vector2i(3, 3)), village.new_id())
 	village.grid.drops.add(Vector2i(1, 1), WOOD, 3)
-	village.timers.wake_at(100000, _note.bind("never"))
 	Game.show_village(village)
+	var handed_out := 0
 	for frame in 30:
-		Game.advance(1.0 / 60.0)
-	var ticked := village.now == 10
+		handed_out += Game.advance(1.0 / 60.0)
+	if handed_out > 0 and village.now == handed_out:
+		_ticked += 1
+	village.timers.wake_after(1, _note_from.bind("a removed village woke a timer"))
 	var ref: WeakRef = weakref(village)
 	Game.remove_village(village)
 	village = null
-	return ticked and ref.get_ref() == null
+	if ref.get_ref() == null:
+		_freed += 1
 
 
 func _run_1000_ticks(village_seed: int, with_commands: bool) -> Village:
@@ -384,5 +471,6 @@ func _listeners() -> int:
 	return total
 
 
-func _note(text: String) -> void:
+## Writes [param text] down. A timer of a village calls it with the village first.
+func _note_from(_village: Village, text: String) -> void:
 	_log.append(text)

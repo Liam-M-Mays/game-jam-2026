@@ -22,6 +22,7 @@ Two exist today. Both are loaded before any scene, under these names.
 - One slow frame counts as a quarter second at most, so a hitch cannot ask for a pile of ticks.
 - `clock.fraction()` says how far the next tick is. The picture will use it to glide between two ticks.
 - `sim/tick_timers.gd`: timers that cost nothing while they wait. A thing sets a wake-up tick. A tick only looks at the timers that are due on it. Each village has its own.
+- A pause that is set during a tick lets that tick finish and stops the rest of the frame.
 
 ## How to use it
 
@@ -32,9 +33,19 @@ Game.show_village(village)
 Game.speed = 3.0
 Game.paused = true
 village.timers.wake_after(village.ticks_for(2.0), my_function)   # in 2 seconds
+
+
+func my_function(village: Village) -> void:   # the village is handed over
+	pass
 ```
 
-A timer holds on to what is bound into it. Closing a village drops its timers, and `Game.remove_village()` closes it.
+- A timer of a village is called with that village as its first argument. So never bind the village into a timer.
+- A closed village takes no new timer: `wake_after` then answers `TickTimers.NO_TIMER`.
+
+## Known limits
+
+- **Slow frames:** the limit is a quarter second of real time, not a number of ticks. So one frame can run 5 ticks at x1 and 15 at x3. If one tick ever costs more than its share of a frame, the frame rate drops instead of the simulation slowing down. The speed has no upper limit yet.
+- **Cancelled timers:** a cancelled timer stays in its list until its tick comes, and is skipped then.
 
 ## Dev settings
 

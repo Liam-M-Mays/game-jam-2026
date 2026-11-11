@@ -102,6 +102,44 @@ func test_a_point_maps_to_the_same_cell_as_in_the_jam_game() -> void:
 	check(points > 10000, "the sweep should cover more than 10,000 points")
 
 
+func test_a_point_exactly_between_two_cells_goes_the_same_way_on_both_sides_of_zero() -> void:
+	for x in range(-5, 6):
+		for y in range(-5, 6):
+			var cell := Vector2i(x, y)
+			var at := GridLayout.position_of(cell)
+			var right := cell + Vector2i(1, 0)
+			var left := cell + Vector2i(-1, 0)
+			check_eq(GridLayout.cell_under(at + Vector2(3, 0)), right, "3 px right of %s" % cell)
+			check_eq(GridLayout.cell_under(at + Vector2(2, 0)), cell, "2 px right of %s" % cell)
+			check_eq(GridLayout.cell_under(at + Vector2(-4, 0)), cell, "4 px left of %s" % cell)
+			check_eq(GridLayout.cell_under(at + Vector2(-5, 0)), left, "5 px left of %s" % cell)
+			check_eq(GridLayout.cell_under(at + Vector2(0, -2.5)), cell, "2.5 px above %s" % cell)
+			check_eq(GridLayout.cell_under(at + Vector2(0, 2.5)).y, y + 1, "2.5 px below %s" % cell)
+
+
+func test_a_tie_only_differs_from_the_jam_game_where_the_jam_game_had_no_cell() -> void:
+	check_eq(GridLayout.cell_under(Vector2(-4, 0)), Vector2i(0, 0))
+	check_eq(_jam_coords_at(Vector2(-4, 0) * JAM_CELL_SCALE), Vector2i(-1, 0))
+	check_eq(GridLayout.cell_under(Vector2(0, -2.5)).y, 0)
+	check_eq(_jam_coords_at(Vector2(0, -2.5) * JAM_CELL_SCALE).y, -1)
+	var differ := 0
+	var differ_on_a_jam_cell := 0
+	var x := -20.0
+	while x <= 120.0:
+		var y := -15.0
+		while y <= 60.0:
+			var point := Vector2(x, y)
+			var jam := _jam_coords_at(point * JAM_CELL_SCALE)
+			if GridLayout.cell_under(point) != jam:
+				differ += 1
+				if jam.x >= 0 and jam.y >= 0:
+					differ_on_a_jam_cell += 1
+			y += 0.5
+		x += 0.5
+	check(differ > 0, "the sweep of whole and half pixels hits ties: %d differ" % differ)
+	check_eq(differ_on_a_jam_cell, 0, "points where the jam game gave a cell and we give another")
+
+
 func test_a_footprint_counts_right_for_width_and_down_for_depth() -> void:
 	var want: Array[Vector2i] = [
 		Vector2i(5, 2),
@@ -138,6 +176,16 @@ func test_the_offsets_within_one_step_are_the_cell_and_its_six_neighbours() -> v
 	check_eq(GridLayout.offsets_within(0), [Vector2i(0, 0)] as Array[Vector2i])
 	check_eq(GridLayout.offsets_within(2).size(), 19)
 	check_eq(GridLayout.offsets_within(3).size(), 37)
+
+
+func test_the_offsets_are_worked_out_once_and_cannot_be_changed() -> void:
+	var first := GridLayout.offsets_within(2)
+	check(is_same(first, GridLayout.offsets_within(2)), "the same list is handed out again")
+	check(first.is_read_only(), "nobody can change the shared list")
+	var copy := first.duplicate()
+	copy.append(Vector2i(9, 9))
+	check_eq(copy.size(), 20, "a copy can be changed")
+	check_eq(GridLayout.offsets_within(2).size(), 19)
 
 
 ## The point lookup of the jam game, copied from grid.gd lines 121 to 125,

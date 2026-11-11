@@ -135,7 +135,8 @@ func empty_cells_near(thing: int, steps: int = 1) -> Array[Vector2i]:
 			if seen.has(near):
 				continue
 			seen[near] = true
-			if has_cell(near) and occupant(near) == NOTHING:
+			var chunk := _chunk_with(near)
+			if chunk != null and chunk.occupant[GridChunk.index_of(near)] == NOTHING:
 				found.append(near)
 	return found
 

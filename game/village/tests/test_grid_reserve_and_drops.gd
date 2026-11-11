@@ -91,6 +91,27 @@ func test_a_cell_stores_its_loose_drops() -> void:
 	check_eq(_grid.drops.at(Vector2i(4, 3)), {})
 
 
+func test_has_any_says_if_a_cell_holds_a_drop() -> void:
+	var cell := Vector2i(3, 3)
+	check(not _grid.drops.has_any(cell), "an empty cell has none")
+	_grid.drops.add(cell, WOOD, 2)
+	check(_grid.drops.has_any(cell), "a cell with wood has some")
+	check(not _grid.drops.has_any(Vector2i(4, 3)), "the cell beside it has none")
+	_grid.drops.take(cell, WOOD, 2)
+	check(not _grid.drops.has_any(cell), "an emptied cell has none again")
+	check(not _grid.drops.has_any(Vector2i(50, 50)), "a missing cell has none")
+
+
+func test_the_drops_of_a_cell_are_handed_out_as_a_copy() -> void:
+	var cell := Vector2i(3, 3)
+	_grid.drops.add(cell, WOOD, 3)
+	var copy := _grid.drops.at(cell)
+	copy[WOOD] = 99
+	copy[STONE] = 5
+	check_eq(_grid.drops.count_at(cell, WOOD), 3)
+	check_eq(_grid.drops.count_at(cell, STONE), 0)
+
+
 func test_taking_drops_gives_only_what_is_there() -> void:
 	var cell := Vector2i(3, 3)
 	_grid.drops.add(cell, WOOD, 3)

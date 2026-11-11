@@ -31,7 +31,8 @@ var now: int = 0
 var rng := RandomNumberGenerator.new()
 ## The cells of this village.
 var grid := VillageGrid.new()
-## The wake-up ticks of this village.
+## The wake-up ticks of this village. A timer that wakes is called with this
+## village as its first argument, so never bind the village into a timer.
 var timers := TickTimers.new()
 
 var _parts: Dictionary[StringName, VillagePart] = {}
@@ -52,12 +53,12 @@ func _init(start_seed: int = 0, start_ticks_per_second: int = 0) -> void:
 
 
 ## Runs one tick: wakes the timers that are due, then steps every part in the
-## order the parts were hung.
+## order the parts were hung. Every timer that wakes is handed this village.
 func tick() -> void:
 	if _closed:
 		return
 	now += 1
-	timers.run(now)
+	timers.run(now, self)
 	var index := 0
 	while index < _order.size():
 		_order[index].tick(self)
@@ -102,8 +103,9 @@ func ticks_for(seconds: float) -> int:
 	return maxi(roundi(seconds * ticks_per_second), 1)
 
 
-## Closes the village: closes its parts, last one first, and drops its timers.
-## A closed village does not tick any more and holds on to nothing.
+## Closes the village: closes its parts, last one first, and closes its
+## timers. A closed village does not tick any more, takes no new timer and
+## holds on to nothing.
 func close() -> void:
 	if _closed:
 		return
@@ -112,7 +114,7 @@ func close() -> void:
 		_order[index].close()
 	_order.clear()
 	_parts.clear()
-	timers.clear()
+	timers.close()
 
 
 ## True once the village has been closed.
@@ -138,7 +140,8 @@ func snapshot() -> Dictionary:
 	}
 
 
-## One number that stands for the whole village. Two villages that differ
-## give different numbers.
+## One number that stands for the whole village. Villages that are the same
+## give the same number. Two different villages can share a number by chance,
+## so compare [method snapshot] to be sure.
 func state_hash() -> int:
 	return snapshot().hash()

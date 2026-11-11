@@ -1,6 +1,6 @@
 class_name GridLayout
 extends Object
-## The maths of the slanted grid. It is the layout of the jam game, unchanged.
+## The maths of the slanted grid. It is the layout of the jam game.
 ##
 ## A cell is a pair of whole numbers: x along a row, y down the rows. Each row
 ## is shifted sideways from the row above, so the grid leans like the 3/4 art.
@@ -33,6 +33,8 @@ const MAX_FOOTPRINT := 4
 ## The answer when there is no cell.
 const NO_CELL := Vector2i(-2147483648, -2147483648)
 
+static var _offsets_within: Dictionary[int, Array] = {}
+
 
 ## Where [param cell] sits, in art pixels.
 static func position_of(cell: Vector2i) -> Vector2:
@@ -41,10 +43,13 @@ static func position_of(cell: Vector2i) -> Vector2:
 
 ## The cell whose middle is nearest to [param point] in the slanted grid.
 ## It does not check that the cell exists: [method VillageGrid.cell_at] does.
+## A point exactly between two cells goes to the cell on the right, or to the
+## row below, on both sides of zero. The jam game rounded such a point away
+## from zero, which is the same for every cell it had: its cells started at 0.
 static func cell_under(point: Vector2) -> Vector2i:
 	var from_middle := point - CELL_MIDDLE
-	var y := roundi(from_middle.y / ROW_HEIGHT)
-	var x := roundi((from_middle.x - ROW_SHIFT * y) / CELL_WIDTH)
+	var y := floori(from_middle.y / ROW_HEIGHT + 0.5)
+	var x := floori((from_middle.x - ROW_SHIFT * y) / CELL_WIDTH + 0.5)
 	return Vector2i(x, y)
 
 
@@ -80,13 +85,19 @@ static func footprint(anchor: Vector2i, width: int = 1, depth: int = 1) -> Array
 
 
 ## Every offset that is at most [param steps] steps long, the zero offset too.
+## The list is worked out once per step count and then shared, so it cannot
+## be changed. Copy it with [code]duplicate()[/code] to change it.
 static func offsets_within(steps: int) -> Array[Vector2i]:
+	if _offsets_within.has(steps):
+		return _offsets_within[steps]
 	var offsets: Array[Vector2i] = []
 	for dx in range(-steps, steps + 1):
 		for dy in range(-steps, steps + 1):
 			var offset := Vector2i(dx, dy)
 			if steps_of(offset) <= steps:
 				offsets.append(offset)
+	offsets.make_read_only()
+	_offsets_within[steps] = offsets
 	return offsets
 
 

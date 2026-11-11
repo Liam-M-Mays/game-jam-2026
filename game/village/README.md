@@ -29,18 +29,21 @@ village.tick()                                 # Game does this for you
 ```
 
 - **Tick:** one step. It wakes the timers that are due, then steps each part in the order the parts were hung.
+- **Timers:** a timer that wakes is called with the village as its first argument. A part never binds its village into a timer.
 - **Seed:** `village.rng` gives every random number of the village. The same seed and the same commands give the same village.
 - **Parts:** the four names are `Village.STOCK`, `JOBS`, `MEEPLES` and `BUILDINGS`. They are empty until #63, #65, #64 and #67 hang something there.
+- **Every part has a `snapshot()`.** A part without one would be left out when two villages are compared, so the base class logs an error.
 - **Commands:** the picture never changes the village. It sends a command, which is done at once and says if it was refused.
 - **Ids:** `village.new_id()` gives the number that names a thing on the grid.
-- **Compare:** `village.snapshot()` is the whole village as plain data, and `village.state_hash()` is one number for it.
-- **Close:** `Game.remove_village()` closes a village. A closed village holds on to nothing.
+- **Compare:** `village.snapshot()` is the whole village as plain data. `village.state_hash()` is one number for it: the same village gives the same number, but compare snapshots to be sure two villages differ.
+- **Close:** `Game.remove_village()` closes a village. A closed village does not tick, takes no command, no part and no timer, and holds on to nothing.
 
 ## The grid
 
-The layout is the one of the jam game, unchanged.
+The layout is the one of the jam game.
 
 - Cell (x, y) sits at (x*7 + y*5, y*5) art pixels. The jam game's cell scale of 10 and the giant's 0.1 cancel out.
+- A point exactly between two cells goes to the cell on the right, or to the row below. That is the jam game's answer for every cell it had. It only differs on the outer edge of column 0 and row 0, where the jam game had no cell.
 - Six neighbours: (1,0), (-1,0), (0,1), (0,-1), (1,-1), (-1,1). Distance is (|dx| + |dy| + |dx+dy|) / 2.
 - A cell stores its ground kind, what stands on it, who reserved it, and its loose drops.
 - A cell holds one thing at most. A footprint counts right for width and down for depth, 1 to 4 each. One missing or taken cell refuses the whole footprint.
@@ -57,7 +60,7 @@ The four questions it answers:
 
 Reserving: `grid.reserve(cells, reserver)` and `grid.release(reserver)`. A reserved cell is only free for its reserver.
 
-Drops: `grid.drops.add(cell, kind, count)`, `grid.drops.take(cell, kind, count)`, `grid.drops.at(cell)`.
+Drops: `grid.drops.add(cell, kind, count)`, `grid.drops.take(cell, kind, count)`, `grid.drops.count_at(cell, kind)`, `grid.drops.has_any(cell)`, `grid.drops.at(cell)`. For now a stack of drops is a small dictionary per cell. Whether drops become rows in arrays is a question for #63.
 
 ## See it run
 

@@ -29,8 +29,8 @@ func _init(cells: Array[Vector2i]) -> void:
 
 ## Sets the two timers this part sleeps on.
 func start(village: Village) -> void:
-	village.timers.wake_after(village.ticks_for(GROW_SECONDS), _grow.bind(village))
-	village.timers.wake_after(village.ticks_for(CLEAR_SECONDS), _clear.bind(village))
+	village.timers.wake_after(village.ticks_for(GROW_SECONDS), _grow)
+	village.timers.wake_after(village.ticks_for(CLEAR_SECONDS), _clear)
 
 
 ## The things, the drop count and the cells that carry drops, as plain data.
@@ -50,7 +50,7 @@ func _grow(village: Village) -> void:
 		if village.grid.place(thing, anchor, rng.randi_range(1, 3), rng.randi_range(1, 2)):
 			things.append(thing)
 			break
-	village.timers.wake_after(village.ticks_for(GROW_SECONDS), _grow.bind(village))
+	village.timers.wake_after(village.ticks_for(GROW_SECONDS), _grow)
 
 
 func _clear(village: Village) -> void:
@@ -65,4 +65,4 @@ func _clear(village: Village) -> void:
 		var oldest: Vector2i = _drop_cells.pop_front()
 		drops_left -= village.grid.drops.take(oldest, WOOD, 99)
 		_drop_cells.erase(oldest)
-	village.timers.wake_after(village.ticks_for(CLEAR_SECONDS), _clear.bind(village))
+	village.timers.wake_after(village.ticks_for(CLEAR_SECONDS), _clear)

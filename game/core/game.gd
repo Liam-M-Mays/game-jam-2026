@@ -10,7 +10,8 @@ extends Node
 ## Turns the seconds of a frame into ticks. Its tick rate comes from [DevSettings].
 var clock: TickClock
 
-## While true, no village ticks.
+## While true, no village ticks. Setting it during a tick lets that tick
+## finish and stops the rest of the frame.
 var paused: bool:
 	get:
 		return clock.paused
@@ -110,10 +111,14 @@ func show_village(village: Village) -> void:
 
 
 ## Takes [param seconds] of real time and runs the ticks they are worth, on
-## every village. Returns how many ticks ran. A frame calls this once.
+## every village. Returns how many ticks really ran. A frame calls this once.
+## A pause that is set during a tick stops the ticks that were still to come.
+## A village that is removed during a tick does not make another one miss it.
 func advance(seconds: float) -> int:
 	var ticks := clock.advance(seconds)
-	for i in ticks:
-		for village in _villages:
+	var ran := 0
+	while ran < ticks and not clock.paused:
+		for village in villages():
 			village.tick()
-	return ticks
+		ran += 1
+	return ran

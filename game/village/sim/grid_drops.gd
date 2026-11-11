@@ -5,6 +5,9 @@ extends RefCounted
 ## A cell holds a small stack per drop kind. A drop kind is a number: the
 ## resource data files give the kinds their numbers later (#63).
 ## Reach it as [member VillageGrid.drops].
+##
+## For now a stack is a small dictionary per cell that has drops. Whether
+## drops become rows in arrays is a question for #63.
 
 var _chunks: Dictionary[Vector2i, GridChunk]
 
@@ -51,17 +54,32 @@ func take(cell: Vector2i, kind: int, count: int = 1) -> int:
 
 ## How many drops of [param kind] lie on [param cell].
 func count_at(cell: Vector2i, kind: int) -> int:
-	var count: int = at(cell).get(kind, 0)
+	var chunk := _chunk_with(cell)
+	if chunk == null:
+		return 0
+	var index := GridChunk.index_of(cell)
+	if not chunk.drops.has(index):
+		return 0
+	var count: int = chunk.drops[index].get(kind, 0)
 	return count
 
 
+## True when at least one drop lies on [param cell].
+func has_any(cell: Vector2i) -> bool:
+	var chunk := _chunk_with(cell)
+	return chunk != null and chunk.drops.has(GridChunk.index_of(cell))
+
+
 ## Every drop on [param cell]: drop kind, then count. Empty when there is none.
+## The answer is a copy. Use [method count_at] or [method has_any] to only look.
 func at(cell: Vector2i) -> Dictionary:
 	var chunk := _chunk_with(cell)
 	if chunk == null:
 		return {}
-	var stack: Dictionary = chunk.drops.get(GridChunk.index_of(cell), {})
-	return stack.duplicate()
+	var index := GridChunk.index_of(cell)
+	if not chunk.drops.has(index):
+		return {}
+	return chunk.drops[index].duplicate()
 
 
 func _chunk_with(cell: Vector2i) -> GridChunk:

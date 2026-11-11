@@ -122,7 +122,7 @@ func _draw_village(village: Village, middle: Vector2) -> void:
 		draw_colored_polygon(corners, colour)
 		corners.append(corners[0])
 		draw_polyline(corners, LINE_COLOUR, 1.0)
-		if not grid.drops.at(cell).is_empty():
+		if grid.drops.has_any(cell):
 			draw_circle(at + GridLayout.CELL_MIDDLE * DRAW_SCALE, DRAW_SCALE, DROP_COLOUR)
 
 

@@ -94,6 +94,29 @@ func test_a_timer_can_set_the_next_one_while_it_wakes() -> void:
 	timers.clear()
 
 
+func test_run_hands_what_it_is_given_to_every_timer_as_its_first_argument() -> void:
+	var timers := TickTimers.new()
+	timers.wake_at(1, _wake_handed.bind("first"))
+	timers.wake_at(2, _wake_handed.bind("second"))
+	timers.run(1, "village")
+	timers.run(2, "village")
+	check_eq(_woke, ["village first", "village second"] as Array[String])
+
+
+func test_closed_timers_drop_everything_and_take_no_new_timer() -> void:
+	var timers := TickTimers.new()
+	var timer := timers.wake_at(2, _wake.bind("before"))
+	timers.close()
+	check(timers.is_closed(), "the timers say they are closed")
+	check(not timers.is_sleeping(timer), "the timer that slept is dropped")
+	check_eq(timers.wake_at(3, _wake.bind("after")), TickTimers.NO_TIMER)
+	check_eq(timers.wake_after(1, _wake.bind("after")), TickTimers.NO_TIMER)
+	check_eq(timers.sleeping(), 0)
+	for tick in range(1, 5):
+		timers.run(tick)
+	check_eq(_woke.size(), 0)
+
+
 func test_clear_drops_every_timer_without_waking_it() -> void:
 	var timers := TickTimers.new()
 	timers.wake_at(2, _wake.bind("a"))
@@ -108,6 +131,10 @@ func test_clear_drops_every_timer_without_waking_it() -> void:
 
 func _wake(tag: String) -> void:
 	_woke.append(tag)
+
+
+func _wake_handed(handed: String, tag: String) -> void:
+	_woke.append("%s %s" % [handed, tag])
 
 
 func _wake_and_repeat(timers: TickTimers, every: int) -> void:
