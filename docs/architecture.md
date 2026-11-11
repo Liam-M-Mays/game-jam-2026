@@ -2,7 +2,7 @@
 
 **What this is:** diagrams of the code as it stands, not a plan. They were drawn from `master` at commit `3c9e6c8` on Nov 9, 2026.
 
-**Keep it true:** when a pull request changes the structure, update the matching diagram in the same pull request. The diagrams are plain text, so the change shows up in the diff.
+**On the branch `core-rewrite`:** these diagrams show the old jam game, which stays in `assets/` until issue #36 removes it. They are not updated during the rewrite. The design of the new core is in [core-design.md](core-design.md).
 
 This file is the source of truth. Older copies of the diagrams exist as Figma boards. They are a snapshot from Nov 9, 2026 and are no longer updated:
 

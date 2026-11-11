@@ -1,10 +1,16 @@
 ## What changed
 
-<!-- One or two lines. Link the issue: "Closes #12". -->
+<!-- One or two lines. Link the issue: "Part of #60". No closing keyword: the issue is closed by hand after the merge. -->
+
+## Done lines this claims
+
+<!-- Copy each "done" line of the issue that this pull request finishes. Next to it, name the test or the picture that proves it. -->
+
+-
 
 ## How to test it
 
-<!-- Steps a reviewer can follow in the game. Add a screenshot or GIF for anything visual. -->
+<!-- Steps a reviewer can follow in the game. Add a screenshot or GIF for anything visual. A big pull request also gets a short walkthrough and a demo scene. -->
 
 1.
 
@@ -13,4 +19,6 @@
 - [ ] I ran the game and tried the change myself
 - [ ] Every scene (`.tscn`) in this pull request is changed on purpose, with no stray moves or hidden nodes
 - [ ] New scripts and assets include their `.uid` or `.import` file
+- [ ] The base of this pull request is `core-rewrite`
+- [ ] I ran both checks myself before pushing
 - [ ] CI is green, or I explained below why it is not

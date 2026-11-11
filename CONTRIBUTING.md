@@ -1,39 +1,56 @@
 # Contributing
 
-**The short version:** make a branch, push it, open a pull request, get one approval, merge.
+**The short version:** make a branch from `core-rewrite`, push it, open a pull request into `core-rewrite`, get Liam's approval, merge.
 
 This applies to everyone: the three of us, and any AI agent working for one of us.
 
+## This branch is the core rewrite
+
+You are reading the copy of this file on the branch `core-rewrite`. The core of the game is being rewritten here. The plan is issue #57 and the design is [docs/core-design.md](docs/core-design.md).
+
+- All rework goes into `core-rewrite` through pull requests.
+- `master` is frozen until the rework is done and works. It keeps the jam game as a fallback. The one exception is art that only touches `ART/`. That follows the copy of this file on `master`.
+- When art lands on `master`, `master` is merged into `core-rewrite`. It never goes the other way before the switch (issue #77).
+- Liam reviews every pull request. A core pull request may be big. Parts are preferred. A big one comes with a short walkthrough, a demo scene and tests. Once the core works, one pull request does one thing again.
+- New code goes in `game/` and `addons/`. The old game in `assets/` and the root scripts stays as it is until issue #36 removes it.
+
 ## The workflow in five steps
 
-1. Get the latest master.
+1. Get the latest `core-rewrite`.
 
    ```bash
-   git switch master
+   git switch core-rewrite
    git pull
    ```
 
 2. Make a branch. Name it `feature/...`, `fix/...`, `art/...` or `chore/...`.
 
    ```bash
-   git switch -c fix/farm-build-mode
+   git switch -c feature/village-tick
    ```
 
 3. Commit as you go, then push the branch.
 
    ```bash
-   git push -u origin fix/farm-build-mode
+   git push -u origin feature/village-tick
    ```
 
-4. Open a pull request on GitHub and fill in the template. Add `Closes #12` to link an issue.
-5. When a teammate has approved and the checks are green, press **Merge**, then delete the branch.
+4. Open a pull request on GitHub with `core-rewrite` as the base, and fill in the template. Write "Part of #60" to link the issue.
+
+   ```bash
+   gh pr create --base core-rewrite
+   ```
+
+5. When Liam has approved and the checks are green, the pull request is merged and the branch deleted.
+6. Close the issue by hand once its last pull request is merged. GitHub only closes issues by itself from the default branch.
 
 ## What GitHub enforces
 
-- `master` cannot be pushed to, force-pushed or deleted. Changes arrive through pull requests only.
+- `master` and `core-rewrite` cannot be pushed to, force-pushed or deleted. Changes arrive through pull requests only.
 - A pull request needs **1 approval** from someone other than its author.
 - The repo owner can merge their own pull requests after reviewing them, but still only through a pull request.
 - Two checks run on every pull request: **Repo checks** and **Godot checks**. See [docs/ci.md](docs/ci.md).
+- The checks do not run on a push to your own branch. Run both yourself before every push.
 
 ## Commit messages
 
@@ -62,7 +79,7 @@ Godot rewrites parts of a `.tscn` file every time it saves, so scenes are where 
 ## New files
 
 - Godot creates a `.uid` file next to every script and a `.import` file next to every asset. **Commit them together with the file.** The one exception is `ART/`: CI does not ask for these files there.
-- Art the game uses goes in `assets/`. Source files and unused art go in `ART/`. See [docs/art-folders.md](docs/art-folders.md).
+- Art the old game uses is in `assets/`. Art the new game uses goes in `game/`. Source files and unused art go in `ART/`. See [docs/art-folders.md](docs/art-folders.md).
 
 ## Issues and the board
 
@@ -85,7 +102,7 @@ GODOT="/path/to/Godot" bash .github/ci/run_godot_checks.sh
 
 The first one takes a second. The second one takes a few minutes and needs Godot 4.7.2.
 
-## If your push to master was rejected
+## If your push to core-rewrite was rejected
 
 Your commits are safe. Move them to a branch and open a pull request:
 
@@ -94,9 +111,9 @@ git switch -c my-work
 git push -u origin my-work
 ```
 
-Then put your local master back in line with GitHub. This only touches your local `master`; your commits stay on `my-work`.
+Then put your local `core-rewrite` back in line with GitHub. This only touches your local `core-rewrite`; your commits stay on `my-work`.
 
 ```bash
-git switch master
-git reset --hard origin/master
+git switch core-rewrite
+git reset --hard origin/core-rewrite
 ```

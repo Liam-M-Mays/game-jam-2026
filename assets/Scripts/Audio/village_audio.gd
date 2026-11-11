@@ -57,9 +57,11 @@ var _ambience := AudioStreamPlayer.new()
 var _ambience_on := false
 var _ambience_timer := 4.0
 var _ambience_level := 0.0
+var _old_game_on := false
+var _normal_volume := 1.0
 
 func _ready() -> void:
-	AudioServer.set_bus_volume_linear(0, MASTER_VOLUME)
+	_normal_volume = AudioServer.get_bus_volume_linear(0)
 	_ambience.stream = AMBIENCE
 	add_child(_ambience)
 	for i in VOICE_COUNT:
@@ -71,8 +73,13 @@ func _ready() -> void:
 		_voices.append(voice)
 
 func _process(delta : float) -> void:
+	# The old game raises the master volume. A new scene gets the normal one back.
+	var old_game_on := OldGame.is_running(get_tree())
+	if old_game_on != _old_game_on:
+		_old_game_on = old_game_on
+		AudioServer.set_bus_volume_linear(0, MASTER_VOLUME if old_game_on else _normal_volume)
 	var camera := get_viewport().get_camera_2d()
-	if camera == null:
+	if camera == null or not old_game_on:
 		_ambience.stop()
 		return
 	_update_ambience(camera, delta)
@@ -93,7 +100,7 @@ func _update_ambience(camera : Camera2D, delta : float) -> void:
 
 func play(sound_name : StringName, at : Vector2) -> void:
 	var camera := get_viewport().get_camera_2d()
-	if camera == null or not LIBRARY.has(sound_name):
+	if camera == null or not _old_game_on or not LIBRARY.has(sound_name):
 		return
 	if _farness(camera) >= 1.0 or _spread(camera, at) >= 1.0:
 		return

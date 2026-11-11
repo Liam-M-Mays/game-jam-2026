@@ -2,11 +2,16 @@
 
 Mighty Meeple is a Godot 4.7.2 game (GDScript, GL Compatibility renderer). Three people work on it, and humans review every change.
 
+**You are on the branch `core-rewrite`.** The core of the game is being rewritten here. The plan is issue #57, and the design is `docs/core-design.md`. Read both before you start.
+
 ## Workflow rules
 
-- Never commit to `master`. Work on a branch named `feature/...`, `fix/...`, `art/...` or `chore/...` and open a pull request.
-- Do not merge pull requests and do not approve them. A human does that.
-- One pull request does one thing. Do not mix a refactor with a feature.
+- All rework goes into `core-rewrite` through pull requests. Never commit to `core-rewrite` directly.
+- Cut your work from `origin/core-rewrite`, on a branch named `feature/...`, `fix/...`, `art/...` or `chore/...`. Open the pull request with `--base core-rewrite`.
+- `master` is frozen until the rework is done. Nothing from this branch goes there. The one exception is art that only touches `ART/`, which follows the rules in the copy of `CONTRIBUTING.md` on `master`.
+- A pull request says "Part of #N". Do not write a closing keyword: GitHub ignores them on this branch. The issue is closed by hand after the merge.
+- Do not merge pull requests and do not approve them. Liam reviews every one.
+- A core pull request may be big. Parts are preferred. A big one comes with a short walkthrough, a demo scene and tests. Once the core works, one pull request does one thing again.
 - Another agent or person may be using the same checkout. Use your own worktree or clone for branch work, and never stash, reset or switch branches in a checkout you did not create.
 - Full rules: `CONTRIBUTING.md`.
 - Issue types, parents and board states: `docs/workflow.md`.
@@ -16,21 +21,37 @@ Mighty Meeple is a Godot 4.7.2 game (GDScript, GL Compatibility renderer). Three
 
 - Run `python3 .github/ci/checks.py repo`.
 - Run `GODOT="<path to Godot 4.7.2>" bash .github/ci/run_godot_checks.sh` when you changed scripts, scenes or resources.
+- CI runs on a pull request, not on a push to your own branch. So run both checks yourself before every push.
 - Read the diff of every `.tscn` and `.tres` you are committing. Revert any scene you did not mean to change.
 - Commit the `.uid` and `.import` files Godot creates next to new scripts and assets.
-- Fill in the pull request template, including how a human can test the change in the game.
+- Fill in the pull request template. List every "done" line of the issue that the pull request claims, each with the test or the picture that proves it.
+
+## Where code goes
+
+- New code goes in `game/` and `addons/`. `game/` has one folder per feature. Each folder has a `README.md` that says what lives there.
+- The old jam game is in `assets/` and the scripts in the project root. Leave it as it is. Issue #36 removes it at the end.
+- The old global scripts stay quiet in new scenes. `OldGame.is_running()` in `assets/Scripts/Dev/old_game.gd` is the guard. New code must not call the old globals.
+- Inside a feature folder, simulation code goes in a `sim/` folder and picture code in a `view/` folder.
+    - A file in `sim/` holds data and rules. It must run with no window. It never touches a node, the camera, the mouse, a sprite, a tween or a sound.
+    - A file in `view/` reads the simulation and draws it. It never changes simulation data. It sends a command.
+- Dev settings such as the world size and the tick rate: the defaults are in `game/core/dev_settings.gd`, and a changed value is saved in `game/core/dev_settings.tres`.
 
 ## Project facts
 
-- Main scene: `Main_Menu.tscn`. Game scene: `assets/Scenes/Levels/game.tscn`.
-- Autoloads: `JobSystem`, `Inventory`, `GameState`, `Population`, `DevSpeed`, `VillageAudio`, `Music`.
-- Running Godot with `--script` does not load the autoloads, so most scripts fail to compile that way. Use a scene, like `.github/ci/load_check.tscn` does.
+- Main scene: `Main_Menu.tscn`. Game scene: `assets/Scenes/Levels/game.tscn`. Both are the old jam game.
+- Autoloads, all from the old game: `JobSystem`, `Inventory`, `GameState`, `Population`, `DevSpeed`, `VillageAudio`, `Music`.
+- Running Godot with `--script` does not load the autoloads, so most old scripts fail to compile that way. Use a scene, like `.github/ci/load_check.tscn` does.
 - The first import of a fresh clone prints script errors. Import twice.
-- Architecture diagrams: `docs/architecture.md`. Update them in the same pull request when you change the structure.
+- Design of the new core, with the numbered decisions: `docs/core-design.md`.
+- What the jam game does, line by line, and which issue owns each line: `docs/jam-game-list.md`.
+- Diagrams of the old code: `docs/architecture.md`.
 
 ## Code conventions
 
-- Comments in GDScript are allowed. The earlier "no comments" rule was only there to save time during the game jam. How the code gets documented is being worked out in issue #22.
-- Use static types. Match the style of the file you are editing.
-- Game files must not reference anything under `ART/`. Art the game uses belongs in `assets/`. See `docs/art-folders.md`.
+- Use static types.
+- Write a `##` doc comment on every class and every public function. Each system also gets one short page: the `README.md` of its folder.
+- In code the big creature is `giant`, never `monster`.
+- GDScript only for now. The game runs on Windows and macOS. There is no browser build.
+- New files use `snake_case` names.
+- Game files must not reference anything under `ART/`. Art the game uses belongs in `assets/` or `game/`. See `docs/art-folders.md`.
 - Do not add entries to `.github/ci/known-problems.txt` to get a check to pass. Fix the problem, or ask.
