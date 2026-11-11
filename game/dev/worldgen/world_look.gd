@@ -45,12 +45,15 @@ var _village: Village
 var _world: GroundWorld
 var _view: VillageView
 var _ground: GroundLayer
-var _marks := Node2D.new()
-var _camera := Camera2D.new()
-var _label := Label.new()
+var _marks: Node2D
+var _camera: Camera2D
+var _label: Label
 
 
 func _ready() -> void:
+	_marks = Node2D.new()
+	_camera = Camera2D.new()
+	_label = Label.new()
 	_cells = DevSettings.load_settings().world_cells
 	var shot := ""
 	for arg in OS.get_cmdline_user_args():

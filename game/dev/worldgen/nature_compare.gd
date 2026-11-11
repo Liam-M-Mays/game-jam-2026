@@ -34,12 +34,14 @@ const HALF_SHIFT := 600.0
 ## Where the side-by-side picture is saved.
 const PICTURE := "res://game/dev/worldgen/pictures/nature_jam_vs_new.png"
 
-var _jam := Node2D.new()
+var _jam: Node2D
 var _batch: SpriteBatch
-var _label := Label.new()
+var _label: Label
 
 
 func _ready() -> void:
+	_jam = Node2D.new()
+	_label = Label.new()
 	get_window().set_flag(Window.FLAG_ALWAYS_ON_TOP, true)
 	var camera := Camera2D.new()
 	camera.zoom = Vector2(ZOOM, ZOOM)

@@ -21,6 +21,7 @@ The old jam game is in `assets/` and in the scripts of the project root. Nothing
 `game.tscn` is the new game scene, and `game_scene.gd` is its script. Open it in Godot and press F6.
 
 - It starts a session, picks the world seed, makes one village on a generated ground world, and shows it.
+- It reads the world size and the fixed seed from the dev settings. A test hands it its own: set `settings` before the scene enters the tree.
 - Later parts add to it: meeples, buildings, the HUD.
 - The main scene of the project is still the old menu. It changes at the switch.
 - Its test is `tests/test_game_scene.gd`, and CI boots it with no window on every pull request.
