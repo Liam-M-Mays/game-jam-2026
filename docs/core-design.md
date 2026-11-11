@@ -204,8 +204,8 @@ The grid becomes data in chunks, and walking uses the cheapest method that works
 - Its size is a dev setting, set to about 100,000 cells. That is about 48 times the jam map. A rough model of generating it takes 0.2 seconds in GDScript. Tests use about 2,000 cells.
 - It is round, not square. The grid is slanted, so a square of cells would look like a leaning box.
 - A band is a share of the cells: the darkest quarter of the noise is the dark band, the rest is the light band. So every world has room for its big trees and rocks. Built this way in [#48](https://github.com/Liam-M-Mays/game-jam-2026/issues/48). Liam has not confirmed this rule yet.
-- The start cell is the lightest spot of the noise within a third of the radius from the middle. Its own cells and the ring round them are on light ground and are kept clear. Built this way in #48. Liam has not confirmed this rule yet.
-- The edge is a circle that moves in and out with a second noise, so the world is one piece with no holes.
+- The start cell is the lightest cell that fits within a third of the radius from the middle. Its own cells and the ring round them are on light ground and are kept clear. Built this way in #48. Liam has not confirmed this rule yet.
+- The edge is a circle that moves in and out with a second noise. The noise is read once per direction, so the world has no holes. How far and how rough the edge may be is limited in the recipe. Inside those limits every world that was tried was one piece. Built this way in #48. Liam has not confirmed this rule yet.
 
 **The giant's back**
 
@@ -309,7 +309,7 @@ New code goes into by-feature folders next to the old game, so the old game stay
 | Path-finding for thousands of meeples | Not measured |
 | Real jobs in place of wandering | Not measured |
 | A world bigger than the screen | Not measured |
-| Making a world of 100,000 cells in under 0.5 seconds | Measured at about 0.21 seconds, while other work ran on the same Mac. To be repeated on a quiet machine |
+| Making a world of 100,000 cells in under 0.5 seconds | Measured: 207 to 212 ms in nine runs, on a quiet Mac in Low Power Mode |
 | Several villages ticking at once | Not measured |
 | Hover outline, flash and squash inside the batch shader | Not built |
 | Time spent on the graphics card | Godot could not report it in the test |

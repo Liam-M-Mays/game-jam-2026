@@ -21,16 +21,18 @@ Built by #48.
 - The bar of issue #48 is under 500 ms for 100,000 cells on an Apple M3.
 - `-- cells=2000 runs=5 seed=7` changes the size, the number of runs and the first seed.
 
-Apple M3, 2026-11-11, **taken while other sessions were running Godot on the same Mac, so the numbers are not final.** Times in milliseconds:
+Apple M3, 2026-11-11. **On a quiet Mac a world of 100,000 cells took 207.0 to 212.0 ms in nine runs.** No other session was working, and the Mac was on battery in Low Power Mode, so the numbers are on the slow side.
+
+The table shows the time of each step. It is one set of three runs, taken while other sessions were running Godot on the same Mac. Times in milliseconds:
 
 | Run | Seed | Cells | Things | Total | Shape | Bands | Grid | Start | Things |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| 1 | 1 | 100,008 | 9,805 | 210.6 | 47.9 | 25.1 | 44.2 | 11.3 | 82.2 |
-| 2 | 2 | 100,012 | 9,805 | 208.9 | 47.8 | 24.7 | 44.0 | 10.8 | 81.7 |
-| 3 | 3 | 100,010 | 9,805 | 209.0 | 47.5 | 24.9 | 44.1 | 11.2 | 81.4 |
+| 1 | 1 | 100,008 | 9,805 | 213.1 | 48.7 | 25.3 | 44.1 | 11.4 | 83.6 |
+| 2 | 2 | 100,012 | 9,805 | 209.8 | 48.4 | 24.8 | 44.4 | 10.9 | 81.3 |
+| 3 | 3 | 100,010 | 9,805 | 209.3 | 48.0 | 24.9 | 43.9 | 11.3 | 81.2 |
 
 - The load matters. With two other Godot runs at full load, an earlier and slower version of the generator took 434 to 513 ms where it took 314 ms a few minutes before.
-- The last line of the output is the time to build the picture of one such world: the atlas, the ground map and 9,805 things put into the batch. It took 195.3 ms in the same run. That is not part of making the world, and it has no bar.
+- The last line of the output is the time to build the picture of one such world: the atlas, the ground map and 9,805 things put into the batch. It took about 193 ms on the quiet Mac. That is not part of making the world, and it has no bar.
 
 ## Looking at a world
 
