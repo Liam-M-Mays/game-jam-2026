@@ -2,6 +2,9 @@ extends Node2D
 class_name Grid
 
 const CELL := preload("res://assets/Scenes/Env/cell.tscn")
+const MEEPLE := preload("res://assets/Scenes/Meeple/meeple.tscn")
+const DEV_SPAWN_KEY := KEY_M
+const DEV_SPAWN_COUNT := 500
 const NEIGHBOURS : Array[Vector2i] = [
 	Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, -1), Vector2i(-1, 1),
 ]
@@ -40,8 +43,11 @@ var _spots : Array = []
 var _respawn_timer := 0.0
 var _coords_of := {}
 var _keep_clear : Array[Cell] = []
+var _meeple_look : MeepleLook
+var _meeples : Array[Meeple] = []
 
 func _ready() -> void:
+	_meeple_look = MEEPLE.instantiate()
 	var template := CELL.instantiate()
 	_cell_scale = template.scale
 	_cell_offset = template.offset
@@ -51,6 +57,29 @@ func _ready() -> void:
 	_seed_world()
 	_place_start_building()
 	_generate_resources()
+
+func _exit_tree() -> void:
+	for meeple in _meeples:
+		meeple.free_item()
+	_meeples.clear()
+	JobSystem.workers.clear()
+	_meeple_look.free()
+
+## Adds a meeple at `at`, in this grid's space, and gives it to the jobs.
+func spawn_meeple(at : Vector2) -> Meeple:
+	var meeple := Meeple.new(self, _meeple_look, at)
+	_meeples.append(meeple)
+	JobSystem.add_worker(meeple)
+	return meeple
+
+func _unhandled_input(event : InputEvent) -> void:
+	var key := event as InputEventKey
+	if not OS.is_debug_build() or key == null or key.physical_keycode != DEV_SPAWN_KEY or not key.pressed or key.echo:
+		return
+	var hall := TownHall.find_town_hall()
+	if hall != null:
+		for i in range(DEV_SPAWN_COUNT):
+			hall.spawn_meeple()
 
 func cell_at(world_pos : Vector2) -> Cell:
 	return _cell_or_null(_coords_at(world_pos))
@@ -242,6 +271,12 @@ func _load_spawnables() -> Array[Spawnable]:
 	return list
 
 func _process(delta : float) -> void:
+	var i := 0
+	while i < _meeples.size():
+		if _meeples[i].tick(delta):
+			i += 1
+		else:
+			_meeples.remove_at(i)
 	if _spawnables.is_empty():
 		return
 	_respawn_timer += delta
@@ -272,13 +307,14 @@ func _respawn() -> void:
 
 func _cells_with_movers() -> Dictionary:
 	var blocked := {}
-	var movers : Array[Node2D] = []
-	movers.append_array(JobSystem.workers)
+	var spots : Array[Vector2] = []
+	for worker in JobSystem.workers:
+		spots.append(worker.global_position)
 	for child in get_children():
 		if child is ResourceDrop:
-			movers.append(child)
-	for mover in movers:
-		var cell := cell_at(mover.global_position)
+			spots.append(child.global_position)
+	for spot in spots:
+		var cell := cell_at(spot)
 		if cell != null:
 			blocked[cell] = true
 	return blocked

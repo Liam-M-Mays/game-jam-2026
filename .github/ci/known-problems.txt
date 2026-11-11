@@ -35,8 +35,6 @@ art-boundary assets/Scenes/Levels/game.tscn -> res://ART/sky_sprites_mountains2.
 art-boundary assets/Scenes/Levels/game.tscn -> res://ART/sky_sprites_sky.tres
 art-boundary assets/Scenes/Levels/game.tscn -> res://ART/sky_sprites_trees1.tres
 art-boundary assets/Scenes/Levels/game.tscn -> res://ART/sky_sprites_trees2.tres
-art-boundary assets/Scenes/Meeple/meeple.tscn -> res://ART/Meeple_holding_moreshizz.png
-art-boundary assets/Scenes/Meeple/meeple.tscn -> res://ART/Meeple_holding_shizz.png
 art-boundary assets/Scenes/Resources/george_bush.tscn -> res://ART/George_Bush.png
 art-boundary assets/Scenes/Test/Brady_Scene.tscn -> res://ART/green.tres
 art-boundary assets/Scenes/Test/Brady_Scene.tscn -> res://ART/sky_sprites_mountains1.tres

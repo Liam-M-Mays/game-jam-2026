@@ -146,7 +146,8 @@ flowchart TD
     back["Back: y-sorted container"]
     grid["Grid (grid.gd)"]
     cells["2,091 Cell nodes, each with a physics area"]
-    objects["Harvestables, buildings, meeples, drops"]
+    objects["Harvestables, buildings, drops"]
+    meeples["Meeples: plain data, one canvas item each, no node"]
     cursor["Mouse: cell cursor (mouse.gd)"]
     buildSystem["BuildSystem (build_system.gd)"]
     tooltip["ConstructionTooltip, created in code"]
@@ -168,6 +169,7 @@ flowchart TD
     back --> buildSystem
     grid --> cells
     grid --> objects
+    grid --> meeples
     buildSystem --> tooltip
     game --> parallax
     game --> hud
@@ -282,7 +284,7 @@ stateDiagram-v2
 
 ## Class diagrams
 
-Three diagrams cover 52 of the 56 scripts. The four left out are tiny: `walk.gd`, `Blink.gd`, `menu_meeple.gd` and `resource_ui.gd`.
+Three diagrams cover 53 of the 57 scripts. The four left out are tiny: `walk.gd`, `Blink.gd`, `menu_meeple.gd` and `resource_ui.gd`.
 
 How to read them:
 
@@ -290,6 +292,7 @@ How to read them:
 - A dotted arrow means "holds or uses".
 - `+` is public, `#` is meant to be overridden. Private members are left out.
 - `<<autoload>>` is a global singleton, `<<resource>>` is a data resource, `<<unnamed>>` is a script without a `class_name`.
+- `<<scene>>` is the root script of a scene that the game reads once as a template (`MeepleLook` is `meeple.tscn`).
 
 ### Class diagram 1: world objects
 
@@ -310,6 +313,7 @@ classDiagram
         +cells_at_offsets(origin, offsets)
         +place(obj, cells)
         +remove(obj)
+        +spawn_meeple(at): Meeple
     }
     class Cell {
         +occupant: GridObject
@@ -517,14 +521,21 @@ classDiagram
     class Meeple {
         +job: Job
         +grid: Grid
-        +speed: int
-        +wander_radius: float
+        +position: Vector2
+        +global_position: Vector2
+        +tick(delta): bool
         +move_to(pos, stop_cells)
         +stop()
         +has_arrived(): bool
         +carry(kind, amount)
         +abandon_job()
         +die()
+    }
+    class MeepleLook {
+        <<scene>>
+        +speed: int
+        +wander_radius: float
+        +draw(item, body_color, frame, head_offset_y)
     }
     class Population {
         <<autoload>>
@@ -584,6 +595,7 @@ classDiagram
     IdleJob <|-- StoreJob
     JobSystem ..> Job : pending and active
     Meeple ..> Job : runs one job
+    Meeple ..> MeepleLook : reads look and numbers
     Population ..> Meeple : starves
 ```
 
