@@ -15,6 +15,7 @@ concurrency:
 
 env:
   GODOT_VERSION: 4.7.2-stable
+  GDTOOLKIT_VERSION: 4.5.0
 
 jobs:
   repo-checks:
@@ -25,6 +26,17 @@ jobs:
       - uses: actions/checkout@v7
       - name: Check files and references
         run: python3 .github/ci/checks.py repo
+
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install gdlint
+        run: pipx install "gdtoolkit==${GDTOOLKIT_VERSION}"
+      - name: Lint the new game's GDScript
+        run: bash .github/ci/run_lint.sh
 
   godot-checks:
     name: Godot checks
@@ -53,7 +65,7 @@ jobs:
           rm "$zip"
           mv "Godot_v${GODOT_VERSION}_linux.x86_64" godot
           chmod +x godot
-      - name: Import, load and boot the project
+      - name: Import, load, boot and test the project
         run: GODOT="$HOME/godot/godot" bash .github/ci/run_godot_checks.sh
       - name: Keep the Godot logs
         if: always()

@@ -20,8 +20,10 @@ Mighty Meeple is a Godot 4.7.2 game (GDScript, GL Compatibility renderer). Three
 ## Before you open a pull request
 
 - Run `python3 .github/ci/checks.py repo`.
-- Run `GODOT="<path to Godot 4.7.2>" bash .github/ci/run_godot_checks.sh` when you changed scripts, scenes or resources.
-- CI runs on a pull request, not on a push to your own branch. So run both checks yourself before every push.
+- Run `GODOT="<path to Godot 4.7.2>" bash .github/ci/run_godot_checks.sh` when you changed scripts, scenes or resources. Its last step runs the tests.
+- Run `bash .github/ci/run_lint.sh` when you changed GDScript in `game/` or `addons/`.
+- CI runs on a pull request, not on a push to your own branch. So run all three yourself before every push.
+- New rules get a test. How to write and run one: `docs/testing.md`. While you work, `bash .github/ci/run_tests.sh` runs only the tests.
 - Read the diff of every `.tscn` and `.tres` you are committing. Revert any scene you did not mean to change.
 - Commit the `.uid` and `.import` files Godot creates next to new scripts and assets.
 - Fill in the pull request template. List every "done" line of the issue that the pull request claims, each with the test or the picture that proves it.

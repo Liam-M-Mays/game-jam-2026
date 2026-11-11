@@ -25,6 +25,10 @@ Inside a feature folder there are two kinds of code, each in its own folder.
 
 A file that is neither, such as a data file or a scene, sits in the feature folder itself.
 
+## Tests
+
+Tests sit in a `tests/` folder inside the feature folder. See [docs/testing.md](../docs/testing.md).
+
 ## Every folder has a page
 
 Each folder has a `README.md` like this one. It is the short page for that system: what it does, how to use it, and where its tests are. Update it in the pull request that changes the system.
