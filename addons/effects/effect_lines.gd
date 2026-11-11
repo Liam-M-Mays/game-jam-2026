@@ -74,9 +74,10 @@ func _is_mover(target: int) -> bool:
 
 
 func _exists(target: int) -> bool:
+	var number := target >> 1
 	if _is_mover(target):
-		return (target >> 1) < _rows.mover_count()
-	return _rows.has_thing(target >> 1)
+		return number >= 0 and number < _rows.mover_count()
+	return _rows.has_thing(number)
 
 
 ## The state of a target. With [param make] a missing one is made. Returns
@@ -91,11 +92,10 @@ func _state(target: int, make: bool) -> EffectState:
 
 
 func _set_line(target: int, line: int) -> void:
-	if _is_mover(target):
-		if (target >> 1) < _rows.mover_count():
-			_rows.set_mover_extra(target >> 1, float(line))
-	else:
+	if not _is_mover(target):
 		_rows.set_thing_extra(target >> 1, float(line))
+	elif _exists(target):
+		_rows.set_mover_extra(target >> 1, float(line))
 
 
 ## Puts a state on the right table line after it changed: none when nothing
