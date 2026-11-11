@@ -181,6 +181,20 @@ func test_a_cell_that_is_half_a_pixel_inside_the_reach_is_not_skipped() -> void:
 	check_eq(_drops.looked_at, 2)
 
 
+func test_a_cell_half_a_pixel_inside_the_reach_from_the_left_is_not_skipped() -> void:
+	_lay_block(Vector2i(0, 0), Vector2i(20, 20))
+	# The mirror of the test above: the point stands left of the drops. The
+	# first drop is 54.4 away and the second one 54.16. The near side of the
+	# second one's cell is 54.56 away when the cell middle is taken half a
+	# pixel too far right, and then the cell is never looked at.
+	var first := _drops.add_at(Vector2(46.4, 10.0), WOOD)
+	var second := _drops.add_at(Vector2(46.1, 12.6), WOOD)
+	check_eq(_drops.cell_of(first), Vector2i(5, 2))
+	check_eq(_drops.cell_of(second), Vector2i(5, 3))
+	check_eq(_drops.closest(WOOD, Vector2(-8.0, 10.0)), second)
+	check_eq(_drops.looked_at, 2)
+
+
 func test_a_point_very_far_off_the_map_still_gets_the_closest_drop() -> void:
 	_lay_block(Vector2i(0, 0), Vector2i(60, 20))
 	var left := _drops.add_at(Vector2(31.0, 10.0), WOOD)

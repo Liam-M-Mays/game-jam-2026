@@ -175,6 +175,9 @@ func test_the_snapshot_holds_every_field_of_a_row() -> void:
 	check_eq(shot.get("totals"), {WOOD: 1, STONE: 1})
 	check_eq(shot.get("loose"), {WOOD: 0, STONE: 1})
 	check_eq(shot.get("free_row"), GridDrops.NO_DROP)
+	# The claimed drop and the only stone are in no list of loose drops.
+	check_eq(shot.get("next"), PackedInt32Array([GridDrops.NO_DROP, GridDrops.NO_DROP]))
+	check_eq(shot.get("prev"), PackedInt32Array([GridDrops.NO_DROP, GridDrops.NO_DROP]))
 	# Two grids that only differ in where a drop lies on its cell are not the same.
 	var other := VillageGrid.new()
 	for cell in GridLayout.block(Vector2i(0, 0), Vector2i(20, 20)):
@@ -187,6 +190,22 @@ func test_the_snapshot_holds_every_field_of_a_row() -> void:
 	if shot.has("spots"):
 		shot["spots"][0] = Vector2.ZERO
 	check_eq(_drops.spot_of(first), Vector2(29.0, 9.0))
+	# Two more stones on the cell of the first stone: the newest is the head
+	# of the loose drops of that cell, and each row points at the next older one.
+	var none := GridDrops.NO_DROP
+	_drops.add_at(Vector2(61.5, 40.0), STONE)
+	_drops.add_at(Vector2(62.0, 40.0), STONE)
+	check_eq(_drops.count_at(Vector2i(3, 8), STONE), 3, "three stones on one cell")
+	var linked := _drops.snapshot()
+	check_eq(linked.get("next"), PackedInt32Array([none, none, 1, 2]))
+	check_eq(linked.get("prev"), PackedInt32Array([none, 2, 3, none]))
+	# A row that is free points at the row that was freed before it.
+	_drops.remove(2)
+	_drops.remove(first, HAULER)
+	var freed := _drops.snapshot()
+	check_eq(freed.get("free_row"), first)
+	check_eq(freed.get("next"), PackedInt32Array([2, none, none, 1]))
+	check_eq(freed.get("prev"), PackedInt32Array([none, 3, none, none]))
 
 
 func test_the_old_add_lays_its_drops_at_the_position_of_the_cell() -> void:

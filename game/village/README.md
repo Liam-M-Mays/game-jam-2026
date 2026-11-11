@@ -75,7 +75,7 @@ A drop is one unit of wood or stone that lies where it fell. Drops are rows: a r
 - `grid.drops.closest(kind, point)` finds the closest loose drop. It works in two steps.
     - First it reads the cells around the point and keeps the ones that hold a loose drop and can hold the closest one. No drop is looked at for that.
     - Then it looks at the drops, nearest cell first, and stops at the first cell that is too far away.
-- `grid.drops.looked_at` says how many drops the last lookup looked at. The numbers below are from `test_closest_drop.gd`, on the 100,000 cell world. Each is the worst of the lookups the test makes, not a limit the lookup holds.
+- `grid.drops.looked_at` says how many drops the last lookup looked at. The numbers below are from `test_closest_drop.gd`, on the 100,000 cell world. Each is the worst of the lookups the test makes, not a limit the lookup holds. For the patch the test tries 150 points on the map: with 8,000 points the worst is 120.
 
 | How the drops lie | Most looked at | Cap in the test |
 | --- | --- | --- |
@@ -88,6 +88,7 @@ A drop is one unit of wood or stone that lies where it fell. Drops are rows: a r
 
 - **The last two are over 200.** From the middle of an empty area, the lookup has to look at every loose drop on the cells that the rim of the area crosses. That number grows with the rim. Liam decides what to do about it: see the pull request of #63.
 - On one cell it looks at the 8 newest loose drops of the kind only (`GridDrops.MOST_LOOKS_PER_CELL`). So a heap of thousands on one cell costs no more. The pick can then be up to 8.61 art pixels further away than the closest drop: the corner to corner of a cell, which is 7 by 5.
+- **Two drops at the very same distance:** the lookup gives one of them, and no rule says which. The jam game took the oldest drop. Liam decides whether a rule is needed: see the pull request of #63.
 - A row number is used again after its drop is taken. Do not keep one for later: claim the drop.
 
 | Question | Call |
@@ -149,7 +150,8 @@ claims.release(haul_id, where_the_hauler_stands)          # abort: the unit is f
 A trip to a pile: `claims.claim_for_storage(haul_id, pile_id, drop)`, then `pick_up`, then `hand_over`. The drop is locked from the claim until it lands: it counts, but it cannot be promised to a site.
 
 - **A site that ends: release its hauls first, then unreserve.** `release` always gives the reservation back to the site. `unreserve` only gives back what no hauler has claimed yet. In the other order the site is left with one reservation, until it calls `unreserve` again.
-- **A reserved drop that is taken off the ground takes a reservation along.** `available(kind)` never goes below zero. When more is reserved than is left, the site with the highest id, which is the newest, loses first. That site reads `reserved_by` when `stock.changed` comes, and asks again.
+- **A reserved drop that is taken off the ground takes a reservation along.** That is a loose drop taken with `grid.drops.take` or `remove`. When more is reserved than is left, the site with the highest id, which is the newest, loses first. That site reads `reserved_by` when `stock.changed` comes, and asks again. So `available(kind)` does not go below zero then. A unit that a hauler has already claimed is not taken back, so an older site can lose its reservation before a newer one.
+- **A claimed drop that is taken off the ground ends its claim.** The ground lets a claimed drop go for the id that claimed it (`grid.drops.remove(drop, haul_id)`). The stock finds that out at the next step of the haul: `pick_up` and `release` answer false, the claim is gone, and nothing is carried. The site gets no reservation back, because the unit is gone. It has to reserve again.
 
 ### Drawing the drops
 
@@ -172,8 +174,12 @@ view.watch(village.grid.drops)
 - **A drop on the cell of a tree** that lies higher than the foot of the tree is drawn over the trunk. The jam game draws the trunk over it. The batch keeps the things of one cell in the order they came.
 - **A lookup across an empty area costs more.** Nothing in the lookup stops it early, so it always gives the closest drop. From the middle of an area with no drops it looks at more than 200 drops: see the table above.
 - **A lookup with few drops reads more cells.** With 1,000 drops spread on the big world it reads up to 972 cells to look at 3 drops. Across an empty area it reads far more: 5,502 in the clearing test. Reading a cell is one array read. The 2,000 cells in `test_closest_drop.gd` are a check of two tests, not a limit of the lookup.
-- **The lookup numbers are for a point on the map.** From far off the map a lookup looks at more: up to 200 at a patch.
+- **The lookup numbers are for a point on the map.** From off the map a lookup looks at more, and the number grows with the distance. From straight above the patch of the test it looked at 104 drops from 3,000 art pixels away, 152 from 10,000, 320 from 100,000 and 824 from a million. These were measured by hand, no test holds them.
 - **The ground does not know the kinds.** Food laid with `grid.drops.add` counts above the cap. `stock.drop` refuses it.
+- **The ground does not know the reservations.** A claim made with `grid.drops.claim` is not known to them.
+- **`available(kind)` can be below zero in two cases.**
+    - A unit taken out of a pile with `stock.storages.change(pile, -1, 0, 0)` is not heard by the reservations. After it, the next drop that leaves the ground costs the newest site a reservation, also when a hauler picks that drop up.
+    - A listener put on `grid.drops.removed` before the stock was hung on the village hears a taken drop before the reservations are settled. Listen to `stock.changed` instead.
 - **A listener of `stock.changed` runs on every change.** With thousands of changes a tick, a listener should only set a flag and do its work once a frame.
 - **Storages are looked at one by one** when the closest pile is asked for. That is fine while piles are few.
 
@@ -196,7 +202,7 @@ The stock and the drops:
 | `test_closest_drop.gd` | The closest loose drop, and how many drops a lookup looks at: spread evenly, in a heap, on a wide patch, round a clearing and after a pile took the closest thousands of times |
 | `test_village_stock.gd` | Add, spend, the food cap, what counts, and that every change is told once |
 | `test_stock_claims.gd` | Reserve, claim, pick up, hand over, release, and trips to a pile |
-| `test_stock_claims_edges.gd` | A reserved drop that is taken off the ground, a site that ends, a drop that is claimed already, a tie between a drop and a pile, and the snapshot |
+| `test_stock_claims_edges.gd` | A reserved or claimed drop that is taken off the ground, which site loses its reservation, a site that ends, a drop that is claimed already, a tie between a drop and a pile, and the snapshot |
 | `test_stock_storages.gd` | The counts of a storage, and what `change` refuses |
 | `test_stock_random.gd` | 10,000 random steps with a book beside the stock: nothing below zero, nothing handed out twice, every promise and every cell count right |
 | `test_stock_in_village.gd` | The same seed gives the same village, drops never expire, a closed village lets go |

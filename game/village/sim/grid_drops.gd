@@ -210,7 +210,8 @@ func unclaim(drop: int) -> bool:
 ## [constant NO_DROP] when there is none. It only looks at the drops on the
 ## cells around the point, not at every drop: [member looked_at] says how many.
 ## On a cell with more than [constant MOST_LOOKS_PER_CELL] loose drops of the
-## kind, it looks at the newest ones only.
+## kind, it looks at the newest ones only. When two drops are at the very
+## same distance it gives one of them: no rule says which.
 ##
 ## It works in two steps. First it reads the cells around the point and keeps
 ## the ones that hold a loose drop and can hold the closest one. No drop is
