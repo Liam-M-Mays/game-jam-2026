@@ -106,13 +106,15 @@ rows.remove_decor(id)
 | Layer | Where it is drawn | Used for |
 | --- | --- | --- |
 | `BatchRows.UNDER` | Under everything | A lit cell |
-| `BatchRows.FRONT` | In front of every thing of its own row, behind the movers below that row and behind the next row | A spark |
+| `BatchRows.FRONT` | In front of every thing of its own row, behind the movers below that row and behind the next row | A one-shot sprite |
 | `BatchRows.OVER` | Over everything | A dust cloud |
 
 - The place is given like the place of a thing: a cell and an offset in art pixels.
 - Inside a layer a newer decor sprite is in front of an older one.
 - `add_decor` hands out the number. Decor numbers are counted apart from thing numbers.
 - Decor under and over everything is always sent, on screen or not. Keep it to a few sprites.
+- A row is sent while one of its things or one of its front decor sprites reaches into the screen.
+- The effects toolkit can also put a one-shot in the order by the height of its own middle (`EffectShots.BY_HEIGHT`). It uses the front layer of the row that the middle falls in.
 
 ## The grid
 
@@ -135,6 +137,8 @@ The batch has no grid numbers of its own. `BatchCells` is all it knows about the
 - The number of a thing must fit in 32 bits, and it cannot be -1.
 - Two movers closer than one art pixel in height are put in order once, when one comes into the band. They are not sorted again while they stay in it. A view that wants a meeple put in by height again when it stops can call `place_mover` for it.
 - `batch_clock` is the clock of the meeple bounce. `MeepleLook` makes it start again every 1.508 seconds, which is one full bounce. So everything in the village shader that reads `batch_clock` must also repeat every 1.508 seconds, or it jumps. The effects toolkit has a clock of its own, `effects_clock`, which runs on game time.
-- The extra number rides in a place number that Godot calls padding. Godot hands it to the shader in the third column of the sprite's matrix. Checked on Godot 4.7.2 with the OpenGL renderer. If a later Godot stops handing it on, every extra number reads as 0. The effects comparison in `game/dev/effects_demo/` fails then.
+- The extra number rides in a place number that Godot calls padding. Godot hands it to the shader in the third column of the sprite's matrix. Checked on Godot 4.7.2 with the OpenGL renderer. If a later Godot stops handing it on, every extra number reads as 0. The effects comparison in `game/dev/effects_demo/` shows that, but it needs a window and CI does not run it. Run it by hand after every Godot upgrade.
+- A sprite is left out by its plain box. What a shader draws outside that box, such as an outline, is not counted. Sideways the batch keeps a margin as wide as its widest thing. Up and down it does not.
+- A mover takes no extra number before it is placed. `is_mover_placed(index)` says whether it was.
 - A class may have 20 public functions at most (the linter's rule), and `BatchRows` has 20. A new batch function goes into `BatchStore`.
 - Making a `BatchRows` for the 100,000 cell world takes 1.5 ms and 1.4 MB (Apple M3). The table of mover buckets covers the whole world. A bucket itself is only made when its first mover comes.

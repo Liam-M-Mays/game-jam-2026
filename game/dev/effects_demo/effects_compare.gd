@@ -54,6 +54,10 @@ const HUT_CELL := Vector2i(1, 0)
 const TREE := 1
 const FRONT := 2
 const HUT := 3
+## Two more trees for a "neighbours" pose: on the cells left and right of
+## the tree, on its own row.
+const LEFT := 4
+const RIGHT := 5
 ## Where the batch node is put for a "moved" pose, and how big it is drawn.
 const MOVED_TO := Vector2(310.0, -170.0)
 const MOVED_SCALE := 2.0
@@ -70,7 +74,8 @@ const POSES_PER_SHEET := 6
 ## The poses. "hut" is how the hut is shown: "built", "preview", or "site"
 ## with the stage in "stage" (-1 is a site with nothing built yet). "time" is
 ## how many seconds after the steps the picture is taken. Each step is what
-## happens, then to which thing, then what it needs.
+## happens, then to which thing, then what it needs. The step "wait" lets
+## that many seconds pass before the next step.
 const POSES: Array[Dictionary] = [
 	{"name": "rest", "steps": []},
 	{"name": "grow_in_start", "steps": [["grow_in", TREE]], "time": 0.0},
@@ -96,6 +101,10 @@ const POSES: Array[Dictionary] = [
 	{"name": "reject_late", "steps": [["reject", TREE], ["reject", HUT]], "time": 0.2},
 	{"name": "pop_top", "steps": [["pop", HUT]], "time": 0.05},
 	{"name": "pop_back", "steps": [["pop", HUT]], "time": 0.1},
+	# A second delivery 0.03 seconds into a pop, and a second hit 0.05 seconds
+	# into a hit. The jam game carries on from the size and the tilt it has.
+	{"name": "pop_again", "steps": [["pop", HUT], ["wait", 0.03], ["pop", HUT]], "time": 0.01},
+	{"name": "hit_again", "steps": [["hit", TREE], ["wait", 0.05], ["hit", TREE]], "time": 0.02},
 	{"name": "flash_on_new_stage", "hut": "site", "stage": 2, "steps": [["flash", HUT]],
 		"time": 0.04},
 	{"name": "preview", "hut": "preview", "steps": []},
@@ -115,11 +124,15 @@ const POSES: Array[Dictionary] = [
 	{"name": "sparks_2", "steps": [["sparks", TREE], ["remove", TREE]], "time": 0.07},
 	{"name": "sparks_3", "steps": [["sparks", TREE], ["remove", TREE]], "time": 0.13},
 	{"name": "sparks_over", "steps": [["sparks", TREE], ["remove", TREE]], "time": 0.2},
+	# A tree on each side, on the row of the tree that broke. The jam game
+	# sorts the sparks by their own height, so these two trees cover them.
+	{"name": "sparks_3_between_trees", "neighbours": true,
+		"steps": [["sparks", TREE], ["remove", TREE]], "time": 0.13},
 	{"name": "cloud_1", "steps": [["cloud", HUT, Vector2.ZERO]], "time": 0.01},
 	{"name": "cloud_2", "steps": [["cloud", HUT, Vector2.ZERO]], "time": 0.11},
 	{"name": "cloud_3_moved_down", "steps": [["cloud", HUT, Vector2(0.0, 10.0)]], "time": 0.21},
 	{"name": "cloud_over", "steps": [["cloud", HUT, Vector2.ZERO]], "time": 0.31},
-	{"name": "cells_round_the_mouse", "steps": [["cursor", Vector2(30.0, 60.0)]]},
+	{"name": "cells_round_the_mouse", "steps": [["cursor", Vector2(30.0, -20.0)]]},
 	{"name": "cells_plot", "hut": "none", "steps": [["plot", false]]},
 	{"name": "cells_plot_under_preview", "hut": "none", "steps": [["plot", true]]},
 	# The next poses must look like an earlier pose. They check the path of
@@ -326,6 +339,9 @@ func _stage_new(pose: Dictionary) -> void:
 	_lit = _jam.cell_highlights(_rows)
 	_rows.add_thing(TREE, TREE_CELL, _tree_sprite, TREE_OFFSET)
 	_rows.add_thing(FRONT, FRONT_CELL, _tree_sprite, TREE_OFFSET)
+	if pose.get("neighbours", false):
+		_rows.add_thing(LEFT, TREE_CELL + Vector2i.LEFT, _tree_sprite, TREE_OFFSET)
+		_rows.add_thing(RIGHT, TREE_CELL + Vector2i.RIGHT, _tree_sprite, TREE_OFFSET)
 	_hut_mode = pose.get("hut", "built")
 	_hut_stage = pose.get("stage", HUT_STAGES - 1)
 	_hut_blocked = false
@@ -353,6 +369,8 @@ func _act_new(step: Array) -> void:
 	var id: int = step[1] if step[1] is int else 0
 	var target := SpriteEffects.thing(id)
 	match what:
+		"wait":
+			_effects.advance(step[1])
 		"grow_in":
 			_effects.grow_in(target)
 		"hit":
@@ -414,6 +432,9 @@ func _stage_old(pose: Dictionary) -> void:
 			_old_cells[Vector2i(column, row)] = cell
 	_old_things[TREE] = _old_thing(OLD_TREE, [TREE_CELL])
 	_old_things[FRONT] = _old_thing(OLD_TREE, [FRONT_CELL])
+	if pose.get("neighbours", false):
+		_old_things[LEFT] = _old_thing(OLD_TREE, [TREE_CELL + Vector2i.LEFT])
+		_old_things[RIGHT] = _old_thing(OLD_TREE, [TREE_CELL + Vector2i.RIGHT])
 	var hut: String = pose.get("hut", "built")
 	if hut == "none":
 		return
@@ -441,6 +462,8 @@ func _act_old(step: Array) -> void:
 	var what: String = step[0]
 	var node: Node2D = _old_things.get(step[1]) if step[1] is int else null
 	match what:
+		"wait":
+			_freeze_old(step[1])
 		"grow_in":
 			node.call("grow_in")
 		"hit":
@@ -504,7 +527,11 @@ func _old_cursor(point: Vector2) -> void:
 	cursor.free()
 
 
-## Stops the jam game's tweens and one-shots, and puts them at [param time].
+## Stops the jam game's tweens and moves them on by [param time] seconds.
+## A one-shot of the jam game is not played: it is stopped and put on the
+## picture it shows [param time] seconds after it began, with the same sum
+## as [method EffectShots.advance_to]. Its scene, its pictures, its place and
+## its rate are the jam game's.
 func _freeze_old(time: float) -> void:
 	for node: Node2D in _old_things.values():
 		var tweens: Dictionary = node.get("_tweens")

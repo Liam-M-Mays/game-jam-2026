@@ -72,6 +72,13 @@ func active_count() -> int:
 	return _states.size()
 
 
+## Returns how many sprites are short of a table line right now, because the
+## effect table is full. Their effect is not shown, or only their lasting
+## look is. One warning is logged the first time it happens.
+func waiting_count() -> int:
+	return _waiting.size()
+
+
 ## Returns the table the shader reads. For tests and tools.
 func table() -> EffectTable:
 	return _table

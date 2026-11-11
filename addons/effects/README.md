@@ -2,7 +2,7 @@
 
 **What lives here:** the effects toolkit. One place for the outline and the effects of everything in a sprite batch: flash, shake, squash, wobble, pop, grow in, hover glow, selected outline, blueprint ghost, one-shot sprites and lit cells. No game script needs its own tween.
 
-It knows nothing about the game's rules or numbers, so it can be tested alone. It builds on the [sprite batch](../sprite_batch/README.md).
+It knows nothing about the game's rules, and it holds no time, distance, colour or size of the game. So it can be tested alone. The shape of each effect is fixed here: see "Limits". It builds on the [sprite batch](../sprite_batch/README.md).
 
 Built by #62. Design: the "Drawing" part of [docs/core-design.md](../../docs/core-design.md).
 
@@ -48,7 +48,7 @@ effects.forget(tree)                 # when the sprite leaves the batch
 ```
 
 - A tree, a building and a meeple are all called the same way.
-- The numbers (how long, how far, which colour) come from the `EffectStyle` the game hands in. The toolkit has none of its own.
+- The numbers (how long, how far, which colour) come from the `EffectStyle` the game hands in. The toolkit has none of those. The shape of each effect is fixed in the toolkit.
 - `squash`, `wobble` and `pop` take an amount of their own as a second value, for a kind that needs another one.
 - `flash(target, colour, hold)` stays solid for `hold` seconds before it fades.
 
@@ -57,6 +57,7 @@ effects.forget(tree)                 # when the sprite leaves the batch
 Timed effects run in five named slots: flash, shake, squash, wobble, pop.
 
 - A new effect in a slot takes the place of the one running there. Grow in uses the squash slot.
+- A flash, a shake and a squash start over. A pop or a wobble that takes over from a running one carries on from the size or the tilt the sprite has. So ten deliveries in a row swell a building once, and do not make it jump. The jam game does the same.
 - Effects in different slots play at the same time.
 - Squash and pop both change the size. Their sizes are multiplied.
 
@@ -71,7 +72,7 @@ Timed effects run in five named slots: flash, shake, squash, wobble, pop.
 Inside the batch an effect is a value per sprite that the shader reads.
 
 1. A sprite with an effect carries an **effect number**. It is the sprite's extra number in the batch: 32-bit, on a path of its own. The colour and the four shader numbers of a sprite are not used, so a meeple keeps all of them.
-2. The effect number is a **line of the effect table**, a small texture. A line is 8 pixels of 4 numbers: what is hovered or selected, the colours, when each timed effect started and how long it runs. The layout is at the top of `effects.gdshaderinc`.
+2. The effect number is a **line of the effect table**, a small texture. A line is 9 pixels of 4 numbers: what is hovered or selected, the colours, when each timed effect started and how long it runs. The layout is at the top of `effects.gdshaderinc`.
 3. The shader works the effect out from that line and from the **effect clock**. No script runs per sprite per frame. A script only runs when an effect starts and when it ends.
 
 - A sprite with no effect carries 0. The shader then changes nothing.
@@ -95,11 +96,13 @@ The outline follows the picture of the sprite, is drawn outside the sprite's own
 ```gdscript
 effects.shots.play_on(thing_id, frames, 16.0)                               # in front of its own row
 effects.shots.play_on(thing_id, frames, 10.0, Vector2(0, 10), BatchRows.OVER)   # over everything
+effects.shots.play_on(thing_id, frames, 16.0, Vector2.ZERO, EffectShots.BY_HEIGHT)  # sorted by height
 ```
 
 - `frames` are sprite numbers of the atlas. They play once, on game time, and take themselves away.
 - It plays at the middle of the thing's picture, moved by the offset in art pixels.
 - It keeps playing when the thing is taken away.
+- `EffectShots.BY_HEIGHT` puts it in the drawing order by the height of its own middle, as a node in a parent that sorts by height would be. The middle of a tree's picture is above the line the tree stands on, so its sparks are behind the things of its own row and in front of the row above. The jam game draws its sparks this way.
 
 ## Lit cells
 
@@ -112,22 +115,28 @@ lit.clear(&"hover")
 ```
 
 - A cell is invisible until a layer lights it. A lit cell is the cell picture in a colour, drawn under everything.
-- Showing a layer again replaces what it showed. Where two layers light one cell, the higher rank wins.
+- Showing a layer again replaces what it showed. Where two layers light one cell, the higher rank wins. Give every layer a rank of its own.
 - The cell maths comes in from the batch (`BatchCells`), as for picking. The toolkit has no grid numbers.
 
 ## Tests and pictures
 
-- `tests/`: the curves, the table, the lines, game time (x3 and pause), the named slots, one-shots and lit cells. All with no window.
-- What the shader really draws is proven by pictures next to the jam game: [game/dev/effects_demo/](../../game/dev/effects_demo/README.md).
+- `tests/`: the curves, the table and its limit, the lines, game time (x3 and pause), the named slots, one-shots, lit cells, and the values the shader is sent. All with no window.
+- A run with no window compiles a shader but draws nothing. So what the shader really draws is proven by pictures next to the jam game: [game/dev/effects_demo/](../../game/dev/effects_demo/README.md). That comparison needs a window. CI does not run it: a person does.
 
 ## Limits
 
-- **The extra number rides in a spare place number of the sprite.** Godot calls those two numbers padding and hands them to the shader in the sprite's matrix. Checked on Godot 4.7.2 with the OpenGL renderer. If a later Godot stops doing that, no effect shows any more, and the comparison scene in `game/dev/effects_demo/` fails.
-- The effect table holds 16,383 lines. When it is full, a new effect is not shown and one warning is logged.
-- No effect may run longer than 64 seconds, a quarter of the effect clock.
+- **The extra number rides in a spare place number of the sprite.** Godot calls those two numbers padding and hands them to the shader in the sprite's matrix. Checked on Godot 4.7.2 with the OpenGL renderer. If a later Godot stops doing that, no effect shows any more. Nothing in CI notices that. **Run the comparison scene in `game/dev/effects_demo/` by hand after every Godot upgrade.**
+- **The shape of each effect is fixed in the toolkit, in two copies.** The style sets how long, how far and which colour. It does not set the shape: the five steps of a shake (out, across, half out, half across, back), the quarter, half, quarter of a wobble, the springy ease of a squash, the sine ease of a pop, the falloff of the glow, and the 16 directions and 48 pixel reach of the outline. They are the jam game's shapes. Why they are here: a shape is a sum in the shader, and a style can only hand in numbers. One copy is in `effects.gdshaderinc`, the other in `EffectCurves` for tests. A change has to be made in both. No test with no window can see the shader's copy: only the comparison pictures catch a shader that differs.
+- The effect table holds 16,383 lines. When it is full, one warning is logged and a new timed effect is not shown. A sprite that is hovered or selected keeps that look when it can. A sprite that is short of a line gets one at the next `advance` after a line came free.
+- No effect may run longer than 64 seconds, a quarter of the effect clock. Nothing checks this: only the hold of a flash is cut to it. Past 256 seconds the shader would start the effect again.
 - An effect that has just ended keeps its line until the next `advance`.
-- Call `forget(target)` when a sprite leaves the batch. A timed effect ends by itself, but a lasting one (hovered, selected, ghost) stays in the toolkit's books, and a mover number that is used again would show it.
+- Call `forget(target)` when a sprite leaves the batch.
+    - A thing number that is used again without it starts clean. So does a mover number after `resize_movers`. The old state is dropped at the next call for that number. Until then `has_effect` still says true.
+    - A mover number that is handed to another meeple with `place_mover` keeps its effect number. The new meeple shows the old one's hover or selected outline until `forget`.
+- A mover gets no effect before it is placed. The call is refused, as for a sprite that is not in the batch.
+- **A sprite is left out by its plain box.** An outline, a squash or a shake reaches outside that box. So it vanishes when the box leaves the screen, not when the outline does. Sideways the batch keeps a margin as wide as its widest thing. Up and down it does not.
+- A one-shot that is sorted by height is behind every mover of the band it falls in, also behind the ones that stand higher than its middle.
+- Two cell layers with the same rank: which one wins a cell depends on the order of earlier calls. Give every layer a rank of its own.
 - The ghost behind a sprite must be a picture of the same size, such as the next frame of the same sheet.
 - A pulse speed of the outline is rounded so that a whole number of pulses fits into 256 seconds.
-- `EffectCurves` is a copy of the curves in the shader, for tests. A change to a curve has to be made in both. The comparison pictures catch a shader that differs.
 - A long frame is not cut short for the effect clock, as it is for the simulation ticks. After a hitch an effect can be over at once.
