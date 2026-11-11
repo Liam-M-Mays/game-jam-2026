@@ -278,6 +278,13 @@ func decor_count() -> int:
 	return _decor_layers.size()
 
 
+## Returns [param row] when the batch has that row, and the nearest row it
+## has when not. The batch has the rows of its world, one more above and one
+## more below.
+func nearest_row(row: int) -> int:
+	return clampi(row, _top_row, _top_row + _row_count - 1)
+
+
 ## Returns true when mover [param index] was placed with
 ## [method BatchRows.place_mover], so it is drawn and can carry an extra number.
 func is_mover_placed(index: int) -> bool:

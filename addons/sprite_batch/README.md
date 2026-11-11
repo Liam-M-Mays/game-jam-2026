@@ -114,7 +114,7 @@ rows.remove_decor(id)
 - `add_decor` hands out the number. Decor numbers are counted apart from thing numbers.
 - Decor under and over everything is always sent, on screen or not. Keep it to a few sprites.
 - A row is sent while one of its things or one of its front decor sprites reaches into the screen.
-- The effects toolkit can also put a one-shot in the order by the height of its own middle (`EffectShots.BY_HEIGHT`). It uses the front layer of the row that the middle falls in.
+- The effects toolkit can also put a one-shot in the order by the height of its own middle (`EffectShots.BY_HEIGHT`). It uses the front layer of the row that the middle falls in. `nearest_row(row)` gives that row, or the first or last row of the batch when the middle is outside them all.
 
 ## The grid
 

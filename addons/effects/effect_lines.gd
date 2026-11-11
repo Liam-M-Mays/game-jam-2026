@@ -94,7 +94,7 @@ func _exists(target: int) -> bool:
 	var number := target >> 1
 	if _is_mover(target):
 		return _rows.is_mover_placed(number)
-	return target >= 0 and _rows.has_thing(number)
+	return _rows.has_thing(number)
 
 
 ## The effect number the sprite really carries in the batch.
@@ -134,8 +134,11 @@ func _set_line(target: int, line: int) -> void:
 ## its own while a timed effect runs.
 ## When the table is full, a sprite keeps its lasting look on a shared line
 ## if it can, and waits. It gets its line when one comes free.
+## A state whose line the sprite does not carry is dropped, as in
+## [method _state]: it belonged to an earlier sprite with the same number.
 func _refresh(target: int, state: EffectState) -> void:
-	if not _exists(target) or not (state.is_timed() or state.is_lasting()):
+	var stale := not _exists(target) or state.line != _carried(target)
+	if stale or not (state.is_timed() or state.is_lasting()):
 		forget(target)
 		return
 	var timed := state.is_timed()
@@ -144,14 +147,16 @@ func _refresh(target: int, state: EffectState) -> void:
 		_next_end = minf(_next_end, state.next_end())
 	else:
 		_timed.erase(target)
+	var short := timed
 	if timed and _take_own(state):
 		state.offset = _offset_of(target)
 		_write(state.line, state, true)
+		short = false
 	elif state.is_lasting():
-		_share(state)
+		short = not _share(state) or timed
 	else:
 		_release(state)
-	if state.line == EffectTable.NONE or (timed and state.shared):
+	if short:
 		_waiting[target] = true
 		if not _full_warned:
 			_full_warned = true
@@ -168,16 +173,26 @@ func _refresh(target: int, state: EffectState) -> void:
 func _take_own(state: EffectState) -> bool:
 	if state.line != EffectTable.NONE and not state.shared:
 		return true
-	var own := _table.take()
-	if own == EffectTable.NONE and state.shared and _shared_counts[state.line] == 1:
-		# Nobody else reads its shared line, so that line becomes its own.
-		_release(state)
-		own = _table.take()
+	var own := _take_line(state)
 	if own == EffectTable.NONE:
 		return false
 	_release(state)
 	state.line = own
 	return true
+
+
+## Takes a free line for a state that moves to another line. At a full table
+## the state gives its line back first, when nobody else reads that line: so
+## its old line becomes its new one. Returns [constant EffectTable.NONE] when
+## there is no line, and then the state is left on the line it has.
+func _take_line(state: EffectState) -> int:
+	var line := _table.take()
+	if line != EffectTable.NONE or state.line == EffectTable.NONE:
+		return line
+	if state.shared and _shared_counts[state.line] > 1:
+		return EffectTable.NONE
+	_release(state)
+	return _table.take()
 
 
 ## Tries again for every sprite that is short of a line, once a line came free.
@@ -197,24 +212,27 @@ func _offset_of(target: int) -> Vector2:
 	return _rows.mover_offset() if _is_mover(target) else _rows.thing_offset(target >> 1)
 
 
-## Moves a state with only lasting values onto the line for those values.
-func _share(state: EffectState) -> void:
+## Moves a state onto the line for its lasting values, and returns true when
+## it is on that line. The new line is taken before the old one is given up,
+## so at a full table the sprite keeps the look it had.
+func _share(state: EffectState) -> bool:
 	var key := state.lasting_key()
 	if state.shared and _shared_keys.get(state.line, []) == key:
-		return
-	_release(state)
+		return true
 	var line: int = _shared_lines.get(key, EffectTable.NONE)
 	if line == EffectTable.NONE:
-		line = _table.take()
+		line = _take_line(state)
 		if line == EffectTable.NONE:
-			return
+			return false
 		_shared_lines[key] = line
 		_shared_keys[line] = key
 		_shared_counts[line] = 0
 		_write(line, state, false)
+	_release(state)
 	_shared_counts[line] += 1
 	state.line = line
 	state.shared = true
+	return true
 
 
 ## Gives the line of a state back.

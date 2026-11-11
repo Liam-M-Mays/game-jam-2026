@@ -102,7 +102,7 @@ effects.shots.play_on(thing_id, frames, 16.0, Vector2.ZERO, EffectShots.BY_HEIGH
 - `frames` are sprite numbers of the atlas. They play once, on game time, and take themselves away.
 - It plays at the middle of the thing's picture, moved by the offset in art pixels.
 - It keeps playing when the thing is taken away.
-- `EffectShots.BY_HEIGHT` puts it in the drawing order by the height of its own middle, as a node in a parent that sorts by height would be. The middle of a tree's picture is above the line the tree stands on, so its sparks are behind the things of its own row and in front of the row above. The jam game draws its sparks this way.
+- `EffectShots.BY_HEIGHT` puts it in the drawing order by the height of its own middle, as a node in a parent that sorts by height would be. The middle of a tree's picture is above the line the tree stands on, so its sparks are behind the things of its own row and in front of the row above. The jam game draws its sparks this way. A middle above the first row of the batch, or below its last, is put on that row.
 
 ## Lit cells
 
@@ -127,11 +127,12 @@ lit.clear(&"hover")
 
 - **The extra number rides in a spare place number of the sprite.** Godot calls those two numbers padding and hands them to the shader in the sprite's matrix. Checked on Godot 4.7.2 with the OpenGL renderer. If a later Godot stops doing that, no effect shows any more. Nothing in CI notices that. **Run the comparison scene in `game/dev/effects_demo/` by hand after every Godot upgrade.**
 - **The shape of each effect is fixed in the toolkit, in two copies.** The style sets how long, how far and which colour. It does not set the shape: the five steps of a shake (out, across, half out, half across, back), the quarter, half, quarter of a wobble, the springy ease of a squash, the sine ease of a pop, the falloff of the glow, and the 16 directions and 48 pixel reach of the outline. They are the jam game's shapes. Why they are here: a shape is a sum in the shader, and a style can only hand in numbers. One copy is in `effects.gdshaderinc`, the other in `EffectCurves` for tests. A change has to be made in both. No test with no window can see the shader's copy: only the comparison pictures catch a shader that differs.
-- The effect table holds 16,383 lines. When it is full, one warning is logged and a new timed effect is not shown. A sprite that is hovered or selected keeps that look when it can. A sprite that is short of a line gets one at the next `advance` after a line came free.
+- The effect table holds 16,383 lines. When it is full, one warning is logged and a new timed effect is not shown. A sprite that is hovered or selected keeps the look it has, also when it asks for another one. A sprite that is short of a line gets one at the next `advance` after a line came free, also while the game is paused. `waiting_count()` says how many are short.
 - No effect may run longer than 64 seconds, a quarter of the effect clock. Nothing checks this: only the hold of a flash is cut to it. Past 256 seconds the shader would start the effect again.
 - An effect that has just ended keeps its line until the next `advance`.
 - Call `forget(target)` when a sprite leaves the batch.
-    - A thing number that is used again without it starts clean. So does a mover number after `resize_movers`. The old state is dropped at the next call for that number. Until then `has_effect` still says true.
+    - A thing number that is used again without it gets none of the old sprite's effects. The same holds for a mover number after `resize_movers`. The old state is dropped at the next call for that number, or when one of its timed effects ends. Until then `has_effect` still says true.
+    - One case cannot be told apart: the old sprite was short of a line at a full table. Its state and a new sprite both carry 0. So the new sprite gets the old look when a line comes free.
     - A mover number that is handed to another meeple with `place_mover` keeps its effect number. The new meeple shows the old one's hover or selected outline until `forget`.
 - A mover gets no effect before it is placed. The call is refused, as for a sprite that is not in the batch.
 - **A sprite is left out by its plain box.** An outline, a squash or a shake reaches outside that box. So it vanishes when the box leaves the screen, not when the outline does. Sideways the batch keeps a margin as wide as its widest thing. Up and down it does not.

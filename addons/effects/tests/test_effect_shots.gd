@@ -114,6 +114,57 @@ func test_a_one_shot_by_height_with_its_middle_in_its_own_band_stays_with_its_ro
 	check_eq(_small_middle(), Vector2(290.0, 140.0), "where it was asked for")
 
 
+func test_a_one_shot_by_height_above_or_below_every_row_of_the_batch_still_plays() -> void:
+	# The world of the test starts at row -80, and the batch has one row more
+	# above it. The middle of a tall thing on row -80 is above them all. The
+	# one-shot goes to the first row there is: behind the thing.
+	_rows.add_thing(20, Vector2i(2, -80), _tall, BatchTestKit.TALL_OFFSET)
+	var frames := PackedInt32Array([_small])
+	var shot := _effects.shots.play_on(20, frames, 4.0, Vector2.ZERO, EffectShots.BY_HEIGHT)
+	check(shot != EffectShots.NO_SHOT, "it plays")
+	check_eq(_small_middle(), Vector2(-3870.0, -4140.0), "at the middle of the thing")
+	check_eq(_drawn_order(), "small tall tall wide", "behind the thing, as on any other row")
+	_effects.shots.stop(shot)
+	# The last row of the batch is 81. A middle below it stays on that row.
+	var low := Vector2(0.0, 12.0)
+	shot = _effects.shots.play(frames, 4.0, Vector2i(2, 81), low, EffectShots.BY_HEIGHT)
+	check(shot != EffectShots.NO_SHOT, "it plays at the bottom edge too")
+	check_eq(_drawn_order(), "tall tall wide small", "in front of everything")
+
+
+func test_a_one_shot_by_height_on_a_row_line_is_in_that_row_whatever_the_grid_origin() -> void:
+	var cells := BatchTestKit.cells(Vector2(0.0, 0.1))
+	var world := Rect2(-4000.0, -4000.0, 8000.0, 8000.0)
+	var rows := BatchRows.new(cells, BatchTestKit.atlas(), world, BatchTestKit.ART_SCALE)
+	var effects := SpriteEffects.new(rows, EffectsTestKit.style())
+	var small := rows.atlas.find(BatchTestKit.SMALL)
+	var wide := rows.atlas.find(BatchTestKit.WIDE)
+	# One wide thing on every row from -12 to 12.
+	for row in range(-12, 13):
+		rows.add_thing(100 + row, Vector2i(0, row), wide)
+	var frames := PackedInt32Array([small])
+	var wrong := 0
+	for row in range(-10, 11):
+		for rows_down in range(-2, 3):
+			# 5 art pixels are one row: the middle is exactly on a row line.
+			var offset := Vector2(0.0, 5.0 * rows_down)
+			var cell := Vector2i(3, row)
+			var shot := effects.shots.play(frames, 4.0, cell, offset, EffectShots.BY_HEIGHT)
+			var buffer := PackedFloat32Array()
+			rows.assemble(BatchTestKit.everything(), buffer)
+			var before := 0
+			for sprite in BatchTestKit.read(buffer):
+				if sprite["sprite"] == small:
+					break
+				before += 1
+			# It is drawn after the things of every row down to its own.
+			if before != row + rows_down + 13:
+				wrong += 1
+			effects.shots.stop(shot)
+	check_eq(wrong, 0, "one-shots that landed in another row than the line they are on")
+	effects.close()
+
+
 func _run(frames: int, speed: float) -> void:
 	for frame in frames:
 		_effects.advance(STEP, speed)

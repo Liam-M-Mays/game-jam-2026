@@ -191,6 +191,127 @@ func test_at_a_full_table_a_selected_sprite_keeps_its_outline_while_it_flashes()
 	check_eq(_rows.thing_extra(TREE), float(_effects.line_of(_tree)))
 
 
+func test_a_thing_with_a_negative_number_takes_select_and_flash() -> void:
+	# The batch allows every thing number but -1.
+	_rows.add_thing(-5, Vector2i(3, 3), _small)
+	var target := SpriteEffects.thing(-5)
+	_effects.select(target, true)
+	var shared := _effects.line_of(target)
+	check(shared != EffectTable.NONE, "selected: it has a line")
+	check_eq(_rows.thing_extra(-5), float(shared), "and carries it")
+	check_eq(_effects.table().read(shared, 0).x, 2.0)
+	_effects.flash(target)
+	var own := _effects.line_of(target)
+	check(own != EffectTable.NONE and own != shared, "flashing: a line of its own")
+	check_eq(_rows.thing_extra(-5), float(own))
+	check_eq(_effects.pose(target)["flash"], 1.0)
+	_run(100)
+	check_eq(_rows.thing_extra(-5), float(_effects.line_of(target)), "selected again afterwards")
+	check_eq(_effects.table().read(_effects.line_of(target), 0).x, 2.0)
+	_effects.forget(target)
+	check_eq(_rows.thing_extra(-5), 0.0)
+	check_eq(_effects.table().lines_in_use(), 0)
+
+
+func test_a_thing_number_used_again_does_not_get_the_old_look_when_the_old_flash_ends() -> void:
+	# The old thing leaves in the middle of a flash, and nobody calls forget.
+	# When the old flash runs out, the new thing must not be handed the old
+	# selected outline, or the old grow-in that still runs.
+	for with: String in ["select", "grow_in"]:
+		_effects.flash(_tree)
+		if with == "select":
+			_effects.select(_tree, true, Color.RED)
+		else:
+			_effects.grow_in(_tree)
+		_rows.remove_thing(TREE)
+		_rows.add_thing(TREE, Vector2i(4, 4), _small)
+		_run(100)
+		check_eq(_rows.thing_extra(TREE), 0.0, with + ": the new thing carries no effect number")
+		check(not _effects.has_effect(_tree), with + ": the old state is dropped")
+		check_eq(_effects.table().lines_in_use(), 0, with + ": and its line is given back")
+
+
+func test_a_mover_number_used_again_does_not_get_the_old_look_when_the_old_flash_ends() -> void:
+	_effects.select(_meeple, true)
+	_effects.flash(_meeple)
+	_rows.resize_movers(0)
+	_rows.resize_movers(1)
+	_place(MEEPLE)
+	_run(100)
+	check_eq(_rows.mover_extra(MEEPLE), 0.0, "the new meeple carries no effect number")
+	check(not _effects.has_effect(_meeple))
+	check_eq(_effects.table().lines_in_use(), 0)
+
+
+func test_a_shared_line_that_comes_free_goes_to_a_waiting_sprite_at_the_next_advance() -> void:
+	_fill_but_for_the_selected_house()
+	_effects.hover(_tree, true)
+	check_eq(_effects.line_of(_tree), EffectTable.NONE, "the table is full")
+	check_eq(_effects.waiting_count(), 1)
+	_effects.select(_house, false)
+	check_eq(_effects.line_of(_tree), EffectTable.NONE, "not before the next advance")
+	_effects.advance(STEP)
+	var line := _effects.line_of(_tree)
+	check(line != EffectTable.NONE, "the line the house shared came free: the tree has it")
+	check_eq(_rows.thing_extra(TREE), float(line))
+	check_eq(_effects.table().read(line, 0).x, 1.0, "hovered")
+	check_eq(_effects.waiting_count(), 0)
+	check_eq(_effects.table().lines_in_use(), FULL, "no flash has ended yet")
+
+
+func test_a_waiting_sprite_gets_its_line_while_the_game_is_paused() -> void:
+	_fill_but_for_the_selected_house()
+	_effects.hover(_tree, true)
+	_effects.select(_house, false)
+	_effects.advance(STEP, 1.0, true)
+	var line := _effects.line_of(_tree)
+	check(line != EffectTable.NONE, "a pause does not hold a hover outline back")
+	check_eq(_rows.thing_extra(TREE), float(line))
+	check_eq(_effects.waiting_count(), 0)
+	check_eq(_effects.clock(), 0.0, "the effect clock stood still")
+
+
+func test_forget_takes_a_waiting_sprite_off_the_waiting_list() -> void:
+	_fill_but_for_the_selected_house()
+	_effects.hover(_tree, true)
+	check_eq(_effects.waiting_count(), 1)
+	_effects.forget(_tree)
+	check_eq(_effects.waiting_count(), 0)
+	check(not _effects.has_effect(_tree))
+
+
+func test_at_a_full_table_a_selected_sprite_that_is_hovered_keeps_its_outline() -> void:
+	_effects.select(_tree, true)
+	_fill_but_for_the_selected_house()
+	var shared := _effects.line_of(_house)
+	check_eq(_effects.line_of(_tree), shared, "the two selected sprites share a line")
+	_effects.hover(_tree, true)
+	check_eq(_effects.line_of(_tree), shared, "no line for the new look: it stays on the old one")
+	check_eq(_rows.thing_extra(TREE), float(shared), "so it is still drawn selected")
+	check_eq(_effects.table().read(shared, 0).x, 2.0, "the shared line itself did not change")
+	check_eq(_effects.waiting_count(), 1, "it waits for a line")
+	_effects.forget(SpriteEffects.thing(CROWD))
+	_effects.advance(STEP)
+	var line := _effects.line_of(_tree)
+	check(line != EffectTable.NONE and line != shared, "a line came free: it moved")
+	check_eq(_rows.thing_extra(TREE), float(line))
+	check_eq(_effects.table().read(line, 0).x, 3.0, "selected and hovered")
+	check_eq(_effects.line_of(_house), shared, "the house stays where it was")
+	check_eq(_effects.waiting_count(), 0)
+	# Alone on its line at a full table, a sprite turns that line into its new one.
+	_effects.hover(_tree, false)
+	_effects.flash(SpriteEffects.thing(CROWD))
+	_effects.forget(_house)
+	check_eq(_effects.table().lines_in_use(), FULL)
+	_effects.hover(_tree, true)
+	line = _effects.line_of(_tree)
+	check(line != EffectTable.NONE, "it has a line")
+	check_eq(_rows.thing_extra(TREE), float(line))
+	check_eq(_effects.table().read(line, 0).x, 3.0, "with the new look")
+	check_eq(_effects.waiting_count(), 0)
+	check_eq(_effects.table().lines_in_use(), FULL)
+
+
 func _place(index: int) -> void:
 	_rows.place_mover(index, Vector2(100.0, 100.0), Color.WHITE, Vector4(float(_small), 0, 0, 1))
 
@@ -200,6 +321,14 @@ func _add_crowd(count: int) -> void:
 	for index in count:
 		@warning_ignore("integer_division")
 		_rows.add_thing(CROWD + index, Vector2i(127 - index % 128, index / 128 - 70), _small)
+
+
+## Fills the table: the house is selected, and a crowd flashes on every
+## other line.
+func _fill_but_for_the_selected_house() -> void:
+	_effects.select(_house, true)
+	_add_crowd(FULL - 1)
+	_flash_crowd(FULL - 1)
 
 
 ## Starts a flash on the first [param count] things of the crowd.
