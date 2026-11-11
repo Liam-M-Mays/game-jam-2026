@@ -3,7 +3,8 @@ extends Node
 ## Draws the meeples of one village through its sprite batch.
 ##
 ## It reads the rows of a [VillageMeeples] and never changes them. Each meeple
-## is one mover of the batch, with the same number as its row.
+## is one mover of the batch, with the same number as its row. So the movers
+## of that batch belong to this view: nothing else may add movers to it.
 ##
 ## The village steps on ticks, and the screen draws more often than that. So
 ## in every frame a walking meeple is put between the spot it had one tick

@@ -66,6 +66,7 @@ What the columns mean:
 | Batch ms | The sprite batch: putting together what is on screen and sending it |
 | Render ms | Godot's drawing time on the processor |
 
+- `pictures/meeple_stress_5000.png` is the run as it is measured. `pictures/meeple_stress_5000_close.png` is the same crowd from close up, and `pictures/meeple_stress_huts_close.png` is a run with `hangouts=300`.
 - **Batch ms is high in this scene on purpose.** The whole world is in view, so the batch looks at every mover column of every band in every frame: about 39,000 of them. From close up it looks at far fewer. Wider columns (`column_width=3840`) make it cheaper here.
 - The same traps as for the batch stress scene apply. Read "How a frame rate is measured" below before trusting a number.
 

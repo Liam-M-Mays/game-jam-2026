@@ -64,7 +64,7 @@ const EXPECTED: Dictionary[String, int] = {
 ## What each picture shows, for the line under it.
 const CAPTIONS: Dictionary[String, String] = {
 	"walk_carry": "Upper line: walking, half way between two ticks. Lower line: standing."
-	+ " Loads: none, wood, 2 wood, stone, 2 stone, none.",
+	+ " Loads, left to right: none, wood, 2 wood, stone, 2 stone, none, none, wood.",
 	"topple": "Ticks since death, left to right: 0, 3, 6, 9, 10, 11, 12, 20."
 	+ " Upper line died standing, lower line died walking.",
 	"fade": "Ticks since death, left to right: 24, 27, 30, 33, 36, 38, 39, 40."
