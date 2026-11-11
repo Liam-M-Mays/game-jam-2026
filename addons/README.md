@@ -4,8 +4,8 @@
 
 | Addon | What it does | Issue |
 | --- | --- | --- |
-| Sprite batch | Draws a village as one batch, with its atlas | #61 |
+| [Sprite batch](sprite_batch/README.md) | Draws a village as one batch, with its atlas. It also finds the thing under the mouse | #61 |
 | Effects toolkit | The outline shader and the effects: flash, squash, wobble, pop, shake, blueprint ghost | #62 |
 | Building editor | Add and edit buildings inside Godot | #33 |
 
-None exists yet. Each addon gets its own folder with a `README.md`.
+The sprite batch exists. The other two do not yet. Each addon gets its own folder with a `README.md`.
