@@ -30,6 +30,7 @@ var _sent := 0
 var _sends := 0
 var _seen_serial := -1
 var _seen_view := Rect2()
+var _seen_turn := Transform2D(0.0, Vector2.ZERO)
 var _prepare_usec := 0
 
 
@@ -72,6 +73,7 @@ func setup(batch_rows: BatchRows, shader: Shader = null) -> void:
 func refresh_atlas() -> void:
 	var drawer := get_child(0) as MultiMeshInstance2D
 	drawer.texture = rows.atlas.texture()
+	_material.set_shader_parameter(&"batch_atlas", rows.atlas.texture())
 	_material.set_shader_parameter(&"batch_rects", rows.atlas.rects_texture())
 	_material.set_shader_parameter(&"batch_atlas_size", Vector2(rows.atlas.image().get_size()))
 	_seen_serial = -1
@@ -122,6 +124,7 @@ func prepare_frame() -> void:
 		return
 	var started := Time.get_ticks_usec()
 	_material.set_shader_parameter(&"batch_clock", fmod(clock, clock_wrap))
+	_send_turn()
 	var view := view_rect()
 	if rows.serial() != _seen_serial or view != _seen_view:
 		_seen_serial = rows.serial()
@@ -133,6 +136,20 @@ func prepare_frame() -> void:
 			RenderingServer.multimesh_set_buffer(_multimesh.get_rid(), _buffer)
 		_sends += 1
 	_prepare_usec = Time.get_ticks_usec() - started
+
+
+## Tells the shader how this node is turned and sized, so that it can read
+## the extra number of a sprite. See batch_extra in sprite_batch.gdshaderinc.
+func _send_turn() -> void:
+	var here := get_global_transform()
+	var turn := Transform2D(here.x, here.y, Vector2.ZERO)
+	if turn == _seen_turn:
+		return
+	_seen_turn = turn
+	var undo := Transform2D.IDENTITY
+	if not is_zero_approx(turn.determinant()):
+		undo = turn.affine_inverse()
+	_material.set_shader_parameter(&"batch_turn_inverse", undo)
 
 
 func _unit_quad() -> ArrayMesh:

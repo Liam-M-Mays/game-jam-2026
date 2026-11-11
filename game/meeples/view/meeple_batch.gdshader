@@ -42,12 +42,39 @@ varying flat vec4 v_data;
 varying flat vec4 v_tint;
 varying vec2 v_local;
 
+// How solid the picture of this sprite is at `local`, 0 to 1 across the
+// sprite. The effects toolkit asks this to draw an outline round the picture.
+float effects_shape(vec2 local) {
+	if (any(lessThan(local, vec2(0.0))) || any(greaterThanEqual(local, vec2(1.0)))) {
+		return 0.0;
+	}
+	if (v_data.w < 0.5) {
+		return texture(batch_atlas, batch_uv(v_rect, local * v_rect.zw)).a;
+	}
+	vec2 p = local * BOX;
+	float solid = 0.0;
+	if (p.x >= 1.0 && p.x < 2.0 && p.y >= 4.0) {
+		solid = texture(batch_atlas, batch_uv(v_body, p - vec2(1.0, 4.0))).a;
+	}
+	vec2 head_pixel = p - (vec2(1.5, 3.0 - v_data.z) - v_rect.zw * 0.5);
+	if (head_pixel.x >= 0.0 && head_pixel.y >= 0.0
+			&& head_pixel.x < v_rect.z && head_pixel.y < v_rect.w) {
+		solid = max(solid, texture(batch_atlas, batch_uv(v_rect, head_pixel)).a);
+	}
+	return solid;
+}
+
+// The effects toolkit: outline, flash, squash, wobble, pop, shake and ghost.
+#include "res://addons/effects/effects.gdshaderinc"
+
 void vertex() {
 	v_rect = batch_rect(INSTANCE_CUSTOM.x);
 	v_data = INSTANCE_CUSTOM;
 	v_tint = COLOR;
 	v_local = UV;
 	v_body = vec4(0.0);
+	vec2 art_size = INSTANCE_CUSTOM.w > 0.5 ? BOX : v_rect.zw;
+	v_effects = effects_vertex(MODEL_MATRIX, CANVAS_MATRIX, art_size, VERTEX, v_local);
 	if (INSTANCE_CUSTOM.w > 0.5) {
 		v_body = batch_rect(meeple_body);
 		float walking = INSTANCE_CUSTOM.w - 1.0;
@@ -86,5 +113,5 @@ void fragment() {
 		colour = vec4(mix(body.rgb, head.rgb, head.a), max(body.a, head.a));
 		colour.a *= v_tint.a;
 	}
-	COLOR = colour;
+	COLOR = effects_colour(colour, v_local, fwidth(v_local));
 }

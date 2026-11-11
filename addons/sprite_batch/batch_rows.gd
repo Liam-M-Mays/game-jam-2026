@@ -1,5 +1,5 @@
 class_name BatchRows
-extends RefCounted
+extends BatchStore
 ## The sprites of one village, kept in drawing order with no sorting.
 ##
 ## A [b]thing[/b] stands still on a cell: a tree, a rock, a building, a drop.
@@ -18,86 +18,9 @@ extends RefCounted
 ## Nothing here needs a window, so all of it can be tested alone.
 ## The cell maths, the atlas and the art scale are given once and cannot be
 ## changed later. A village is moved by moving its [SpriteBatch] node.
-
-## How many numbers one sprite takes in the buffer: 8 say where it is and how
-## big, 4 are its colour and 4 are for the shader.
-## The colour and the four shader numbers reach the graphics card as 16-bit
-## numbers on Godot's OpenGL renderer: about 3 digits, and whole numbers are
-## only exact up to 2,048. Keep them small. The 8 place numbers are 32-bit.
-const FLOATS := 16
-## Returned when there is no thing.
-const NO_THING := -1
-## The fourth shader number of a plain sprite. Other values pick another way
-## of drawing in the shader, such as the meeple.
-const PLAIN := 0.0
-
-const _X := 3
-const _Y := 7
-const _WIDTH := 0
-const _HEIGHT := 5
-const _COLOUR := 8
-const _DATA := 12
-const _INT32_MAX := 2147483647
-## The bucket of a mover that was not placed yet. No real bucket is this big.
-const _UNPLACED := _INT32_MAX
-
-## The cell maths: where a cell is and which cell a point is in. Read-only.
-var cells: BatchCells:
-	get:
-		return _cells
-	set(_value):
-		push_error("BatchRows: the cell maths cannot be changed. Make new rows.")
-## The image that holds every sprite. Read-only.
-var atlas: SpriteAtlas:
-	get:
-		return _atlas
-	set(_value):
-		push_error("BatchRows: the atlas cannot be changed. Make new rows.")
-## How many pixels one art pixel takes at zoom 1. Read-only.
-var pixel_scale: float:
-	get:
-		return _pixel_scale
-	set(_value):
-		push_error("BatchRows: the art scale cannot be changed. Make new rows.")
-
-var _cells: BatchCells
-var _atlas: SpriteAtlas
-var _pixel_scale := 1.0
-var _serial := 0
-
-var _top_row := 0
-var _top_y := 0.0
-var _row_count := 0
-var _row_height := 1.0
-var _row_blocks: Array[PackedFloat32Array] = []
-var _row_ids: Array[PackedInt32Array] = []
-var _row_keys: Array[PackedFloat64Array] = []
-var _row_up := PackedFloat64Array()
-var _row_down := PackedFloat64Array()
-var _row_versions := PackedInt32Array()
-var _thing_cells: Dictionary[int, Vector2i] = {}
-var _thing_footprints: Dictionary[int, Array] = {}
-var _cell_things: Dictionary[Vector2i, int] = {}
-var _cell_others: Dictionary[Vector2i, PackedInt32Array] = {}
-var _max_up := 0.0
-var _max_down := 0.0
-var _reach_x := 0.0
-
-var _left := 0.0
-var _column_width := 960.0
-var _columns := 1
-var _mover_size := Vector2(10.0, 10.0)
-var _mover_offset := Vector2.ZERO
-var _mover_slack := 0.0
-var _mover_buckets := PackedInt32Array()
-var _mover_slots := PackedInt32Array()
-var _bucket_blocks: Array[PackedFloat32Array] = []
-var _bucket_movers: Dictionary[int, PackedInt32Array] = {}
-var _bucket_made := PackedByteArray()
-var _bands_per_row := 1.0
-var _band_height := 1.0
-var _band_count := 0
-var _band_counts := PackedInt32Array()
+##
+## The numbers themselves are kept in [BatchStore], which this class extends.
+## The extra number of a sprite and the decor layers are there too.
 
 
 ## [param world] is the area, in pixels, that holds every cell and every mover.
@@ -133,6 +56,7 @@ func _init(
 	_row_up.resize(_row_count)
 	_row_down.resize(_row_count)
 	_row_versions.resize(_row_count)
+	_front_counts.resize(_row_count)
 	_band_counts.resize(_band_count)
 	# A bucket is one band in one column. The table covers the whole world, so
 	# a bucket is only made when its first mover comes. Until then every
@@ -188,7 +112,7 @@ func add_thing(
 
 
 ## Gives the thing [param id] another sprite, offset or colour. It stays on its
-## cell. Only its own row is rebuilt.
+## cell and keeps its extra number. Only its own row is rebuilt.
 func change_thing(
 		id: int, sprite: int, offset: Vector2 = Vector2.ZERO, tint: Color = Color.WHITE
 ) -> void:
@@ -200,6 +124,7 @@ func change_thing(
 	var at := _row_ids[row].find(id) * FLOATS
 	var record := _thing_record(_cells.position_of(cell), sprite, offset, tint)
 	var block: PackedFloat32Array = _row_blocks[row]
+	record[_EXTRA] = block[at + _EXTRA]
 	for index in FLOATS:
 		block[at + index] = record[index]
 	_measure_row(row)
@@ -316,11 +241,13 @@ func mover_count() -> int:
 ## Puts mover [param index] at [param spot] with a colour and the four numbers
 ## its shader reads. Use it for a new mover, and to move one a long way.
 ## The mover goes into its band by height: in front of the movers that are
-## higher in the band and behind the lower ones.
+## higher in the band and behind the lower ones. A mover that was placed
+## before keeps its extra number.
 func place_mover(index: int, spot: Vector2, tint: Color, data: Vector4) -> void:
+	var extra := mover_extra(index)
 	_drop_mover(index)
 	var record := PackedFloat32Array([
-		_mover_size.x, 0.0, 0.0, spot.x + _mover_offset.x,
+		_mover_size.x, 0.0, extra, spot.x + _mover_offset.x,
 		0.0, _mover_size.y, 0.0, spot.y + _mover_offset.y,
 		tint.r, tint.g, tint.b, tint.a,
 		data.x, data.y, data.z, data.w,
@@ -405,9 +332,13 @@ func set_mover_number(index: int, which: int, value: float) -> void:
 ## Writes every sprite that can be seen in [param view] into [param into],
 ## back to front, and returns how many sprites that is. Rows and columns that
 ## are off screen are left out. Nothing is sorted: a row's things come first,
-## then the mover bands below that row from top to bottom, then the next row.
+## then its front decor, then the mover bands below that row from top to
+## bottom, then the next row. Decor under everything comes first of all and
+## decor over everything last. Those two are always sent.
 func assemble(view: Rect2, into: PackedFloat32Array) -> int:
 	into.clear()
+	if not _under_block.is_empty():
+		into.append_array(_under_block)
 	var top := view.position.y
 	var bottom := view.end.y
 	var height := _row_height
@@ -439,6 +370,11 @@ func assemble(view: Rect2, into: PackedFloat32Array) -> int:
 				into.append_array(_row_blocks[row])
 			elif to > from:
 				into.append_array(_row_blocks[row].slice(from * FLOATS, to * FLOATS))
+		if (
+			_front_counts[row] != 0
+			and line - _row_up[row] < bottom and line + _row_down[row] > top
+		):
+			into.append_array(_front_blocks[row])
 		for band in range(row * bands, row * bands + bands):
 			if _band_counts[band] == 0:
 				continue
@@ -452,6 +388,8 @@ func assemble(view: Rect2, into: PackedFloat32Array) -> int:
 				var block: PackedFloat32Array = _bucket_blocks[base + column]
 				if not block.is_empty():
 					into.append_array(block)
+	if not _over_block.is_empty():
+		into.append_array(_over_block)
 	@warning_ignore("integer_division")
 	return into.size() / FLOATS
 
@@ -502,15 +440,9 @@ func _is_solid_at(block: PackedFloat32Array, at: int, point: Vector2) -> bool:
 func _thing_record(
 		anchor: Vector2, sprite: int, offset: Vector2, tint: Color
 ) -> PackedFloat32Array:
-	var size := Vector2(_atlas.size_of(sprite)) * _pixel_scale
-	var middle := anchor + offset * _pixel_scale
-	_reach_x = maxf(_reach_x, absf(middle.x - anchor.x) + size.x * 0.5)
-	return PackedFloat32Array([
-		size.x, 0.0, 0.0, middle.x,
-		0.0, size.y, 0.0, middle.y,
-		tint.r, tint.g, tint.b, tint.a,
-		float(sprite), 0.0, 0.0, PLAIN,
-	])
+	var record := _record(anchor, sprite, offset, tint)
+	_reach_x = maxf(_reach_x, absf(record[_X] - anchor.x) + record[_WIDTH] * 0.5)
+	return record
 
 
 ## Works out how far the things of one row reach above and below its line.
@@ -525,14 +457,6 @@ func _measure_row(row: int) -> void:
 		down = maxf(down, block[at + _Y] + half - line)
 	_row_up[row] = up
 	_row_down[row] = down
-	_max_up = maxf(_max_up, up)
-	_max_down = maxf(_max_down, down)
-
-
-## Makes a row's reach bigger when a new thing reaches further than the others.
-func _stretch_row(row: int, up: float, down: float) -> void:
-	_row_up[row] = maxf(_row_up[row], up)
-	_row_down[row] = maxf(_row_down[row], down)
 	_max_up = maxf(_max_up, up)
 	_max_down = maxf(_max_down, down)
 
@@ -562,11 +486,6 @@ func _release_cell(cell: Vector2i, id: int) -> void:
 		_cell_others.erase(cell)
 	else:
 		_cell_others[cell] = others
-
-
-func _touch_row(row: int) -> void:
-	_row_versions[row] += 1
-	_serial += 1
 
 
 ## The bucket of a spot: its band and its column. The two sums are the same
