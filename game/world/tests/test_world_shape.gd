@@ -5,6 +5,8 @@ extends GameTest
 
 ## How many slices the world is cut into to measure how far its edge reaches.
 const SLICES := 24
+## How many seeds the one-piece tests try, at each world size.
+const PIECE_SEEDS := 40
 
 
 func test_the_same_seed_gives_the_same_world() -> void:
@@ -29,6 +31,7 @@ func test_another_seed_gives_another_world() -> void:
 	var one := GroundWorld.of(first)
 	var two := GroundWorld.of(second)
 	check(one.thing_cells != two.thing_cells, "their things stand elsewhere")
+	check(one.bounds != two.bounds, "their outlines differ: %s and %s" % [one.bounds, two.bounds])
 
 
 func test_a_world_has_about_the_cells_asked_for() -> void:
@@ -80,18 +83,22 @@ func test_no_wobble_gives_a_plain_circle() -> void:
 
 
 func test_every_cell_can_be_reached_from_the_start() -> void:
-	var made := WorldTestKit.village(5)
-	var world := GroundWorld.of(made)
-	var seen: Dictionary[Vector2i, bool] = {world.start_cell: true}
-	var queue: Array[Vector2i] = [world.start_cell]
-	var next := 0
-	while next < queue.size():
-		for near in made.grid.neighbours(queue[next]):
-			if not seen.has(near):
-				seen[near] = true
-				queue.append(near)
-		next += 1
-	check_eq(seen.size(), world.cells, "cells reached from the start cell")
+	for cells: int in [500, WorldTestKit.CELLS]:
+		for world_seed in range(1, PIECE_SEEDS + 1):
+			var made := WorldTestKit.village(world_seed, cells)
+			var cut_off := _cells_cut_off(made)
+			check_eq(cut_off, 0, "seed %d, %d cells: cells cut off from the start" % [world_seed, cells])
+
+
+func test_a_world_is_one_piece_up_to_the_roughest_edge() -> void:
+	var recipe := WorldTestKit.recipe()
+	recipe.edge_wobble = WorldRecipe.MOST_EDGE_WOBBLE
+	recipe.edge_bumps = WorldRecipe.MOST_EDGE_BUMPS
+	for cells: int in [500, WorldTestKit.CELLS]:
+		for world_seed in range(1, PIECE_SEEDS + 1):
+			var made := WorldTestKit.village(world_seed, cells, recipe)
+			var cut_off := _cells_cut_off(made)
+			check_eq(cut_off, 0, "seed %d, %d cells: cells cut off from the start" % [world_seed, cells])
 
 
 func test_a_village_gets_one_world_only() -> void:
@@ -106,6 +113,23 @@ func test_a_village_gets_one_world_only() -> void:
 	check(WorldGenerator.generate(closed, 500) == null, "a closed village gets no world")
 
 
+func test_a_village_with_cells_gets_no_world() -> void:
+	var made := Village.new(4, 20)
+	made.grid.add_cell(Vector2i.ZERO)
+	check(WorldGenerator.generate(made, 500) == null, "a grid that has a cell is refused")
+	check_eq(made.grid.cell_count(), 1, "the grid was not touched")
+	check(GroundWorld.of(made) == null, "and no world hangs on the village")
+
+
+func test_a_world_of_no_cells_is_refused() -> void:
+	for asked: int in [0, -10]:
+		var made := Village.new(4, 20)
+		var before := made.snapshot()
+		check(WorldGenerator.generate(made, asked) == null, "%d cells are refused" % asked)
+		check(GroundWorld.of(made) == null, "no world hangs on the village")
+		check(made.snapshot() == before, "and the village was not touched")
+
+
 func test_a_closed_village_lets_go_of_its_world() -> void:
 	var made := WorldTestKit.village(4)
 	var world := GroundWorld.of(made)
@@ -114,6 +138,21 @@ func test_a_closed_village_lets_go_of_its_world() -> void:
 	check_eq(world.keep_clear.size(), 0)
 	check(world.recipe == null, "the recipe was let go")
 	check(not world.is_kept_clear(world.start_cell), "nothing is kept clear any more")
+
+
+## How many cells of [param made] have no path of neighbours to the start cell.
+func _cells_cut_off(made: Village) -> int:
+	var world := GroundWorld.of(made)
+	var seen: Dictionary[Vector2i, bool] = {world.start_cell: true}
+	var queue: Array[Vector2i] = [world.start_cell]
+	var next := 0
+	while next < queue.size():
+		for near in made.grid.neighbours(queue[next]):
+			if not seen.has(near):
+				seen[near] = true
+				queue.append(near)
+		next += 1
+	return world.cells - seen.size()
 
 
 ## How much further the edge reaches in its longest slice than in its

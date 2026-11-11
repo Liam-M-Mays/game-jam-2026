@@ -26,7 +26,7 @@ The numbers are the jam game's.
 | `big_rock` | 2 | 10 by 6 | (3, -2) |
 
 - Every kind is one row deep.
-- The tree and rock sprites are cut from `assets/Art/Environment/Starter_sprites.png`, for now.
+- The tree and rock sprites are cut from `assets/Art/Environment/Starter_sprites.png`, the old game's sheet, for now. The bush sheet was copied here because its original is in `ART/`. The old sheet moves into `game/` when the old game is removed (#36).
 - A data file holds no harvest number yet. Hits to break, drops, food and regrowth come with #66. The four other pictures of the bush come with it too.
 
 ## Using it

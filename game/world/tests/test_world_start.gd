@@ -1,9 +1,16 @@
 extends GameTest
-## Checks the start cell: it is the lightest spot near the middle of the
-## world, on light ground and away from the dark areas, it is chosen with no
-## roll, and the cells round it are kept clear.
+## Checks the start cell: it is the lightest cell that fits near the middle
+## of the world, on light ground and away from the dark areas, it is chosen
+## with no roll, and the cells round it are kept clear.
 
 const SEEDS := 8
+## The fewest steps from the start building to a dark cell on a test world of
+## 2,000 cells. The least in 200 seeds was 5.
+const AWAY_SMALL := 4
+## The same on a world of 100,000 cells. The least in 40 seeds was 11.
+const AWAY_FULL := 8
+## How far round the start building the dark is looked for, in steps.
+const LOOK_STEPS := 30
 
 
 func test_the_cells_round_the_start_cell_are_empty() -> void:
@@ -56,6 +63,30 @@ func test_the_start_is_on_light_ground_away_from_the_dark() -> void:
 		var reach := world.recipe.start_reach * world.radius
 		var far := (GridLayout.position_of(world.start_cell) + GridLayout.CELL_MIDDLE).length()
 		check(far <= reach, "seed %d: the start is near the middle" % world_seed)
+		var steps := _steps_to_dark(made)
+		check(steps >= AWAY_SMALL, "seed %d: steps to the nearest dark cell: %d" % [world_seed, steps])
+
+
+func test_the_start_of_a_full_size_world_is_far_from_the_dark() -> void:
+	for world_seed in range(1, 4):
+		var made := WorldTestKit.village(world_seed, 100000)
+		var steps := _steps_to_dark(made)
+		check(steps >= AWAY_FULL, "seed %d: steps to the nearest dark cell: %d" % [world_seed, steps])
+
+
+func test_a_dark_middle_sends_the_search_to_the_whole_world() -> void:
+	var recipe := WorldTestKit.recipe()
+	recipe.bands[0].share = 0.75
+	recipe.bands[1].share = 0.25
+	recipe.start_reach = 0.05
+	for world_seed in range(1, 5):
+		var made := WorldTestKit.village(world_seed, WorldTestKit.CELLS, recipe)
+		var world := GroundWorld.of(made)
+		var far := (GridLayout.position_of(world.start_cell) + GridLayout.CELL_MIDDLE).length()
+		var near := recipe.start_reach * world.radius
+		check(far > near, "seed %d: the start is not near the middle" % world_seed)
+		check(_ring_is_light(made, world.start_cell), "seed %d: and its ring is light" % world_seed)
+		check_eq(world.keep_clear.size(), 10)
 
 
 func test_the_start_is_the_lightest_spot_that_fits() -> void:
@@ -103,6 +134,8 @@ func test_a_world_with_no_fitting_spot_starts_in_the_middle() -> void:
 	recipe.bands[1].share = 0.0
 	var made := WorldTestKit.village(6, 500, recipe)
 	var world := GroundWorld.of(made)
+	check_eq(WorldTestKit.count_ground(made, WorldTestKit.LIGHT), 0, "a share of 1 takes every cell")
+	check_eq(WorldTestKit.count_ground(made, WorldTestKit.DARK), world.cells)
 	check_eq(world.start_cell, Vector2i.ZERO, "an all-dark world starts on the middle cell")
 	check_eq(world.keep_clear.size(), 10)
 
@@ -132,6 +165,18 @@ func test_a_start_needs_light_ground_all_round() -> void:
 			check(made.grid.has_cell(part + offset), "the ring round the lightest cell exists")
 	check(not _ring_is_light(made, lightest), "but that ring is not light all round")
 	check_eq(world.start_cell, Vector2i.ZERO, "so the world starts on its middle cell instead")
+
+
+## How many steps lie between the start building of [param made] and the
+## nearest dark cell. [constant LOOK_STEPS] plus one when none is that near.
+func _steps_to_dark(made: Village) -> int:
+	var least := LOOK_STEPS + 1
+	var offsets := GridLayout.offsets_within(LOOK_STEPS)
+	for part in GroundWorld.of(made).start_cells():
+		for offset in offsets:
+			if made.grid.ground(part + offset) == WorldTestKit.DARK:
+				least = mini(least, GridLayout.steps_of(offset))
+	return least
 
 
 ## True when the start building at [param cell] and its ring are all light.

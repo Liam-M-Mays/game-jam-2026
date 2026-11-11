@@ -9,8 +9,18 @@ extends Resource
 
 ## Where the saved values of the ground world are.
 const PATH := "res://game/world/ground_recipe.tres"
-## The most bands a table can have. A cell stores its band as its ground kind.
+## The most bands a table can have. A cell stores its band as its ground kind,
+## and the ground picture has room for this many colours. The generator
+## reports a longer table as an error and reads only its first rows.
 const MAX_BANDS := 8
+## The furthest [member edge_wobble] may go. See [constant MOST_EDGE_BUMPS].
+const MOST_EDGE_WOBBLE := 0.25
+## The roughest [member edge_bumps] may be. A rough edge that moves far makes
+## thin spikes, and a spike thinner than a cell cuts cells off from the rest
+## of the world. Up to these two numbers every world that was tried stayed in
+## one piece. Try many seeds again before you raise one of them: the test
+## [code]test_a_world_is_one_piece_up_to_the_roughest_edge[/code] does that.
+const MOST_EDGE_BUMPS := 2.0
 
 ## The band table, from the darkest band of the noise to the lightest.
 @export var bands: Array[WorldBand] = []
@@ -25,9 +35,9 @@ const MAX_BANDS := 8
 @export_range(4.0, 200.0, 1.0) var area_cells: float = 40.0
 ## How far the edge of the world moves in and out, as a share of its radius.
 ## 0 is a plain circle.
-@export_range(0.0, 0.5, 0.01) var edge_wobble: float = 0.12
+@export_range(0.0, MOST_EDGE_WOBBLE, 0.01) var edge_wobble: float = 0.12
 ## How rough the edge is. A higher number gives more and smaller bumps.
-@export_range(0.1, 10.0, 0.1) var edge_bumps: float = 1.2
+@export_range(0.1, MOST_EDGE_BUMPS, 0.1) var edge_bumps: float = 1.2
 ## How many cells the building at the start takes along its row. The Town
 ## Hall of the jam game takes 2.
 @export_range(1, 4, 1) var start_width: int = 2

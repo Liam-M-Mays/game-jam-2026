@@ -4,6 +4,24 @@ extends GameTest
 ## the noise and the placing.
 
 
+## Hears the errors the engine reports while it is switched on.
+class Listener:
+	extends Logger
+	var errors: PackedStringArray = []
+
+	func _log_error(
+		_function: String,
+		_file: String,
+		_line: int,
+		code: String,
+		rationale: String,
+		_editor_notify: bool,
+		_error_type: int,
+		_script_backtraces: Array[ScriptBacktrace]
+	) -> void:
+		errors.append("%s %s" % [code, rationale])
+
+
 func test_every_cell_has_a_band_of_the_table() -> void:
 	var made := WorldTestKit.village(11)
 	var world := GroundWorld.of(made)
@@ -45,6 +63,31 @@ func test_a_table_with_three_bands_cuts_three_shares() -> void:
 	check(absi(WorldTestKit.count_ground(made, 2) - roundi(0.3 * cells)) <= 1, "middle is 30%")
 	check(absi(WorldTestKit.count_ground(made, 3) - roundi(0.5 * cells)) <= 1, "light is 50%")
 	check_eq(WorldTestKit.count_ground(made, 4), 0)
+
+
+func test_a_table_with_too_many_bands_is_cut_and_says_so() -> void:
+	var rows := WorldRecipe.MAX_BANDS + 1
+	var recipe := WorldTestKit.recipe()
+	recipe.bands.clear()
+	for index in rows:
+		var band := WorldBand.new()
+		band.band_name = StringName("band_%d" % index)
+		band.share = 1.0 / rows
+		recipe.bands.append(band)
+	var listener := Listener.new()
+	OS.add_logger(listener)
+	var made := WorldTestKit.village(12, WorldTestKit.CELLS, recipe)
+	OS.remove_logger(listener)
+	var said := false
+	for line in listener.errors:
+		said = said or line.contains("the band table has %d rows" % rows)
+	check(said, "the generator reported the long table: %s" % [listener.errors])
+	var cells := GroundWorld.of(made).cells
+	var counted := 0
+	for ground in range(1, WorldRecipe.MAX_BANDS + 1):
+		counted += WorldTestKit.count_ground(made, ground)
+	check_eq(counted, cells, "every cell is in one of the first %d bands" % WorldRecipe.MAX_BANDS)
+	check_eq(WorldTestKit.count_ground(made, rows), 0, "no cell is in the row that was cut")
 
 
 func test_the_noise_seeds_come_from_the_world_seed() -> void:

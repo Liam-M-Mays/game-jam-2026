@@ -51,18 +51,23 @@ func _init(recipe: WorldRecipe = null, kinds: Array[NatureKind] = []) -> void:
 	_recipe = recipe if recipe != null else WorldRecipe.load_recipe()
 	_kinds = kinds if not kinds.is_empty() else NatureKinds.all()
 	_band_count = clampi(_recipe.bands.size(), 1, WorldRecipe.MAX_BANDS)
+	if _recipe.bands.size() > WorldRecipe.MAX_BANDS:
+		push_error(
+			"WorldGenerator: the band table has %d rows, only the first %d are read"
+			% [_recipe.bands.size(), WorldRecipe.MAX_BANDS]
+		)
 	_world.recipe = _recipe
 
 
 ## Makes a ground world of about [param cells] cells on [param village] and
-## returns it. Returns null, and changes nothing, when the village is closed,
-## already has a world, or already has cells.
+## returns it. Returns null, and changes nothing, when [param cells] is below
+## 1, or when the village is closed, already has a world, or already has cells.
 static func generate(
 	village: Village, cells: int, recipe: WorldRecipe = null, kinds: Array[NatureKind] = []
 ) -> GroundWorld:
 	if village == null or village.is_closed() or GroundWorld.of(village) != null:
 		return null
-	if village.grid.cell_count() > 0:
+	if cells < 1 or village.grid.cell_count() > 0:
 		return null
 	var maker := WorldGenerator.new(recipe, kinds)
 	maker.shape(village.village_seed, cells)
@@ -164,7 +169,8 @@ func shape(world_seed: int, cells: int) -> void:
 
 ## Step 2. Gives every cell its band. The cells are cut by how dark their
 ## noise is: the darkest share goes to the first band of the table, and the
-## last band takes what is left. A band is stored as a ground kind.
+## last band takes what is left. When the shares before a band already come to
+## the whole world, that band gets no cell. A band is stored as a ground kind.
 func cut_bands() -> void:
 	var count := _values.size()
 	if count == 0:
@@ -175,7 +181,9 @@ func cut_bands() -> void:
 	var share := 0.0
 	for index in _band_count - 1:
 		share += _recipe.bands[index].share
-		limits.append(sorted[clampi(roundi(share * count), 0, count - 1)])
+		var first := maxi(roundi(share * count), 0)
+		# INF is a limit no cell reaches: nothing is left for the bands after.
+		limits.append(sorted[first] if first < count else INF)
 	_grounds.resize(count)
 	var limit_count := limits.size()
 	for index in count:
@@ -194,10 +202,12 @@ func fill_grid(grid: VillageGrid) -> void:
 	grid.add_cells(_xs, _ys, _grounds)
 
 
-## Step 4. Picks the start cell: the lightest spot of the noise, which is the
-## middle of a light area. It is looked for near the middle of the world
-## first, and in the whole world when nothing fits there. The cells of the
-## start building and the ring round them must all be on the lightest band.
+## Step 4. Picks the start cell: the lightest cell of the noise that fits. It
+## is looked for near the middle of the world first, inside a disc, and in
+## the whole world when nothing fits there. The cells of the start building
+## and the ring round them must all be on the lightest band. The top of a
+## light area can lie just outside the disc. Then the start cell is on the
+## rim of the disc, a few steps from that top.
 ## It rolls nothing, so the same ground gives the same start cell.
 func choose_start() -> void:
 	var ring := _start_ring()

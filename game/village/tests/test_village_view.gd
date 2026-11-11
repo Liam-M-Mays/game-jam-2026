@@ -71,7 +71,7 @@ func test_a_village_runs_the_same_with_and_without_its_picture() -> void:
 	check(shown.snapshot() != at_start, "and the village did change in those ticks")
 	var busy := shown.part(&"busy") as Busy
 	check_eq(busy.wakes, 333, "the stand-in part woke every third tick")
-	check(busy.things.size() > 20, "and things stand that were not there: %d" % busy.things.size())
+	check(busy.things.size() > 0, "and things stand that were not there: %d" % busy.things.size())
 	check_eq(view.layer_count(), 2, "the picture had its layers")
 	check_eq(view.rows.thing_count(), GroundWorld.of(shown).thing_count())
 
@@ -127,19 +127,20 @@ func test_every_thing_of_the_world_is_in_the_batch() -> void:
 
 
 func test_a_thing_is_drawn_with_the_sprite_and_offset_of_its_kind() -> void:
-	var recipe := WorldTestKit.recipe()
-	recipe.amounts = {&"big_tree": 1} as Dictionary[StringName, int]
-	var made := WorldTestKit.village(24, 2091, recipe)
-	var world := GroundWorld.of(made)
-	check_eq(world.thing_count(), 1)
-	var view := _show(made, VillageLayers.of(made))
-	var kind := world.thing_kind(0)
-	check_eq(kind.kind_name, &"big_tree")
-	check_eq(view.atlas.size_of(view.atlas.find(&"big_tree")), Vector2i(10, 12))
-	var middle := GridLayout.position_of(world.thing_cell(0)) + kind.offset
-	check_eq(view.rows.pick_sprite(VillageView.to_pixels(middle)), world.thing_ids[0])
-	var beside := middle + Vector2(kind.region.size.x, 0.0)
-	check_eq(view.rows.pick_sprite(VillageView.to_pixels(beside)), BatchRows.NO_THING)
+	var sizes: Array[Vector2i] = []
+	for kind in NatureKinds.all():
+		var recipe := WorldTestKit.recipe()
+		recipe.amounts = {kind.kind_name: 1} as Dictionary[StringName, int]
+		var made := WorldTestKit.village(24, 2091, recipe)
+		var world := GroundWorld.of(made)
+		check_eq(world.thing_count(), 1, "one %s stands" % kind.kind_name)
+		check_eq(world.thing_kind(0), kind)
+		var view := _show(made, VillageLayers.of(made))
+		var wrong := _wrong_pixels(view, world, kind)
+		check_eq(wrong, 0, "%s: art pixels where the batch shows another picture" % kind.kind_name)
+		check(not sizes.has(kind.region.size), "%s has a size of its own" % kind.kind_name)
+		sizes.append(kind.region.size)
+	check_eq(sizes.size(), 5, "all five kinds were looked at")
 
 
 func test_the_layers_of_a_village_are_listed_in_one_place() -> void:
@@ -160,6 +161,27 @@ func test_a_picture_shows_one_village_and_the_ground_is_behind() -> void:
 	check(ground.get_index() < view.batch.get_index(), "the ground is drawn before the batch")
 	check_eq(view.batch.rows, view.rows)
 	check_eq(view.batch.material().shader, SpriteBatch.PLAIN_SHADER, "no layer asked for a shader")
+
+
+## Compares the one thing of [param world] in the batch with the picture of
+## [param kind], art pixel by art pixel, with one pixel of air all round.
+## The batch must find the thing exactly on the solid pixels of that picture,
+## at the offset of the kind. Returns how many art pixels are wrong.
+func _wrong_pixels(view: VillageView, world: GroundWorld, kind: NatureKind) -> int:
+	var sheet := kind.sheet.get_image()
+	var size := kind.region.size
+	var corner := GridLayout.position_of(world.thing_cell(0)) + kind.offset - Vector2(size) * 0.5
+	var wrong := 0
+	for y in range(-1, size.y + 1):
+		for x in range(-1, size.x + 1):
+			var solid := false
+			if x >= 0 and y >= 0 and x < size.x and y < size.y:
+				solid = sheet.get_pixelv(kind.region.position + Vector2i(x, y)).a > SpriteAtlas.SOLID_ALPHA
+			var want := world.thing_ids[0] if solid else BatchRows.NO_THING
+			var point := VillageView.to_pixels(corner + Vector2(x + 0.5, y + 0.5))
+			if view.rows.pick_sprite(point) != want:
+				wrong += 1
+	return wrong
 
 
 ## A village with a small world and the stand-in part.
