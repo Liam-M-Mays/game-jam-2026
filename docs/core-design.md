@@ -51,24 +51,34 @@ Everything else on this page follows from these five.
 
 ## The layers
 
-There are three layers, and calls only go down.
+There are four layers, and calls only go down.
 
 ```mermaid
 flowchart TD
     UI["UI<br/>HUD, build menu, building panel, menus"]
+    Game["Game<br/>the session: creates, holds, ticks and closes the villages, pause, speed"]
     subgraph World
         Ground["Village on the ground"]
         Back["Village on a giant's back"]
     end
-    Core["Core<br/>Game, Events, Settings, Audio, Data"]
+    Core["Core<br/>clock, timers, Events, Settings, Audio, Data"]
 
     UI -- commands --> World
+    UI --> Game
+    Game -- "creates, ticks, closes" --> World
     World -. events .-> UI
+    Game -. events .-> UI
     UI --> Core
+    Game --> Core
     World --> Core
 ```
 
-The UI talks to the World. The World holds the villages. Everything may use the Core. A lower layer never calls a higher one: it sends an event, and whoever cares listens.
+- **The UI** talks to Game and to the village in view.
+- **Game is the session.** It sits on top of the villages: it creates, holds, ticks and closes them, and it owns pause and speed. See Decision 33.
+- **The World** is the villages themselves, on the ground or on a giant's back. A village never names Game.
+- **The news of a village comes from the village itself**, never through Events. The UI listens to the village in view, and Game tells it which village that is.
+- **The Core** is the bottom layer. It is only what knows nothing about villages: the clock, the timers, Events, Settings, Audio and Data. Everything may use it.
+- A lower layer never calls a higher one: it sends an event, and whoever cares listens.
 
 ## Inside one village
 
@@ -239,14 +249,14 @@ The UI stays normal Godot scenes, and only five things remain global.
 **UI**
 
 - The HUD, build menu, building panel and menus are ordinary scenes.
-- The UI sends commands to the village in view and listens to its events. It reaches nothing else.
+- The UI sends commands to the village in view and listens to its events. It asks Game for the session: pause, speed and which village is in view. It reaches nothing else.
 
 **Global services**
 
 | Service | What it owns |
 | --- | --- |
-| Game | The session: new game, pause, speed, and which village is in view |
-| Events | Toasts and notifications |
+| Game | The session: new game, pause, speed, and which village is in view. It creates, holds, ticks and closes the villages, and sits above them (Decision 33) |
+| Events | Toasts and notifications. It knows nothing about villages, and the news of the session comes from Game |
 | Settings | Options, saved to disk |
 | Audio | Music and sound effects |
 | Data | The data files for resources and buildings |
@@ -273,7 +283,7 @@ New code goes into by-feature folders next to the old game, so the old game stay
 
 | Folder | What lives there |
 | --- | --- |
-| `game/core/` | Game, Events, Settings, Audio, Data, and the dev settings |
+| `game/core/` | Game, Events, Settings, Audio, Data, and the dev settings. Game is the only one here that knows the villages |
 | `game/world/` | The ground world and its generator |
 | `game/village/` | Grid, stock, jobs, and the village object |
 | `game/meeples/` | Meeple rules and the meeple shader |
@@ -315,7 +325,7 @@ These rules are set only for now. They are worth a second look once the game run
 
 ## Decisions
 
-All made by Liam on 2026-11-10. The issues cite them by number.
+Made by Liam on 2026-11-10, unless a decision names another date. The issues cite them by number.
 
 1. **Done means** the same game as the jam build, on the ground. The city building stays very similar. Roles replace idle jobs. The open fixes are in. The quality of life points from the playtest that do not transform the game are in. All assets and the giant scene stay in the project. See Decision 19 for the giant's back.
 2. **Branch:** all rework happens on the branch `core-rewrite`, through pull requests into that branch. Nothing goes to `master` until the whole rework is done and works. `master` stays untouched as a fallback. Only art into `ART/` may land there. Pull requests may be big for the core. Parts are preferred. They get smaller once the core works. Liam reviews everything. Each big pull request comes with a short walkthrough, a demo scene and tests.
@@ -349,3 +359,4 @@ All made by Liam on 2026-11-10. The issues cite them by number.
 30. **World detail:** big trees and rocks stand together in the dark areas of the noise, small ones in the light areas. The Town Hall starts in the middle of a light area. Each kind keeps its share of the jam map, scaled up. Regrowth stays fixed for the whole world.
 31. **Landing:** one large pull request from `core-rewrite` into `master`. The Windows and macOS exports are built and started once. The web preset is deleted. `gdlint` is a third check. `core-rewrite` is protected like `master`. The debug overlay and the building editor do not block the switch.
 32. **Small points:** the HUD always stays on the ground world. The food bar shows food out of the food limit. The two wrong tips are fixed. Holding X for x3 is dropped. The speed button is blocked while paused. The falling menu meeples tilt up to 35 degrees. A two-finger scroll zooms. The ground camera zooms out to a fixed limit. The music stays at full level on the ground. The number keys and F stay silent. The bird ambience is raised. The app is named "Mighty Meeple". The windmill rule stays and the menu says so. An agent drafts the new menu texts and Liam reviews them. A worker pauses shortly between tasks. A storage worker takes the shortest total trip. Playtest point #28 is out for now. #13 closes with #7.
+33. **The Game service holds the villages.** Game is the session: it creates, holds, ticks and closes the villages, and owns pause and speed. It sits above the villages. Liam, 2026-11-11.
