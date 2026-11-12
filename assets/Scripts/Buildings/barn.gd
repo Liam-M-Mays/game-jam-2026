@@ -34,6 +34,17 @@ func plot_count(plot : BarnPlot) -> int:
 func has_room_for(plot : BarnPlot) -> bool:
 	return plot_count(plot) < slots()
 
+## The barn's worker harvests the ripe farm nearest to it.
+func find_work(worker : Meeple) -> Job:
+	var from := worker.global_position
+	var best : Farm = null
+	for plot in plots:
+		if not is_instance_valid(plot) or not plot is Farm or not plot.needs_harvest():
+			continue
+		if best == null or from.distance_squared_to(plot.global_position) < from.distance_squared_to(best.global_position):
+			best = plot
+	return FarmJob.new(best) if best != null else null
+
 func add_plot(plot : BarnPlot) -> void:
 	plots.append(plot)
 

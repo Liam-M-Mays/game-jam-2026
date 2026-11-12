@@ -112,7 +112,7 @@ flowchart LR
 
     tree -->|"Harvest costs 1 food"| drops
     drops -->|"Hauled one by one"| site
-    drops -->|"Stored by idle meeples"| piles
+    drops -->|"Stored by pile workers"| piles
     piles -->|"Hauled up to two at a time"| site
     site -->|"Completes"| huts
     bush -->|"Pick: plus 2"| food
@@ -211,25 +211,27 @@ sequenceDiagram
 
 ## Meeple job lifecycle
 
-From `meeple_movement.gd` and `job_system.gd`. Once a frame, `JobSystem.match_jobs` gives each new job to the nearest free meeple, and each meeple that became free the nearest waiting job. A meeple doing idle work counts as free. There is no job limit.
+From `meeple_movement.gd` and `job_system.gd`. A meeple is either a builder or a worker of one building. Once a frame, `JobSystem.match_jobs` gives each new job to the nearest free builder, and each builder that became free the nearest waiting job. There is no job limit. A worker asks its building for work with `find_work` at most every half second, and never takes the player's jobs. Until the building panel exists, an open worker slot takes the nearest free builder, but one builder always stays. A dead worker's slot opens again.
 
 ```mermaid
 stateDiagram-v2
     direction LR
-    Wandering: Wandering near buildings
+    Wandering: Builder, wandering near buildings
     QueuedJob: Queued job - harvest, haul, collect crop
-    IdleWork: Idle work - chop, farm, store
+    WorkerWandering: Worker, wandering
+    Work: Work for its building - chop, farm, store
     Dead: Dead - topples and fades out
 
     [*] --> Wandering: spawned by a hut
     Wandering --> QueuedJob: nearest to a new job, or takes the nearest waiting job
-    Wandering --> IdleWork: a building offers idle work
-    IdleWork --> QueuedJob: nearest to a new job
-    IdleWork --> Wandering: idle job ends
     QueuedJob --> Wandering: job done or cancelled
+    Wandering --> WorkerWandering: nearest builder to an open slot
+    WorkerWandering --> Work: its building has work
+    Work --> WorkerWandering: task done
     Wandering --> Dead: starved
     QueuedJob --> Dead: starved, job requeued
-    IdleWork --> Dead: starved
+    WorkerWandering --> Dead: starved, slot opens
+    Work --> Dead: starved, slot opens
     Dead --> [*]
 ```
 
@@ -380,6 +382,8 @@ classDiagram
         +min_to_start: Dictionary[String, int]
         +required_town_hall_level: int
         +description: String
+        +worker_slots: int
+        +workers: Array[Meeple]
         +costs: Dictionary (computed)
         +start_construction()
         +deliver(kind)
@@ -387,10 +391,10 @@ classDiagram
         +toggle_paused()
         +can_afford() / can_start()
         +missing() / next_stage_needs()
-        +claim_idle_job(worker): IdleJob
+        +find_work(worker): Job
+        +add_worker(meeple) / lose_worker(meeple)
         +icon(): Texture2D
         +can_place_at() / placement_area()
-        #has_idle_work() / _make_idle_job()
     }
     class BuildFrame {
         <<resource>>
@@ -415,12 +419,12 @@ classDiagram
         +capacity(): int
         +has_room(): bool
         +store(drop) / take(drop)
+        +find_work(worker): StoreJob
         +make_store_job(drop): StoreJob
     }
     class Lumberjack {
         +chops: PackedScene
-        #has_idle_work(worker): bool
-        #_make_idle_job(): ChopJob
+        +find_work(worker): ChopJob
     }
     class Barn {
         +base_slots: int = 3
@@ -428,6 +432,7 @@ classDiagram
         +plots: Array[BarnPlot]
         +slots(): int
         +has_room_for(plot): bool
+        +find_work(worker): FarmJob
         +add_plot(plot)
         +plot_area(): Array[Cell]
         +in_plot_range(cells): bool
@@ -462,6 +467,7 @@ classDiagram
         +food_per_harvest: int
         +harvest_time: float
         +is_ripe() / can_harvest_now()
+        +needs_harvest(): bool
         +harvest_crop()
         +grow_stages(): int
     }
@@ -503,7 +509,6 @@ classDiagram
     class JobSystem {
         <<autoload>>
         +signal changed
-        +signal worker_idle(worker, offers)
         +workers: Array[Meeple]
         +add(job)
         +match_jobs()
@@ -511,7 +516,7 @@ classDiagram
         +finish(job)
         +requeue(job, worker)
         +cancel(job)
-        +find_idle_job(worker): IdleJob
+        +open_slot(building)
         +take_partner(job): HaulJob
         +recall_hauls(site)
         +reset()
@@ -525,6 +530,7 @@ classDiagram
     }
     class Meeple {
         +job: Job
+        +workplace: Building
         +grid: Grid
         +position: Vector2
         +global_position: Vector2
@@ -567,7 +573,7 @@ classDiagram
         +reserve(kind, n)
         +claim_closest(kind, pos): ResourceDrop
         +claim_reserved(drop)
-        +closest_loose(kind, pos)
+        +shortest_trip_loose(kind, from, to)
         +food_cap() / food_full()
         +register(drop) / unregister(drop)
         +reset()
@@ -582,24 +588,21 @@ classDiagram
     class CollectCropJob {
         +farm: Farm
     }
-    class IdleJob {
-        +site: Building
-        +end()
-    }
     class ChopJob {
         +target: Harvestable
     }
     class FarmJob {
+        +farm: Farm
     }
     class StoreJob {
+        +site: Storage
     }
     Job <|-- HarvestJob
     Job <|-- HaulJob
     Job <|-- CollectCropJob
-    Job <|-- IdleJob
-    IdleJob <|-- ChopJob
-    IdleJob <|-- FarmJob
-    IdleJob <|-- StoreJob
+    Job <|-- ChopJob
+    Job <|-- FarmJob
+    Job <|-- StoreJob
     JobSystem ..> Job : pending and active
     Meeple ..> Job : runs one job
     Meeple ..> MeepleLook : reads look and numbers

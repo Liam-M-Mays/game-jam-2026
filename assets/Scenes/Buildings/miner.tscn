@@ -65,7 +65,8 @@ min_to_start = Dictionary[String, int]({
 "wood": 4
 })
 required_town_hall_level = 3
-description = "An idle meeple works here, mining the nearest rock. Mining uses food."
+description = "Its worker mines the nearest rock. Mining uses food."
+worker_slots = 1
 area = NodePath("Area2D")
 footprint = 2
 

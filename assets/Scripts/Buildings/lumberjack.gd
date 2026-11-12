@@ -3,10 +3,7 @@ class_name Lumberjack
 
 @export var chops : PackedScene = preload("res://assets/Scenes/Resources/Drops/wood.tscn")
 
-func has_idle_work(_worker : Meeple) -> bool:
-	return _closest_tree() != null
-
-func _make_idle_job(_worker : Meeple) -> IdleJob:
+func find_work(_worker : Meeple) -> Job:
 	var tree := _closest_tree()
 	if tree == null:
 		return null
