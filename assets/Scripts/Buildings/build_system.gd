@@ -25,6 +25,7 @@ var _right_press_at := Vector2.ZERO
 
 func _ready() -> void:
 	add_child(ConstructionTooltip.new())
+	cursor.grid = grid
 
 func start_build(scene : PackedScene) -> void:
 	_clear_preview()

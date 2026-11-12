@@ -32,9 +32,6 @@ width = 1
 height = 1
 fill_to = Vector2(0, 0)
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_g0qf3"]
-radius = 200.0
-
 [node name="Game" type="Node2D" unique_id=773093084]
 
 [node name="Node2D2" type="Node2D" parent="." unique_id=890392512]
@@ -121,13 +118,9 @@ grid_size = 110
 ground_sprites = [NodePath("../../Yard"), NodePath("../../Yard/Yard")]
 ground_cover = NodePath("../..")
 
-[node name="Mouse" type="Area2D" parent="Node2D2/Node2D/Torso/Back" unique_id=1782876279]
-input_pickable = false
+[node name="Mouse" type="Node2D" parent="Node2D2/Node2D/Torso/Back" unique_id=1782876279]
 script = ExtResource("5_ci4bg")
 enabled = false
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Node2D2/Node2D/Torso/Back/Mouse" unique_id=1292404197]
-shape = SubResource("CircleShape2D_g0qf3")
 
 [node name="BuildSystem" type="Node2D" parent="Node2D2/Node2D/Torso/Back" unique_id=783348263 node_paths=PackedStringArray("grid", "cursor")]
 script = ExtResource("7_xomjc")

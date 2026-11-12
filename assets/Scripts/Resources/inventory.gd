@@ -66,6 +66,10 @@ func unregister(drop : ResourceDrop) -> void:
 	_all_drops.erase(drop)
 	changed.emit()
 
+## Every drop in the world, loose or in a storage.
+func all_drops() -> Array[ResourceDrop]:
+	return _all_drops
+
 func available(kind : String) -> int:
 	var unclaimed := _drops_of(kind).filter(func(drop): return not drop.claimed).size()
 	return unclaimed - _reserved.get(kind, 0)
