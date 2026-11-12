@@ -124,6 +124,7 @@ func _try_place() -> void:
 	grid.place(site, cells)
 	site.completed.connect(func(): building_completed.emit(site))
 	site.start_construction()
+	VillageAudio.play(&"hammer", site.global_position)
 	building_placed.emit(site)
 	end_build()
 
