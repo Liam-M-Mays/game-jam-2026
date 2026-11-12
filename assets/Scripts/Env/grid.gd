@@ -23,6 +23,8 @@ const CELL_OUTLINE : Array[Vector2] = [
 @export var building_clearance := 4
 
 const SPAWN_ATTEMPTS := 100
+## How many cells left of a building a tree or rock can be and still reach under its art.
+const PIN_REACH := 4
 
 class Spawnable:
 	var scene : PackedScene
@@ -32,6 +34,13 @@ class Spawnable:
 	var curve : Curve
 	var cluster_bonus : float
 	var max_weight : float
+	## A copy of the scene, out of the tree. Rows draw from its look and lumberjacks read its drops.
+	var template : Harvestable
+	## The click box around a tree or rock's position, read from the scene's Area2D.
+	var hit_box : Rect2
+	var count := 0
+	## Bushes stay real nodes until part 7b.
+	var as_data : bool
 
 var _cells : Array[Array] = []
 var _cell_scale : Vector2
@@ -47,6 +56,12 @@ var _building_cells : Array[Vector2i] = []
 var _cell_layer : CellLayer
 var _meeple_look : MeepleLook
 var _meeples : Array[Meeple] = []
+## Every tree, rock and bush on the grid.
+var standing : Array[Standing] = []
+var _awake : Array[Standing] = []
+var _hovered : Array[Standing] = []
+var _rows := {}
+var _reach_rows := 0
 
 func _ready() -> void:
 	_meeple_look = MEEPLE.instantiate()
@@ -68,6 +83,8 @@ func _exit_tree() -> void:
 	_meeples.clear()
 	JobSystem.workers.clear()
 	_meeple_look.free()
+	for s in _spawnables:
+		s.template.free()
 
 ## Adds a meeple at `at`, in this grid's space, and gives it to the jobs.
 func spawn_meeple(at : Vector2) -> Meeple:
@@ -77,6 +94,10 @@ func spawn_meeple(at : Vector2) -> Meeple:
 	return meeple
 
 func _unhandled_input(event : InputEvent) -> void:
+	var click := event as InputEventMouseButton
+	if click != null and click.pressed and click.button_index == MOUSE_BUTTON_LEFT:
+		for s in _hovered:
+			s.node._on_clicked()
 	var key := event as InputEventKey
 	if not OS.is_debug_build() or key == null or key.physical_keycode != DEV_SPAWN_KEY or not key.pressed or key.echo:
 		return
@@ -149,15 +170,20 @@ func place(obj : GridObject, cells : Array[Cell]) -> void:
 		for cell in cells:
 			_building_cells.append(_coords_of[cell])
 	_sort_into_row(obj)
+	if obj is Building:
+		_wake_left_of(obj as Building)
 
 ## Puts `obj` before the objects on its row that stand left of it, so the ones on the right draw behind.
 func _sort_into_row(obj : GridObject) -> void:
 	var coords : Vector2i = _coords_of[obj.cells[0]]
 	for x in range(coords.x - 1, -1, -1):
 		var cell := _cell_or_null(Vector2i(x, coords.y))
-		var other := cell.occupant if cell != null else null
-		if other != null and other != obj and other.position.y == obj.position.y:
-			move_child(obj, other.get_index())
+		var other : Object = cell.occupant if cell != null else null
+		if other is Standing:
+			other = (other as Standing).node
+		var node := other as GridObject
+		if node != null and node != obj and node.position.y == obj.position.y:
+			move_child(obj, node.get_index())
 			return
 
 func remove(obj : GridObject) -> void:
@@ -166,6 +192,8 @@ func remove(obj : GridObject) -> void:
 		cell.highlight(0.0)
 		if obj is Building:
 			_building_cells.erase(_coords_of[cell])
+	if obj is Harvestable:
+		_forget((obj as Harvestable).standing)
 	obj.queue_free()
 
 func _build_cells() -> void:
@@ -302,8 +330,14 @@ func _load_spawnables() -> Array[Spawnable]:
 			s.max_weight = template.edge_distance_curve.max_value if template.edge_distance_curve != null else 1.0
 			if s.cluster_bonus > 0.0:
 				s.max_weight *= 1.0 + s.cluster_bonus * NEIGHBOURS.size() * s.footprint
+			s.template = template
+			var shape : CollisionShape2D = template.area.get_child(0)
+			s.hit_box = template.transform * template.area.transform * shape.transform * shape.shape.get_rect()
+			_reach_rows = maxi(_reach_rows, ceili(-s.hit_box.position.y / (_cell_scale.y * 5)))
+			s.as_data = not (template is Bush)
 			list.append(s)
-		template.free()
+		else:
+			template.free()
 	return list
 
 func _process(delta : float) -> void:
@@ -313,6 +347,8 @@ func _process(delta : float) -> void:
 			i += 1
 		else:
 			_meeples.remove_at(i)
+	_update_hover()
+	_sleep_still()
 	if _spawnables.is_empty():
 		return
 	_respawn_timer += delta
@@ -322,14 +358,10 @@ func _process(delta : float) -> void:
 	_respawn()
 
 func _respawn() -> void:
-	var counts := {}
-	for node in get_tree().get_nodes_in_group(Harvestable.GROUP):
-		if not node.is_queued_for_deletion():
-			counts[node.scene_file_path] = counts.get(node.scene_file_path, 0) + 1
 	var blocked := {}
 	var blocked_ready := false
 	for s in _spawnables:
-		var missing : int = s.target - counts.get(s.scene.resource_path, 0)
+		var missing := s.target - s.count
 		if missing <= 0:
 			continue
 		if _rng.randf() >= s.respawn_chance * missing / float(s.target):
@@ -337,9 +369,9 @@ func _respawn() -> void:
 		if not blocked_ready:
 			blocked = _cells_with_movers()
 			blocked_ready = true
-		var obj := _spawn(s, blocked)
-		if obj != null:
-			obj.grow_in()
+		var item := _spawn(s, blocked)
+		if item != null:
+			wake(item).grow_in()
 
 func _cells_with_movers() -> Dictionary:
 	var blocked := {}
@@ -354,7 +386,7 @@ func _cells_with_movers() -> Dictionary:
 			blocked[cell] = true
 	return blocked
 
-func _spawn(s : Spawnable, blocked := {}) -> Harvestable:
+func _spawn(s : Spawnable, blocked := {}) -> Standing:
 	if _spots.is_empty():
 		return null
 	var building_coords := _building_cells
@@ -366,10 +398,113 @@ func _spawn(s : Spawnable, blocked := {}) -> Harvestable:
 		var weight := _spawn_weight(s, coords) * _building_factor(s, coords, building_coords)
 		if _rng.randf() * s.max_weight >= weight:
 			continue
-		var obj : Harvestable = s.scene.instantiate()
-		place(obj, cells)
-		return obj
+		return _add_standing(s, cells)
 	return null
+
+func _add_standing(kind : Spawnable, cells : Array[Cell]) -> Standing:
+	var item := Standing.new()
+	item.kind = kind
+	item.cells = cells
+	item.position = cells[0].position
+	for cell in cells:
+		cell.occupant = item
+	standing.append(item)
+	kind.count += 1
+	if kind.as_data and not _under_building(item):
+		_row(item).add(item)
+	else:
+		wake(item)
+	return item
+
+func _forget(item : Standing) -> void:
+	standing.erase(item)
+	_awake.erase(item)
+	_hovered.erase(item)
+	item.kind.count -= 1
+
+## Gives `item` its real scene, for as long as something happens to it. Returns the scene's node.
+func wake(item : Standing) -> Harvestable:
+	if item.node != null:
+		return item.node
+	_row(item).remove(item)
+	var node : Harvestable = item.kind.scene.instantiate()
+	node.standing = item
+	node.grid = self
+	node.position = item.position
+	node.cells = item.cells
+	add_child(node)
+	_sort_into_row(node)
+	item.node = node
+	_awake.append(item)
+	return node
+
+## Hands the trees and rocks that are still again back to their rows.
+func _sleep_still() -> void:
+	for item in _awake.duplicate():
+		if item.kind.as_data and not _hovered.has(item) and item.node.is_still() and not _under_building(item):
+			_awake.erase(item)
+			item.node.queue_free()
+			item.node = null
+			_row(item).add(item)
+
+## The node that draws the still trees and rocks of `item`'s row. It goes first among the grid's
+## children, so on a tie in y it draws behind buildings.
+func _row(item : Standing) -> StandingRow:
+	if not _rows.has(item.position.y):
+		var row := StandingRow.new()
+		row.position.y = item.position.y
+		row.z_index = item.kind.template.z_index
+		add_child(row)
+		move_child(row, 0)
+		_rows[item.position.y] = row
+	return _rows[item.position.y]
+
+## True when a building on the same row starts just right of `item` and its art reaches over it.
+## Such a tree or rock keeps its node, so it still draws in front of the building as before.
+func _under_building(item : Standing) -> bool:
+	var coords : Vector2i = _coords_of[item.cells[-1]]
+	for x in range(coords.x + 1, coords.x + 1 + PIN_REACH):
+		var cell := _cell_or_null(Vector2i(x, coords.y))
+		var building := cell.occupant as Building if cell != null else null
+		if building != null and building.position.y == item.position.y:
+			var item_right := item.position.x + item.kind.template.get_rect().end.x * item.kind.template.scale.x
+			return building.position.x + building.get_rect().position.x * building.scale.x < item_right
+	return false
+
+func _wake_left_of(building : Building) -> void:
+	var coords : Vector2i = _coords_of[building.cells[0]]
+	for x in range(coords.x - PIN_REACH, coords.x):
+		var cell := _cell_or_null(Vector2i(x, coords.y))
+		var item := cell.occupant as Standing if cell != null else null
+		if item != null and _under_building(item):
+			wake(item)
+
+func _update_hover() -> void:
+	var under := _standing_under_mouse()
+	for item in _hovered:
+		if not under.has(item) and item.node != null:
+			item.node._set_hovered(false)
+	for item in under:
+		if not _hovered.has(item):
+			wake(item)._set_hovered(true)
+	_hovered = under
+
+## The trees and rocks whose click box holds the mouse, found through the cells under it.
+## Tall ones reach up over the rows behind them, so this also looks a few rows further down.
+func _standing_under_mouse() -> Array[Standing]:
+	var found : Array[Standing] = []
+	if get_viewport().gui_get_hovered_control() != null:
+		return found
+	var mouse := get_local_mouse_position()
+	var center := _coords_at(get_global_mouse_position())
+	for dy in range(-1, _reach_rows + 1):
+		# Each row further down starts 5/7 of a cell further right.
+		for dx in range(-3 - dy, 3):
+			var cell := _cell_or_null(center + Vector2i(dx, dy))
+			var item := cell.occupant as Standing if cell != null else null
+			if item != null and not found.has(item) and item.kind.hit_box.has_point(mouse - item.position):
+				found.append(item)
+	return found
 
 func _spawn_weight(s : Spawnable, coords : Vector2i) -> float:
 	var weight := 1.0
@@ -397,7 +532,7 @@ func _matching_neighbours(s : Spawnable, coords : Vector2i) -> int:
 	for i in range(s.footprint):
 		for n in NEIGHBOURS:
 			var cell := _cell_or_null(coords + Vector2i(i, 0) + n)
-			if cell != null and cell.occupant != null and cell.occupant.scene_file_path == s.scene.resource_path:
+			if cell != null and cell.occupant is Standing and (cell.occupant as Standing).kind == s:
 				found += 1
 	return found
 

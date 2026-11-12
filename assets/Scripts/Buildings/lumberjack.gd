@@ -7,16 +7,16 @@ func find_work(_worker : Meeple) -> Job:
 	var tree := _closest_tree()
 	if tree == null:
 		return null
-	return ChopJob.new(tree)
+	return ChopJob.new(grid.wake(tree))
 
-func _closest_tree() -> Harvestable:
-	var closest : Harvestable = null
+func _closest_tree() -> Standing:
+	var closest : Standing = null
 	var best := INF
-	for node in get_tree().get_nodes_in_group(Harvestable.GROUP):
-		var tree : Harvestable = node
-		if not tree.is_free() or not tree.drops.has(chops) or Inventory.count("food") < tree.food_cost:
+	for tree in grid.standing:
+		var look := tree.kind.template
+		if not tree.is_free() or not look.drops.has(chops) or Inventory.count("food") < look.food_cost:
 			continue
-		var distance := global_position.distance_squared_to(tree.global_position)
+		var distance := position.distance_squared_to(tree.position)
 		if distance < best:
 			best = distance
 			closest = tree

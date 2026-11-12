@@ -145,7 +145,8 @@ flowchart TD
     grid["Grid (grid.gd)"]
     cells["2,091 cells: plain data, no node"]
     cellLayer["CellLayer: draws the lit cells in one node (cell_layer.gd)"]
-    objects["Harvestables, buildings, drops"]
+    rows["StandingRow per grid row: draws the still trees and rocks of that row (standing_row.gd)"]
+    objects["Buildings, drops, bushes, and the trees and rocks that are hovered, hit, chosen or growing"]
     meeples["Meeples: plain data, one canvas item each, no node"]
     cursor["Mouse: cell cursor, asks Grid for the cells near the mouse (mouse.gd)"]
     buildSystem["BuildSystem (build_system.gd)"]
@@ -168,6 +169,7 @@ flowchart TD
     back --> buildSystem
     grid --> cells
     grid --> cellLayer
+    grid --> rows
     grid --> objects
     grid --> meeples
     buildSystem --> tooltip
@@ -315,10 +317,23 @@ classDiagram
         +place(obj, cells)
         +remove(obj)
         +spawn_meeple(at): Meeple
+        +standing: Array[Standing]
+        +wake(item): Harvestable
+    }
+    class Standing {
+        +kind: Spawnable
+        +cells: Array[Cell]
+        +position: Vector2
+        +wobbles: int
+        +node: Harvestable
+        +is_free(): bool
+    }
+    class StandingRow {
+        +add(item) / remove(item)
     }
     class Cell {
         +position: Vector2
-        +occupant: GridObject
+        +occupant: GridObject or Standing
         +highlight(alpha, color)
     }
     class CellLayer {
@@ -372,8 +387,10 @@ classDiagram
         +can_harvest(): bool
         +is_free(): bool
         +claim(job) / release(job)
+        +standing: Standing
         +harvest(): bool
         +grow_in()
+        +is_still(): bool
     }
     class Building {
         +signal completed
@@ -490,6 +507,10 @@ classDiagram
     BarnPlot <|-- Silo
     Grid ..> Cell : 2,091 cells
     Cell ..> GridObject : occupant
+    Cell ..> Standing : occupant
+    Grid ..> Standing : trees, rocks, bushes
+    Standing ..> StandingRow : drawn by, while still
+    Standing ..> Harvestable : node, while awake
     Cell ..> CellLayer : lit by
     CellCursor ..> Grid : cells_near
     Harvestable ..> ResourceDrop : breaks into
