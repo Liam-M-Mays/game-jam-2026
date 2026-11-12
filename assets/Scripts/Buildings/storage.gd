@@ -44,11 +44,35 @@ func take(drop : ResourceDrop) -> void:
 func has_room() -> bool:
 	return _held.size() + _en_route < capacity()
 
+## The worker carries a loose drop of this pile's kind to a pile of that kind.
+## It picks the drop and the pile with the shortest total trip.
+func find_work(worker : Meeple) -> Job:
+	if Inventory.available(kind) <= 0:
+		return null
+	var from := worker.global_position
+	var best_pile : Storage = null
+	var best_drop : ResourceDrop = null
+	var best_trip := INF
+	for pile : Storage in get_tree().get_nodes_in_group(GROUP):
+		if pile.kind != kind or not pile.has_room():
+			continue
+		var drop := Inventory.shortest_trip_loose(kind, from, pile.global_position)
+		if drop == null:
+			continue
+		var trip := from.distance_to(drop.global_position) + drop.global_position.distance_to(pile.global_position)
+		if trip < best_trip:
+			best_trip = trip
+			best_pile = pile
+			best_drop = drop
+	if best_pile == null:
+		return null
+	return best_pile.make_store_job(best_drop)
+
 func make_store_job(drop : ResourceDrop) -> StoreJob:
 	_en_route += 1
 	return StoreJob.new(drop, self)
 
-func idle_job_ended() -> void:
+func trip_ended() -> void:
 	_en_route -= 1
 
 func _refresh() -> void:

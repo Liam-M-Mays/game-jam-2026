@@ -38,8 +38,6 @@ func _queue_collect() -> void:
 		return
 	JobSystem.add(job)
 	_set_collect_job(job)
-	if _idle_job != null:
-		_idle_job.cancelled = true
 
 func _cancel_collect() -> void:
 	JobSystem.cancel(_collect_job)
@@ -70,11 +68,9 @@ func harvest_crop() -> void:
 	flash()
 	_set_growth(0)
 
-func has_idle_work(_worker : Meeple) -> bool:
+## True when the barn's worker should harvest it: it is ripe and the player did not send a builder.
+func needs_harvest() -> bool:
 	return can_harvest_now() and _collect_job == null
-
-func _make_idle_job(worker : Meeple) -> IdleJob:
-	return FarmJob.new() if has_idle_work(worker) else null
 
 func _set_growth(stage : int) -> void:
 	_growth = clampi(stage, 0, grow_stages())
