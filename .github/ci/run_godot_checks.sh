@@ -23,16 +23,16 @@ run() {
 echo "Godot: $("$GODOT" --version 2>/dev/null | head -1)"
 echo "Logs:  $LOGS"
 
-echo "1/4 First import. Godot builds its class cache here, so errors in this pass are expected."
+echo "1/5 First import. Godot builds its class cache here, so errors in this pass are expected."
 run "$GODOT" --headless --path "$ROOT" --import >"$LOGS/import-first.log" 2>&1
 
-echo "2/4 Second import. This one has to be clean."
+echo "2/5 Second import. This one has to be clean."
 run "$GODOT" --headless --path "$ROOT" --import >"$LOGS/import.log" 2>&1
 
-echo "3/4 Loading every script, scene, resource and shader."
+echo "3/5 Loading every script, scene, resource and shader."
 run "$GODOT" --headless --path "$ROOT" res://.github/ci/load_check.tscn >"$LOGS/load.log" 2>&1
 
-echo "4/4 Booting the entry scenes with no window."
+echo "4/5 Booting the entry scenes with no window."
 while read -r name scene frames; do
   case "$name" in ""|\#*) continue ;; esac
   if [ "$scene" = "main" ]; then
@@ -43,5 +43,10 @@ while read -r name scene frames; do
   echo "$?" >"$LOGS/boot-$name.exit"
   echo "    $name: ran $frames frames, exit code $(cat "$LOGS/boot-$name.exit")"
 done <"$HERE/entry-scenes.txt"
+
+echo "5/5 Running the tests."
+run "$GODOT" --headless --path "$ROOT" res://assets/Scripts/Dev/test_runner/run_tests.tscn >"$LOGS/tests.log" 2>&1
+echo "$?" >"$LOGS/tests.exit"
+grep -E "^TEST FAIL|^TESTS DONE" "$LOGS/tests.log" | sed 's/^/    /'
 
 python3 "$HERE/checks.py" logs "$LOGS" "$@"

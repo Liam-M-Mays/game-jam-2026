@@ -75,7 +75,6 @@ func _ready() -> void:
 	GameState.hunger_changed.connect(_check_hunger_band)
 	JobSystem.changed.connect(_refresh_counters)
 	JobSystem.changed.connect(_check_meeples)
-	JobSystem.job_rejected.connect(func(_job): GameState.warn("Job queue is full"))
 	Population.all_meeples_died.connect(_on_all_meeples_died)
 	_last_meeple_count = JobSystem.workers.size()
 	_last_food = Inventory.count("food")

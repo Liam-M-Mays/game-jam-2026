@@ -250,7 +250,7 @@ func _refresh() -> void:
 		for color_name in LOCKED_FONT_COLORS + LOCKED_ICON_COLORS:
 			button.remove_theme_color_override(color_name)
 		button.text = "%s   %s" % [_button_name(scene, counts), _cost_text(building.min_to_start)]
-		button.modulate = Color.WHITE if building.can_start() else unavailable_tint
+		button.modulate = Color.WHITE if building.can_afford() else unavailable_tint
 
 
 func _on_building_pressed(scene: PackedScene) -> void:
@@ -260,9 +260,6 @@ func _on_building_pressed(scene: PackedScene) -> void:
 		return
 	if not building.can_afford():
 		GameState.warn("You need more materials to build %s" % display_name(scene))
-		return
-	if not building.can_start():
-		GameState.warn("Job queue is full")
 		return
 	if not build_system:
 		push_warning("BuildMenu has no BuildSystem assigned")

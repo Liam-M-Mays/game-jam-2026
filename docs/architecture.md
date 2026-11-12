@@ -54,7 +54,7 @@ flowchart LR
     end
 
     subgraph globals ["Global singletons (autoloads)"]
-        jobSystem["JobSystem: job queue, workers"]
+        jobSystem["JobSystem: waiting jobs, workers, nearest-first matching"]
         inventory["Inventory: stock, drops, reservations"]
         population["Population: growth, starvation"]
         gameState["GameState: hunger, toasts, speed"]
@@ -77,7 +77,7 @@ flowchart LR
     building -->|"Posts haul jobs"| jobSystem
     building -->|"Reserves"| inventory
     drop -->|"Registers"| inventory
-    meeple -->|"Takes jobs"| jobSystem
+    jobSystem -->|"Gives jobs once a frame"| meeple
     meeple -->|"Delivers to"| building
     building -->|"Huts spawn"| meeple
     population -->|"Starves or grows"| meeple
@@ -107,7 +107,6 @@ flowchart LR
     food[("Food stock, cap 20 plus 20 per silo")]
     hunger{"Hunger: food per meeple"}
     meeples["Meeples"]
-    jobs["Job capacity: meeples plus 3"]
     hall["Town Hall level"]
     unlocks["New buildings unlock"]
 
@@ -123,7 +122,6 @@ flowchart LR
     hunger -->|"Above 50: grow"| meeples
     hunger -->|"Below 25: starve"| meeples
     huts -->|"Housing capacity"| meeples
-    meeples --> jobs
     meeples -->|"3, 6, 10, 15 meeples"| hall
     hall --> unlocks
     unlocks --> site
@@ -199,11 +197,9 @@ sequenceDiagram
     Player->>BuildSystem: Left click on free cells
     BuildSystem->>Building: grid.place, start_construction
     Building->>Inventory: reserve(wood)
+    Building->>Inventory: claim_closest(wood), in HaulJob.new
     Building->>JobSystem: add(HaulJob)
-    Meeple->>JobSystem: take()
-    JobSystem-->>Meeple: HaulJob
-    Meeple->>Inventory: claim_closest(wood)
-    Inventory-->>Meeple: ResourceDrop
+    JobSystem->>Meeple: take_job(HaulJob), nearest free meeple, next frame
     Meeple->>Building: deliver(wood)
     Building-->>BuildSystem: completed
     BuildSystem-->>HUD: building_completed
@@ -213,7 +209,7 @@ sequenceDiagram
 
 ## Meeple job lifecycle
 
-From `meeple_movement.gd` and `job_system.gd`. A meeple drops idle work the moment any queued job exists.
+From `meeple_movement.gd` and `job_system.gd`. Once a frame, `JobSystem.match_jobs` gives each new job to the nearest free meeple, and each meeple that became free the nearest waiting job. A meeple doing idle work counts as free. There is no job limit.
 
 ```mermaid
 stateDiagram-v2
@@ -224,9 +220,9 @@ stateDiagram-v2
     Dead: Dead - topples and fades out
 
     [*] --> Wandering: spawned by a hut
-    Wandering --> QueuedJob: JobSystem.take
+    Wandering --> QueuedJob: nearest to a new job, or takes the nearest waiting job
     Wandering --> IdleWork: a building offers idle work
-    IdleWork --> QueuedJob: a queued job appears
+    IdleWork --> QueuedJob: nearest to a new job
     IdleWork --> Wandering: idle job ends
     QueuedJob --> Wandering: job done or cancelled
     Wandering --> Dead: starved
@@ -410,7 +406,6 @@ classDiagram
         +capacity(): int
         +has_room(): bool
         +store(drop) / take(drop)
-        +first_unclaimed(): ResourceDrop
         +make_store_job(drop): StoreJob
     }
     class Lumberjack {
@@ -489,7 +484,7 @@ classDiagram
 
 ### Class diagram 2: jobs, meeples and the simulation singletons
 
-How work gets done: the job queue, the six job types, the meeple that runs them, and the two singletons that hold the economy and the population.
+How work gets done: the waiting jobs, the six job types, the meeple that runs them, and the two singletons that hold the economy and the population.
 
 ```mermaid
 classDiagram
@@ -497,23 +492,22 @@ classDiagram
     class JobSystem {
         <<autoload>>
         +signal changed
-        +signal job_rejected(job)
         +signal worker_idle(worker, offers)
         +workers: Array[Meeple]
-        +EXTRA_JOBS = 3
-        +add(job): bool
-        +take(): Job
+        +add(job)
+        +match_jobs()
+        +worker_freed(worker)
         +finish(job)
         +requeue(job, worker)
         +cancel(job)
         +find_idle_job(worker): IdleJob
         +take_partner(job): HaulJob
         +recall_hauls(site)
-        +capacity() / has_room(n)
         +reset()
     }
     class Job {
         +cancelled: bool
+        +place(): Vector2
         +start(worker)
         +update(worker, delta): bool
         +abort(worker)
@@ -529,6 +523,8 @@ classDiagram
         +has_arrived(): bool
         +carry(kind, amount)
         +abandon_job()
+        +is_free(): bool
+        +take_job(job)
         +die()
     }
     class MeepleLook {
@@ -557,9 +553,9 @@ classDiagram
         +count(kind): int
         +available(kind): int
         +add(kind, n) / spend(kind, n)
-        +reserve(kind, n) / unreserve(kind, n)
+        +reserve(kind, n)
         +claim_closest(kind, pos): ResourceDrop
-        +claim_reserved(drop) / release(drop)
+        +claim_reserved(drop)
         +closest_loose(kind, pos)
         +food_cap() / food_full()
         +register(drop) / unregister(drop)

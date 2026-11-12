@@ -41,12 +41,6 @@ func take(drop : ResourceDrop) -> void:
 	drop.storage = null
 	_refresh()
 
-func first_unclaimed() -> ResourceDrop:
-	for drop in _held:
-		if not drop.claimed:
-			return drop
-	return null
-
 func has_room() -> bool:
 	return _held.size() + _en_route < capacity()
 

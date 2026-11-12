@@ -73,10 +73,6 @@ func available(kind : String) -> int:
 func reserve(kind : String, amount : int) -> void:
 	_reserved[kind] = _reserved.get(kind, 0) + amount
 
-func unreserve(kind : String, amount : int) -> void:
-	_reserved[kind] = _reserved.get(kind, 0) - amount
-	changed.emit()
-
 func claim_closest(kind : String, world_pos : Vector2) -> ResourceDrop:
 	var closest : ResourceDrop = null
 	for drop in _drops_of(kind):
@@ -105,11 +101,6 @@ func _is_loose(drop : ResourceDrop) -> bool:
 
 func set_claimed(drop : ResourceDrop, on : bool) -> void:
 	drop.claimed = on
-	changed.emit()
-
-func release(drop : ResourceDrop) -> void:
-	drop.claimed = false
-	_reserved[drop.kind] = _reserved.get(drop.kind, 0) + 1
 	changed.emit()
 
 func _drops_of(kind : String) -> Array:
