@@ -12,20 +12,19 @@ A quick map of the gameplay code, written for hooking up UI: what to read, which
 | Food cap (`12 / 40`) | `Inventory.food_cap()` / `Inventory.food_full()` | `Inventory.changed` |
 | What can still be spent on new builds | `Inventory.available("wood")` | `Inventory.changed` |
 | Meeple count | `JobSystem.workers.size()` | `JobSystem.changed` |
-| Job queue (`3 / 4`) | `JobSystem.job_count()` / `JobSystem.capacity()` | `JobSystem.changed` |
+| Job count | `JobSystem.job_count()` (there is no job limit) | `JobSystem.changed` |
 | Building costs | `building.costs` (total of every frame) / `building.min_to_start` (needed to place) | static |
 | What a site under construction is stuck on | `site.missing()` → `{"wood": 1}`, empty when not stuck | `site.missing_changed` |
 | What a site needs for its next stage | `site.next_stage_needs()` → `{"stone": 1}` (minus what's already delivered). Hover tooltip for this is built in (`ConstructionTooltip`, created by `BuildSystem`) | poll / `Inventory.changed` |
 | Picture of a building (finished frame) | `building.icon()` → `Texture2D` (used by the build menu buttons) | static |
-| Can place (stock covers `min_to_start`) | `building.can_afford()` / `building.can_start()` | `Inventory.changed` |
+| Can place (stock covers `min_to_start`) | `building.can_afford()` | `Inventory.changed` |
 | Enter / leave build mode | `build_system.start_build(scene)` / `build_system.end_build()` | — |
 | Build mode events | `BuildSystem` signals (below) | — |
-| Queue-full feedback | `JobSystem.job_rejected` | — |
 | New game | `Inventory.reset()` + `JobSystem.reset()` | — |
 | Toast | `GameState.toast("text")` | (yours) |
 | Hunger | `GameState.hunger` (yours) | `GameState.hunger_changed` |
 
-`Inventory.changed` and `JobSystem.changed` carry no arguments. Connect them and re-read whatever you need.
+`Inventory.changed` and `JobSystem.changed` carry no arguments. `JobSystem.changed` fires at most once a frame. Connect them and re-read whatever you need.
 
 > ⚠️ `GameState.wood/stone/meeple` are **not** connected to the real game. Meeples chopping trees changes `Inventory`, not `GameState`. Read resources from `Inventory` and meeples from `JobSystem`.
 
@@ -35,7 +34,7 @@ A quick map of the gameplay code, written for hooking up UI: what to read, which
 
 | Name | Script | What it is |
 |---|---|---|
-| `JobSystem` | `assets/Scripts/Jobs/job_system.gd` | Job queue + worker (meeple) registry + job cap |
+| `JobSystem` | `assets/Scripts/Jobs/job_system.gd` | Waiting jobs + worker (meeple) registry; gives each job to the nearest free meeple once a frame |
 | `Inventory` | `assets/Scripts/Resources/inventory.gd` | All resource counts |
 | `GameState` | `Game_State.gd` | UI-side state (hunger, toasts) |
 | `Population` | `assets/Scripts/Meeple/population.gd` | Meeple cap (= completed huts), starvation deaths, respawns |
@@ -60,17 +59,12 @@ func reset()                           # clear stored stock + reservations (new 
 
 ```gdscript
 signal changed
-signal job_rejected(job: Job)          # something tried to queue a job while full
-
-const EXTRA_JOBS := 3
 var workers: Array[Meeple]             # every meeple alive
-func capacity() -> int                 # workers.size() + EXTRA_JOBS
-func job_count() -> int                # pending + in-progress
-func has_room(amount := 1) -> bool
+func job_count() -> int                # waiting + in-progress, no limit
 func reset()                           # drop every job (new game)
 ```
 
-`changed` fires when a job is queued, finished or cancelled, and when a meeple spawns or is removed. `job_rejected` fires when the player clicks a tree or rock with a full queue. The object also flashes red and shakes in the world on its own.
+`changed` fires at most once a frame, after a job is queued, given, finished or cancelled, or a meeple spawns or is removed.
 
 Both autoloads outlive scene changes. **Call `Inventory.reset()` and `JobSystem.reset()` when starting a new game**, or jobs pointing at the old map's trees carry over. Meeples and drops unregister themselves when their scene is freed, so only those two calls are needed.
 
@@ -87,7 +81,7 @@ signal building_placed(building: Building)      # site placed, hauling starts
 signal building_completed(building: Building)   # last delivery landed, building done
 signal placement_failed(reason: BuildSystem.PlacementError)
 
-enum PlacementError { NONE, BLOCKED, CANT_AFFORD, QUEUE_FULL, OUT_OF_AREA }
+enum PlacementError { NONE, BLOCKED, CANT_AFFORD, OUT_OF_AREA }
 
 func start_build(scene: PackedScene)   # enter build mode with this building (swaps if already in it)
 func end_build()                       # leave build mode (no-op if not in it)
@@ -97,7 +91,7 @@ func is_building() -> bool
 How it behaves:
 
 - **In build mode** a ghost preview follows the mouse, green when it can be placed and red when it can't.
-- **Left-click** places the building and **stays in build mode** so you can keep placing the same building. Esc or the build button exits. Placing only checks that the current stock (`Inventory.count`) covers `min_to_start`. A full job queue never blocks placing: haul jobs wait and post as room opens. Each sprite frame has its own cost (`frames` on the scene). Meeples keep hauling whatever the unbuilt frames still need, and the building advances a frame whenever the resources delivered so far cover the next frame's cost. When the next frame can't be paid for with what's delivered or on the way, the blueprint turns red until more resources show up. `building_completed` fires on the last frame. A hut also spawns a meeple at that point.
+- **Left-click** places the building and **stays in build mode** so you can keep placing the same building. Esc or the build button exits. Placing only checks that the current stock (`Inventory.count`) covers `min_to_start`. There is no job limit: every haul job is posted at once and waits for a meeple. Each sprite frame has its own cost (`frames` on the scene). Meeples keep hauling whatever the unbuilt frames still need, and the building advances a frame whenever the resources delivered so far cover the next frame's cost. When the next frame can't be paid for with what's delivered or on the way, the blueprint turns red until more resources show up. `building_completed` fires on the last frame. A hut also spawns a meeple at that point.
 - **A failed click** (blocked cells, can't afford) makes the preview flash red and shake, emits `placement_failed(reason)`, and stays in build mode.
 - **Farm plots and silos** can only go near a barn. Each barn takes 3 of each in its `plot_offsets` area (2x2 in front and behind, 1x3 on each side), and a barn counts as soon as it's placed (it doesn't have to be finished). While placing one, the normal cell cursor is off. Only the free cells around barns are shown, and the ghost appears only when the mouse is on one of them. A click outside them fails with `OUT_OF_AREA`, which `HUD._on_placement_failed` doesn't handle yet.
 - **Windmills** go anywhere. Each finished windmill gives every barn +1 farm slot and +1 silo slot.
@@ -137,7 +131,7 @@ func _ready() -> void:
 func _refresh() -> void:
 	for button in building_list.get_children():
 		var b: Building = _templates[button.get_meta("scene")]
-		button.disabled = not b.can_start()          # stock covers min_to_start
+		button.disabled = not b.can_afford()          # stock covers min_to_start
 		button.text = "Hut  %s" % _cost_text(b.costs)
 
 func _on_building_pressed(scene: PackedScene) -> void:
@@ -170,7 +164,7 @@ func _refresh() -> void:
 	stone_label.text = str(Inventory.count("stone"))
 	food_label.text = str(Inventory.count("food"))
 	meeple_label.text = str(JobSystem.workers.size())
-	job_label.text = "%d / %d" % [JobSystem.job_count(), JobSystem.capacity()]
+	job_label.text = str(JobSystem.job_count())
 ```
 
 `Inventory.changed` can fire several times in one frame (a tree breaking spawns several drops). If you animate counters, debounce with a dirty flag checked in `_process`.
@@ -182,7 +176,6 @@ All of these come from backend signals, so the UI never has to poll:
 ```gdscript
 build_system.building_completed.connect(func(b): GameState.toast("Hut finished!"))
 build_system.placement_failed.connect(_on_placement_failed)
-JobSystem.job_rejected.connect(func(_job): GameState.toast("Too many jobs queued"))
 
 func _on_placement_failed(reason: BuildSystem.PlacementError) -> void:
 	match reason:

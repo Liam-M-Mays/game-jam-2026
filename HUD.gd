@@ -188,8 +188,6 @@ func _on_placement_failed(reason: BuildSystem.PlacementError) -> void:
 		BuildSystem.PlacementError.CANT_AFFORD:
 			var building_name := BuildMenu.display_name(_building_scene) if _building_scene else "that"
 			GameState.warn("You need more materials to build %s" % building_name)
-		BuildSystem.PlacementError.QUEUE_FULL:
-			GameState.warn("Job queue is full")
 		BuildSystem.PlacementError.BLOCKED:
 			GameState.warn("Can't build there")
 
