@@ -339,7 +339,7 @@ classDiagram
         +signal build_ended
         +signal building_placed(building)
         +signal building_completed(building)
-        +signal placement_failed(reason)
+        +signal placement_failed(reason, hint)
         +grid: Grid
         +cursor: CellCursor
         +start_build(scene)

@@ -250,7 +250,7 @@ func _refresh() -> void:
 		for color_name in LOCKED_FONT_COLORS + LOCKED_ICON_COLORS:
 			button.remove_theme_color_override(color_name)
 		button.text = "%s   %s" % [_button_name(scene, counts), _cost_text(building.min_to_start)]
-		button.modulate = Color.WHITE if building.can_afford() else unavailable_tint
+		button.modulate = Color.WHITE if building.can_afford() and _has_room(building) else unavailable_tint
 
 
 func _on_building_pressed(scene: PackedScene) -> void:
@@ -277,6 +277,11 @@ func _built_counts() -> Dictionary:
 	for node in get_tree().get_nodes_in_group(Building.COMPLETED_GROUP):
 		counts[node.scene_file_path] = counts.get(node.scene_file_path, 0) + 1
 	return counts
+
+
+## False when the building can only go in an area, like a farm round a barn, and that area has no free cell.
+func _has_room(building: Building) -> bool:
+	return not building.restricts_placement() or not building.placement_area(build_system.grid if build_system else null).is_empty()
 
 
 func _is_locked(building: Building) -> bool:
