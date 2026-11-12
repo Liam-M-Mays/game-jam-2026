@@ -1,20 +1,21 @@
-extends Area2D
+extends Node2D
 class_name CellCursor
+## Lights the cells around the mouse while a building is being placed.
 
 @export var enabled := true
 @export_range(0.0, 1.0) var highlight_alpha := 0.5
+@export var radius := 200.0
+
+var grid : Grid
 
 var _lit : Array[Cell] = []
 
 func _process(_delta : float) -> void:
-	global_position = get_global_mouse_position()
 	for cell in _lit:
 		cell.highlight(0.0)
 	_lit.clear()
-	if not enabled:
+	if not enabled or grid == null:
 		return
-	for area in get_overlapping_areas():
-		var cell := area.get_parent() as Cell
-		if cell != null:
-			cell.highlight(highlight_alpha)
-			_lit.append(cell)
+	_lit = grid.cells_near(get_global_mouse_position(), radius)
+	for cell in _lit:
+		cell.highlight(highlight_alpha)

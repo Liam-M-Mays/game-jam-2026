@@ -1,9 +1,18 @@
-extends Sprite2D
+extends RefCounted
 class_name Cell
+## One spot on the grid, as plain data. The grid's CellLayer draws it while it is lit.
 
 const HIGHLIGHT_COLOR := Color(0.4, 0.4, 0.4)
 
+var position : Vector2
 var occupant : GridObject = null
 
+var _layer : CellLayer
+
+func _init(at : Vector2, layer : CellLayer) -> void:
+	position = at
+	_layer = layer
+
+## Lights the cell with `color`. An alpha of 0 turns the light off.
 func highlight(alpha : float, color := HIGHLIGHT_COLOR) -> void:
-	modulate = Color(color, alpha)
+	_layer.set_lit(self, Color(color, alpha))

@@ -143,10 +143,11 @@ flowchart TD
     camera["Camera2D (giant_camera.gd)"]
     back["Back: y-sorted container"]
     grid["Grid (grid.gd)"]
-    cells["2,091 Cell nodes, each with a physics area"]
+    cells["2,091 cells: plain data, no node"]
+    cellLayer["CellLayer: draws the lit cells in one node (cell_layer.gd)"]
     objects["Harvestables, buildings, drops"]
     meeples["Meeples: plain data, one canvas item each, no node"]
-    cursor["Mouse: cell cursor (mouse.gd)"]
+    cursor["Mouse: cell cursor, asks Grid for the cells near the mouse (mouse.gd)"]
     buildSystem["BuildSystem (build_system.gd)"]
     tooltip["ConstructionTooltip, created in code"]
     parallax["5 parallax background layers"]
@@ -166,6 +167,7 @@ flowchart TD
     back --> cursor
     back --> buildSystem
     grid --> cells
+    grid --> cellLayer
     grid --> objects
     grid --> meeples
     buildSystem --> tooltip
@@ -304,6 +306,7 @@ classDiagram
         +generation_seed: int
         +respawn_interval: float
         +cell_at(world_pos): Cell
+        +cells_near(world_pos, radius)
         +free_cells_at(pos, width, depth)
         +cells_around(obj, radius)
         +cells_at_offsets(origin, offsets)
@@ -312,8 +315,12 @@ classDiagram
         +spawn_meeple(at): Meeple
     }
     class Cell {
+        +position: Vector2
         +occupant: GridObject
         +highlight(alpha, color)
+    }
+    class CellLayer {
+        +set_lit(cell, color)
     }
     class GridObject {
         +area: Area2D
@@ -342,6 +349,8 @@ classDiagram
     class CellCursor {
         +enabled: bool
         +highlight_alpha: float
+        +radius: float
+        +grid: Grid
     }
     class ResourceDrop {
         +kind: String
@@ -475,6 +484,8 @@ classDiagram
     BarnPlot <|-- Silo
     Grid ..> Cell : 2,091 cells
     Cell ..> GridObject : occupant
+    Cell ..> CellLayer : lit by
+    CellCursor ..> Grid : cells_near
     Harvestable ..> ResourceDrop : breaks into
     Building ..> BuildFrame : cost per stage
     BuildSystem ..> Building : previews and places

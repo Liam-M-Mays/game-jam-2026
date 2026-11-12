@@ -43,15 +43,19 @@ var _spots : Array = []
 var _respawn_timer := 0.0
 var _coords_of := {}
 var _keep_clear : Array[Cell] = []
+var _building_cells : Array[Vector2i] = []
+var _cell_layer : CellLayer
 var _meeple_look : MeepleLook
 var _meeples : Array[Meeple] = []
 
 func _ready() -> void:
 	_meeple_look = MEEPLE.instantiate()
-	var template := CELL.instantiate()
+	var template : Sprite2D = CELL.instantiate()
 	_cell_scale = template.scale
 	_cell_offset = template.offset
+	_cell_layer = CellLayer.new(template)
 	template.free()
+	add_child(_cell_layer)
 	_build_cells()
 	_compute_edge_distance()
 	_seed_world()
@@ -83,6 +87,31 @@ func _unhandled_input(event : InputEvent) -> void:
 
 func cell_at(world_pos : Vector2) -> Cell:
 	return _cell_or_null(_coords_at(world_pos))
+
+## The cells whose outline touches a circle of `radius` around `world_pos`, in this grid's space.
+func cells_near(world_pos : Vector2, radius : float) -> Array[Cell]:
+	var found : Array[Cell] = []
+	var center := _coords_at(world_pos)
+	var local := to_local(world_pos)
+	var rows := ceili(radius / (_cell_scale.y * 5)) + 1
+	var columns := ceili(radius / (_cell_scale.x * 7)) + rows
+	for dy in range(-rows, rows + 1):
+		for dx in range(-columns, columns + 1):
+			var cell := _cell_or_null(center + Vector2i(dx, dy))
+			if cell != null and _touches(cell, local, radius):
+				found.append(cell)
+	return found
+
+func _touches(cell : Cell, local : Vector2, radius : float) -> bool:
+	var point := (local - cell.position) / _cell_scale
+	var outline := PackedVector2Array(CELL_OUTLINE)
+	if Geometry2D.is_point_in_polygon(point, outline):
+		return true
+	for i in range(outline.size()):
+		var closest := Geometry2D.get_closest_point_to_segment(point, outline[i - 1], outline[i])
+		if (closest - point).length() * _cell_scale.x <= radius:
+			return true
+	return false
 
 func free_cells_at(world_pos : Vector2, width := 1, depth := 1) -> Array[Cell]:
 	return _free_cells(_coords_at(world_pos), width, depth)
@@ -116,18 +145,27 @@ func place(obj : GridObject, cells : Array[Cell]) -> void:
 	for cell in cells:
 		cell.occupant = obj
 	add_child(obj)
+	if obj is Building:
+		for cell in cells:
+			_building_cells.append(_coords_of[cell])
 	_sort_into_row(obj)
 
+## Puts `obj` before the objects on its row that stand left of it, so the ones on the right draw behind.
 func _sort_into_row(obj : GridObject) -> void:
-	for child in get_children():
-		if child != obj and child is GridObject and child.position.y == obj.position.y and child.position.x < obj.position.x:
-			move_child(obj, child.get_index())
+	var coords : Vector2i = _coords_of[obj.cells[0]]
+	for x in range(coords.x - 1, -1, -1):
+		var cell := _cell_or_null(Vector2i(x, coords.y))
+		var other := cell.occupant if cell != null else null
+		if other != null and other != obj and other.position.y == obj.position.y:
+			move_child(obj, other.get_index())
 			return
 
 func remove(obj : GridObject) -> void:
 	for cell in obj.cells:
 		cell.occupant = null
 		cell.highlight(0.0)
+		if obj is Building:
+			_building_cells.erase(_coords_of[cell])
 	obj.queue_free()
 
 func _build_cells() -> void:
@@ -138,11 +176,9 @@ func _build_cells() -> void:
 		for y in range(grid_size):
 			var pos := _cell_position(x, y)
 			if _fits_ground(pos):
-				var cell := CELL.instantiate()
-				cell.position = pos
+				var cell := Cell.new(pos, _cell_layer)
 				column[y] = cell
 				_coords_of[cell] = Vector2i(x, y)
-				add_child(cell)
 
 func _cell_position(x : int, y : int) -> Vector2:
 	return Vector2((x * 7 + y * 5) * _cell_scale.x, y * 5 * _cell_scale.y)
@@ -310,9 +346,8 @@ func _cells_with_movers() -> Dictionary:
 	var spots : Array[Vector2] = []
 	for worker in JobSystem.workers:
 		spots.append(worker.global_position)
-	for child in get_children():
-		if child is ResourceDrop:
-			spots.append(child.global_position)
+	for drop in Inventory.all_drops():
+		spots.append(drop.global_position)
 	for spot in spots:
 		var cell := cell_at(spot)
 		if cell != null:
@@ -322,7 +357,7 @@ func _cells_with_movers() -> Dictionary:
 func _spawn(s : Spawnable, blocked := {}) -> Harvestable:
 	if _spots.is_empty():
 		return null
-	var building_coords := _building_coords()
+	var building_coords := _building_cells
 	for i in range(SPAWN_ATTEMPTS):
 		var coords : Vector2i = _spots[_rng.randi_range(0, _spots.size() - 1)]
 		var cells := _free_cells(coords, s.footprint)
@@ -343,14 +378,6 @@ func _spawn_weight(s : Spawnable, coords : Vector2i) -> float:
 	if s.cluster_bonus != 0.0:
 		weight *= maxf(1.0 + s.cluster_bonus * _matching_neighbours(s, coords), 0.0)
 	return weight
-
-func _building_coords() -> Array[Vector2i]:
-	var list : Array[Vector2i] = []
-	for child in get_children():
-		if child is Building:
-			for cell in child.cells:
-				list.append(_coords_of[cell])
-	return list
 
 func _building_factor(s : Spawnable, coords : Vector2i, building_coords : Array[Vector2i]) -> float:
 	if building_clearance <= 0 or building_coords.is_empty():
