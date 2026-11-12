@@ -30,7 +30,8 @@ func start_construction() -> void:
 
 func _barns_with_room() -> Array[Barn]:
 	var list : Array[Barn] = []
-	for node in get_tree().get_nodes_in_group(Barn.GROUP):
+	var tree := Engine.get_main_loop() as SceneTree
+	for node in tree.get_nodes_in_group(Barn.GROUP):
 		if node.has_room_for(self):
 			list.append(node)
 	return list

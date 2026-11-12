@@ -5,7 +5,7 @@ signal build_started(scene : PackedScene)
 signal build_ended
 signal building_placed(building : Building)
 signal building_completed(building : Building)
-signal placement_failed(reason : PlacementError)
+signal placement_failed(reason : PlacementError, hint : String)
 
 enum PlacementError { NONE, BLOCKED, CANT_AFFORD, OUT_OF_AREA }
 
@@ -28,14 +28,17 @@ func _ready() -> void:
 	cursor.grid = grid
 
 func start_build(scene : PackedScene) -> void:
+	var preview : Building = scene.instantiate()
+	if preview.restricts_placement() and preview.placement_area(grid).is_empty():
+		placement_failed.emit(PlacementError.OUT_OF_AREA, preview.placement_hint())
+		preview.free()
+		return
 	_clear_preview()
 	_scene = scene
-	_preview = scene.instantiate()
+	_preview = preview
 	grid.add_child(_preview)
 	_preview.show_as_preview()
 	cursor.enabled = not _preview.restricts_placement()
-	if _preview.restricts_placement() and _preview.placement_area(grid).is_empty():
-		print(_preview.placement_hint())
 	build_started.emit(scene)
 
 func end_build() -> void:
@@ -116,14 +119,14 @@ func _try_place() -> void:
 	var error := _placement_error(cells)
 	if error != PlacementError.NONE:
 		_preview.reject()
-		if error == PlacementError.OUT_OF_AREA:
-			print(_preview.placement_hint())
-		placement_failed.emit(error)
+		var hint := _preview.placement_hint() if error == PlacementError.OUT_OF_AREA else ""
+		placement_failed.emit(error, hint)
 		return
 	var site : Building = _scene.instantiate()
 	grid.place(site, cells)
 	site.completed.connect(func(): building_completed.emit(site))
 	site.start_construction()
+	VillageAudio.play(&"hammer", site.global_position)
 	building_placed.emit(site)
 	end_build()
 

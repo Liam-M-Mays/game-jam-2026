@@ -1,4 +1,4 @@
-extends IdleJob
+extends Job
 class_name ChopJob
 
 var target : Harvestable
@@ -15,7 +15,7 @@ func start(worker : Meeple) -> void:
 	worker.move_to(target.global_position, target.cells)
 
 func update(worker : Meeple, delta : float) -> bool:
-	if not is_instance_valid(site) or not is_instance_valid(target):
+	if not is_instance_valid(target):
 		abort(worker)
 		return true
 	if not worker.has_arrived():

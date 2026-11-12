@@ -19,7 +19,7 @@ size = Vector2(28, 61)
 z_index = 1
 scale = Vector2(10, 10)
 texture = ExtResource("1_tex")
-offset = Vector2(10, -18)
+offset = Vector2(16, -19)
 hframes = 48
 script = ExtResource("2_scr")
 description = "A towering monument to your village."
@@ -38,5 +38,5 @@ footprint_depth = 3
 [node name="Area2D" type="Area2D" parent="." unique_id=503917264]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=1172640385]
-position = Vector2(10, -18.5)
+position = Vector2(16, -19.5)
 shape = SubResource("RectangleShape2D_1")

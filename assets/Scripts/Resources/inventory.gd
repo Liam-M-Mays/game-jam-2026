@@ -91,14 +91,18 @@ func claim_reserved(drop : ResourceDrop) -> void:
 	drop.claimed = true
 	_reserved[drop.kind] -= 1
 
-func closest_loose(kind : String, world_pos : Vector2) -> ResourceDrop:
-	var closest : ResourceDrop = null
+## The loose drop of `kind` with the shortest walk from `from` to it and on to `to`.
+func shortest_trip_loose(kind : String, from : Vector2, to : Vector2) -> ResourceDrop:
+	var best : ResourceDrop = null
+	var best_trip := INF
 	for drop in _drops_of(kind):
 		if not _is_loose(drop):
 			continue
-		if closest == null or world_pos.distance_squared_to(drop.global_position) < world_pos.distance_squared_to(closest.global_position):
-			closest = drop
-	return closest
+		var trip : float = from.distance_to(drop.global_position) + drop.global_position.distance_to(to)
+		if trip < best_trip:
+			best_trip = trip
+			best = drop
+	return best
 
 func _is_loose(drop : ResourceDrop) -> bool:
 	return not drop.claimed and drop.storage == null

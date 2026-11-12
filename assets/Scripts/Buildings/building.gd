@@ -23,6 +23,8 @@ const PAUSED_OUTLINE := Color(1.0, 0.85, 0.1)
 @export var show_blueprint := true
 @export var icon_texture : Texture2D
 @export_multiline var description := ""
+## How many meeples work here once it is finished. Set in each building's scene.
+@export var worker_slots := 0
 
 var costs : Dictionary[String, int]:
 	get:
@@ -35,7 +37,7 @@ var _missing : Dictionary[String, int] = {}
 var _requesting := false
 var _banked : Dictionary[String, int] = {}
 var _incoming : Dictionary[String, int] = {}
-var _idle_job : IdleJob = null
+var workers : Array[Meeple] = []
 var _blueprint : Sprite2D = null
 
 func _ready() -> void:
@@ -194,30 +196,23 @@ func complete() -> void:
 	_set_stage(last_stage())
 	area.input_pickable = true
 	spawn_effect(BUILD_EFFECT, 1)
-	JobSystem.worker_idle.connect(_on_worker_idle)
 	add_to_group(COMPLETED_GROUP)
+	for i in range(worker_slots):
+		JobSystem.open_slot(self)
 	completed.emit()
 
-func has_idle_work(_worker : Meeple) -> bool:
-	return false
-
-func _make_idle_job(_worker : Meeple) -> IdleJob:
+## The next task for `worker`, one of this building's workers, or null when there is nothing to do.
+func find_work(_worker : Meeple) -> Job:
 	return null
 
-func claim_idle_job(worker : Meeple) -> IdleJob:
-	if _idle_job != null:
-		return null
-	_idle_job = _make_idle_job(worker)
-	if _idle_job != null:
-		_idle_job.site = self
-	return _idle_job
+func add_worker(meeple : Meeple) -> void:
+	workers.append(meeple)
+	meeple.workplace = self
 
-func idle_job_ended() -> void:
-	_idle_job = null
-
-func _on_worker_idle(worker : Meeple, offers : Array) -> void:
-	if _idle_job == null and has_idle_work(worker):
-		offers.append(self)
+## Frees the slot of a worker who died, so another meeple takes it.
+func lose_worker(meeple : Meeple) -> void:
+	workers.erase(meeple)
+	JobSystem.open_slot(self)
 
 func _pop() -> void:
 	var tween := _tween(&"pop").set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)

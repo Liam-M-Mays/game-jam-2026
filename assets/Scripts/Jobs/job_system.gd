@@ -1,16 +1,17 @@
 extends Node
 ## Holds the jobs and the meeples that do them. Once a frame it gives each new job to the
-## nearest free meeple, and each meeple that became free the nearest waiting job.
-## A meeple doing idle work counts as free: a real job takes it over.
+## nearest free builder, and each builder that became free the nearest waiting job.
+## Meeples with a workplace never take these jobs: their building gives them work.
 
 signal changed
-signal worker_idle(worker : Meeple, offers : Array)
 
 var workers : Array[Meeple] = []
 var _pending : Array[Job] = []
 var _active : Array[Job] = []
 var _fresh : Array[Job] = []
 var _freed : Array[Meeple] = []
+var _open_slots : Array[Building] = []
+var _slot_opened := false
 var _changed := false
 
 func _ready() -> void:
@@ -29,6 +30,7 @@ func reset() -> void:
 	_active.clear()
 	_fresh.clear()
 	_freed.clear()
+	_open_slots.clear()
 	_changed = true
 
 func job_count() -> int:
@@ -46,6 +48,9 @@ func worker_freed(worker : Meeple) -> void:
 ## Gives new jobs to the nearest free meeple, then gives meeples that became free the nearest waiting job.
 ## Runs once a frame. Tests call it directly.
 func match_jobs() -> void:
+	if not _open_slots.is_empty() and (_slot_opened or not _freed.is_empty()):
+		_slot_opened = false
+		_fill_slots()
 	if _pending.is_empty():
 		_fresh.clear()
 		_freed.clear()
@@ -101,39 +106,26 @@ func _nearest_waiting_job(worker : Meeple) -> Job:
 			best = job
 	return best
 
-func has_pending() -> bool:
-	return not _pending.is_empty()
+## Tells the jobs that `building` has a worker slot with nobody in it.
+func open_slot(building : Building) -> void:
+	_open_slots.append(building)
+	_slot_opened = true
 
-func find_idle_job(worker : Meeple) -> IdleJob:
-	var offers : Array = []
-	worker_idle.emit(worker, offers)
-	var from := worker.global_position
-	offers.sort_custom(func(a, b): return from.distance_squared_to(a.global_position) < from.distance_squared_to(b.global_position))
-	for building in offers:
-		var job : IdleJob = building.claim_idle_job(worker)
-		if job != null:
-			return job
-	return _find_store_job(worker)
-
-func _find_store_job(worker : Meeple) -> StoreJob:
-	var from := worker.global_position
-	var best_storage : Storage = null
-	var best_drop : ResourceDrop = null
-	var best_trip := INF
-	for storage : Storage in get_tree().get_nodes_in_group(Storage.GROUP):
-		if not storage.has_room() or Inventory.available(storage.kind) <= 0:
-			continue
-		var drop := Inventory.closest_loose(storage.kind, from)
-		if drop == null:
-			continue
-		var trip := from.distance_to(drop.global_position) + drop.global_position.distance_to(storage.global_position)
-		if trip < best_trip:
-			best_trip = trip
-			best_storage = storage
-			best_drop = drop
-	if best_storage == null:
-		return null
-	return best_storage.make_store_job(best_drop)
+## Dev rule until the building panel of part 4b: an open slot takes the nearest free builder,
+## but one builder always stays for the player's jobs.
+func _fill_slots() -> void:
+	var builders := 0
+	for worker in workers:
+		if worker.workplace == null:
+			builders += 1
+	while not _open_slots.is_empty() and builders > 1:
+		var building : Building = _open_slots[0]
+		var builder := _nearest_free_worker(building.global_position)
+		if builder == null:
+			return
+		_open_slots.pop_front()
+		building.add_worker(builder)
+		builders -= 1
 
 func take_partner(job : HaulJob) -> HaulJob:
 	for other in _pending:
@@ -159,16 +151,11 @@ func take_pending_hauls(site : Building) -> Array[HaulJob]:
 	return taken
 
 func finish(job : Job) -> void:
-	if job is IdleJob:
-		job.end()
 	_active.erase(job)
 	_changed = true
 
 func requeue(job : Job, worker : Meeple) -> void:
 	job.abort(worker)
-	if job is IdleJob:
-		job.end()
-		return
 	_active.erase(job)
 	if not job.cancelled:
 		add(job)

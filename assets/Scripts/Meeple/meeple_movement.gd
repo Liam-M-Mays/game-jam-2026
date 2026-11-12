@@ -22,6 +22,8 @@ const STAND_STRETCH_STEP := 0.01
 
 var grid : Grid
 var job : Job
+## The building this meeple works for. Null for a builder, who takes only the player's jobs.
+var workplace : Building
 var position : Vector2
 var global_position : Vector2:
 	get:
@@ -83,23 +85,25 @@ func abandon_job() -> void:
 	stop()
 	JobSystem.worker_freed(self)
 
-## True when a new job may take this meeple: it is alive and has no job, or only idle work.
+## True when a player's job may take this meeple: it is an alive builder with no job.
 func is_free() -> bool:
-	return _dead_time < 0.0 and (job == null or job is IdleJob)
+	return _dead_time < 0.0 and job == null and workplace == null
 
-## Starts `new_job`, dropping any idle work. JobSystem calls this when it matches the two.
+## Starts `new_job`. JobSystem calls this when it matches the two.
 func take_job(new_job : Job) -> void:
-	if job != null:
-		JobSystem.requeue(job, self)
 	job = new_job
 	_wandering = false
 	job.start(self)
 
 func die() -> void:
 	VillageAudio.play(&"hurt", global_position)
-	if job != null:
+	if job != null and workplace != null:
+		job.abort(self)
+	elif job != null:
 		JobSystem.requeue(job, self)
-		job = null
+	job = null
+	if workplace != null:
+		workplace.lose_worker(self)
 	JobSystem.remove_worker(self)
 	_stretch = 1.0
 	_arm = FEET_OFFSET * _look.scale
@@ -166,24 +170,27 @@ func _topple_angle(t : float) -> float:
 
 func _work(delta : float) -> void:
 	if job == null:
-		if not JobSystem.has_pending():
-			job = _ask_for_idle_job(delta)
+		if workplace != null:
+			job = _ask_for_work(delta)
 		if job == null:
 			_wander(delta)
 			return
 		_wandering = false
 		job.start(self)
-	if job.update(self, delta):
+	if not job.update(self, delta):
+		return
+	if workplace == null:
 		JobSystem.finish(job)
-		job = null
 		JobSystem.worker_freed(self)
+	job = null
 
-func _ask_for_idle_job(delta : float) -> IdleJob:
+## A worker asks its building for the next task at most every IDLE_CHECK_INTERVAL.
+func _ask_for_work(delta : float) -> Job:
 	_idle_check -= delta
 	if _idle_check > 0.0:
 		return null
 	_idle_check = IDLE_CHECK_INTERVAL
-	return JobSystem.find_idle_job(self)
+	return workplace.find_work(self)
 
 func _wander(delta : float) -> void:
 	if not has_arrived():

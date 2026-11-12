@@ -1,6 +1,7 @@
-extends IdleJob
+extends Job
 class_name StoreJob
 
+var site : Storage
 var _drop : ResourceDrop
 var _carrying := false
 
@@ -28,7 +29,8 @@ func update(worker : Meeple, _delta : float) -> bool:
 	if not worker.has_arrived():
 		return false
 	worker.carry()
-	(site as Storage).store(_drop)
+	site.store(_drop)
+	site.trip_ended()
 	_drop = null
 	_carrying = false
 	return true
@@ -36,6 +38,8 @@ func update(worker : Meeple, _delta : float) -> bool:
 func abort(worker : Meeple) -> void:
 	if _drop == null:
 		return
+	if is_instance_valid(site):
+		site.trip_ended()
 	if _carrying:
 		_drop.global_position = worker.global_position
 		_drop.show()
