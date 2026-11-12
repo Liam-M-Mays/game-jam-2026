@@ -35,7 +35,6 @@ var _missing : Dictionary[String, int] = {}
 var _requesting := false
 var _banked : Dictionary[String, int] = {}
 var _incoming : Dictionary[String, int] = {}
-var _unposted : Array[HaulJob] = []
 var _idle_job : IdleJob = null
 var _blueprint : Sprite2D = null
 
@@ -172,15 +171,6 @@ func placement_hint() -> String:
 func can_afford() -> bool:
 	return _has_resources(min_to_start)
 
-func jobs_needed() -> int:
-	var total := 0
-	for kind in min_to_start:
-		total += min_to_start[kind]
-	return mini(total, JobSystem.capacity())
-
-func can_start() -> bool:
-	return can_afford() and JobSystem.has_room(jobs_needed())
-
 func start_construction() -> void:
 	_built = EMPTY_STAGE
 	_constructing = true
@@ -189,7 +179,6 @@ func start_construction() -> void:
 	area.input_pickable = true
 	add_to_group(CONSTRUCTION_GROUP)
 	Inventory.changed.connect(_request_hauls)
-	JobSystem.changed.connect(_post_jobs)
 	_advance()
 	_request_hauls()
 
@@ -264,8 +253,6 @@ func _finish_construction() -> void:
 	remove_from_group(CONSTRUCTION_GROUP)
 	_set_missing({})
 	Inventory.changed.disconnect(_request_hauls)
-	if JobSystem.changed.is_connected(_post_jobs):
-		JobSystem.changed.disconnect(_post_jobs)
 	complete()
 
 func _request_hauls() -> void:
@@ -278,22 +265,14 @@ func _request_hauls() -> void:
 		for i in range(mini(want, Inventory.available(kind))):
 			Inventory.reserve(kind, 1)
 			_incoming[kind] = _incoming.get(kind, 0) + 1
-			_unposted.append(HaulJob.new(self, kind))
-	_post_jobs()
+			JobSystem.add(HaulJob.new(self, kind))
 	_refresh_missing()
 	_requesting = false
 
-func _post_jobs() -> void:
-	while not _unposted.is_empty() and JobSystem.has_room():
-		JobSystem.add(_unposted.pop_front())
-
 func _drop_queued_hauls() -> void:
-	var dropped := JobSystem.take_pending_hauls(self)
-	dropped.append_array(_unposted)
-	_unposted.clear()
-	for job in dropped:
+	for job in JobSystem.take_pending_hauls(self):
 		_incoming[job.kind] -= 1
-		Inventory.unreserve(job.kind, 1)
+		job.release_drop()
 
 func _refresh_missing() -> void:
 	if not _constructing or _paused:

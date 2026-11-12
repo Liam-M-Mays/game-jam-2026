@@ -33,9 +33,10 @@ func _on_clicked() -> void:
 
 func _queue_collect() -> void:
 	var job := CollectCropJob.new(self)
-	if not can_harvest_now() or not JobSystem.add(job):
+	if not can_harvest_now():
 		reject()
 		return
+	JobSystem.add(job)
 	_set_collect_job(job)
 	if _idle_job != null:
 		_idle_job.cancelled = true

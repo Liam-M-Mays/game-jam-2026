@@ -7,6 +7,9 @@ var _timer := 0.0
 func _init(target_harvestable : Harvestable) -> void:
 	target = target_harvestable
 
+func place() -> Vector2:
+	return target.global_position
+
 func start(worker : Meeple) -> void:
 	worker.move_to(target.global_position, target.cells)
 

@@ -75,7 +75,6 @@ func _ready() -> void:
 	GameState.hunger_changed.connect(_check_hunger_band)
 	JobSystem.changed.connect(_refresh_counters)
 	JobSystem.changed.connect(_check_meeples)
-	JobSystem.job_rejected.connect(func(_job): GameState.warn("Job queue is full"))
 	Population.all_meeples_died.connect(_on_all_meeples_died)
 	_last_meeple_count = JobSystem.workers.size()
 	_last_food = Inventory.count("food")
@@ -189,8 +188,6 @@ func _on_placement_failed(reason: BuildSystem.PlacementError) -> void:
 		BuildSystem.PlacementError.CANT_AFFORD:
 			var building_name := BuildMenu.display_name(_building_scene) if _building_scene else "that"
 			GameState.warn("You need more materials to build %s" % building_name)
-		BuildSystem.PlacementError.QUEUE_FULL:
-			GameState.warn("Job queue is full")
 		BuildSystem.PlacementError.BLOCKED:
 			GameState.warn("Can't build there")
 

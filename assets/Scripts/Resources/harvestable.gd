@@ -42,10 +42,8 @@ func _on_clicked() -> void:
 		reject()
 	elif can_harvest():
 		var job := HarvestJob.new(self)
-		if JobSystem.add(job):
-			_set_job(job)
-		else:
-			reject()
+		JobSystem.add(job)
+		_set_job(job)
 
 func can_harvest() -> bool:
 	return _wobbles < wobbles_to_break

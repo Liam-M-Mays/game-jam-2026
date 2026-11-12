@@ -81,6 +81,19 @@ func abandon_job() -> void:
 	JobSystem.requeue(job, self)
 	job = null
 	stop()
+	JobSystem.worker_freed(self)
+
+## True when a new job may take this meeple: it is alive and has no job, or only idle work.
+func is_free() -> bool:
+	return _dead_time < 0.0 and (job == null or job is IdleJob)
+
+## Starts `new_job`, dropping any idle work. JobSystem calls this when it matches the two.
+func take_job(new_job : Job) -> void:
+	if job != null:
+		JobSystem.requeue(job, self)
+	job = new_job
+	_wandering = false
+	job.start(self)
 
 func die() -> void:
 	VillageAudio.play(&"hurt", global_position)
@@ -152,12 +165,8 @@ func _topple_angle(t : float) -> float:
 	return lerpf(rebound, _lying, 1.0 - cos(minf(t / TOPPLE_REBOUND_TIME, 1.0) * PI * 0.5))
 
 func _work(delta : float) -> void:
-	if job is IdleJob and JobSystem.has_pending():
-		JobSystem.requeue(job, self)
-		job = null
 	if job == null:
-		job = JobSystem.take()
-		if job == null:
+		if not JobSystem.has_pending():
 			job = _ask_for_idle_job(delta)
 		if job == null:
 			_wander(delta)
@@ -167,6 +176,7 @@ func _work(delta : float) -> void:
 	if job.update(self, delta):
 		JobSystem.finish(job)
 		job = null
+		JobSystem.worker_freed(self)
 
 func _ask_for_idle_job(delta : float) -> IdleJob:
 	_idle_check -= delta

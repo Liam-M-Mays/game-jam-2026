@@ -7,7 +7,7 @@ signal building_placed(building : Building)
 signal building_completed(building : Building)
 signal placement_failed(reason : PlacementError)
 
-enum PlacementError { NONE, BLOCKED, CANT_AFFORD, QUEUE_FULL, OUT_OF_AREA }
+enum PlacementError { NONE, BLOCKED, CANT_AFFORD, OUT_OF_AREA }
 
 const AREA_COLOR := Color(1.0, 0.95, 0.6)
 const AREA_ALPHA := 0.7

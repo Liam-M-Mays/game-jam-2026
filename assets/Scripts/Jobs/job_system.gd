@@ -1,44 +1,105 @@
 extends Node
+## Holds the jobs and the meeples that do them. Once a frame it gives each new job to the
+## nearest free meeple, and each meeple that became free the nearest waiting job.
+## A meeple doing idle work counts as free: a real job takes it over.
 
 signal changed
-signal job_rejected(job : Job)
 signal worker_idle(worker : Meeple, offers : Array)
-
-const EXTRA_JOBS := 3
 
 var workers : Array[Meeple] = []
 var _pending : Array[Job] = []
 var _active : Array[Job] = []
+var _fresh : Array[Job] = []
+var _freed : Array[Meeple] = []
+var _changed := false
+
+func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
+
+func _process(_delta : float) -> void:
+	match_jobs()
+	if _changed:
+		_changed = false
+		changed.emit()
 
 func reset() -> void:
 	for job in _pending + _active:
 		job.cancelled = true
 	_pending.clear()
 	_active.clear()
-	changed.emit()
-
-func capacity() -> int:
-	return workers.size() + EXTRA_JOBS
+	_fresh.clear()
+	_freed.clear()
+	_changed = true
 
 func job_count() -> int:
 	return _pending.size() + _active.size()
 
-func has_room(amount := 1) -> bool:
-	return job_count() + amount <= capacity()
-
-func add(job : Job) -> bool:
-	if not has_room():
-		job_rejected.emit(job)
-		return false
+func add(job : Job) -> void:
 	_pending.push_back(job)
-	changed.emit()
-	return true
+	_fresh.push_back(job)
+	_changed = true
 
-func take() -> Job:
-	var job : Job = _pending.pop_front()
-	if job != null:
-		_active.append(job)
-	return job
+## Tells the jobs that `worker` has nothing to do, so it takes the nearest waiting job at the next match.
+func worker_freed(worker : Meeple) -> void:
+	_freed.push_back(worker)
+
+## Gives new jobs to the nearest free meeple, then gives meeples that became free the nearest waiting job.
+## Runs once a frame. Tests call it directly.
+func match_jobs() -> void:
+	if _pending.is_empty():
+		_fresh.clear()
+		_freed.clear()
+		return
+	var fresh := _fresh
+	var freed := _freed
+	_fresh = []
+	_freed = []
+	for job in fresh:
+		if not _pending.has(job):
+			continue
+		var worker := _nearest_free_worker(job.place())
+		if worker == null:
+			break
+		_give(job, worker)
+	for worker in freed:
+		if _pending.is_empty():
+			break
+		if worker.is_free() and workers.has(worker):
+			_give(_nearest_waiting_job(worker), worker)
+
+func _give(job : Job, worker : Meeple) -> void:
+	_pending.erase(job)
+	_active.append(job)
+	_changed = true
+	worker.take_job(job)
+
+func _nearest_free_worker(place : Vector2) -> Meeple:
+	var best : Meeple = null
+	var best_dist := INF
+	var grid : Grid = null
+	var local := Vector2.ZERO
+	for worker in workers:
+		if not worker.is_free():
+			continue
+		if worker.grid != grid:
+			grid = worker.grid
+			local = grid.to_local(place)
+		var dist := worker.position.distance_squared_to(local)
+		if dist < best_dist:
+			best_dist = dist
+			best = worker
+	return best
+
+func _nearest_waiting_job(worker : Meeple) -> Job:
+	var from := worker.global_position
+	var best : Job = null
+	var best_dist := INF
+	for job in _pending:
+		var dist := from.distance_squared_to(job.place())
+		if dist < best_dist:
+			best_dist = dist
+			best = job
+	return best
 
 func has_pending() -> bool:
 	return not _pending.is_empty()
@@ -76,7 +137,7 @@ func _find_store_job(worker : Meeple) -> StoreJob:
 
 func take_partner(job : HaulJob) -> HaulJob:
 	for other in _pending:
-		if other is HaulJob and other.site == job.site and other.kind == job.kind:
+		if other is HaulJob and job.pairs_with(other):
 			_pending.erase(other)
 			_active.append(other)
 			return other
@@ -94,14 +155,14 @@ func take_pending_hauls(site : Building) -> Array[HaulJob]:
 			_pending.erase(job)
 			taken.append(job)
 	if not taken.is_empty():
-		changed.emit()
+		_changed = true
 	return taken
 
 func finish(job : Job) -> void:
 	if job is IdleJob:
 		job.end()
 	_active.erase(job)
-	changed.emit()
+	_changed = true
 
 func requeue(job : Job, worker : Meeple) -> void:
 	job.abort(worker)
@@ -110,19 +171,20 @@ func requeue(job : Job, worker : Meeple) -> void:
 		return
 	_active.erase(job)
 	if not job.cancelled:
-		_pending.push_front(job)
-	changed.emit()
+		add(job)
+	_changed = true
 
 func cancel(job : Job) -> void:
 	job.cancelled = true
 	_pending.erase(job)
 	_active.erase(job)
-	changed.emit()
+	_changed = true
 
 func add_worker(worker : Meeple) -> void:
 	workers.append(worker)
-	changed.emit()
+	worker_freed(worker)
+	_changed = true
 
 func remove_worker(worker : Meeple) -> void:
 	workers.erase(worker)
-	changed.emit()
+	_changed = true

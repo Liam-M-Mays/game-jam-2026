@@ -10,11 +10,23 @@ var _partner : HaulJob
 func _init(target_site : Building, target_kind : String) -> void:
 	site = target_site
 	kind = target_kind
+	_drop = Inventory.claim_closest(kind, site.global_position)
 
-func start(worker : Meeple) -> void:
-	_drop = Inventory.claim_closest(kind, worker.global_position)
+func place() -> Vector2:
+	return _drop.global_position
+
+func start(_worker : Meeple) -> void:
 	if _drop.storage != null:
-		_grab_partner()
+		_partner = JobSystem.take_partner(self)
+
+## True when `other` can be carried in the same trip: same site, same kind, from the same pile.
+func pairs_with(other : HaulJob) -> bool:
+	return other.site == site and other.kind == kind and other._drop.storage == _drop.storage
+
+## Lets go of the drop this haul claimed. The building calls this when it drops a waiting haul.
+func release_drop() -> void:
+	Inventory.set_claimed(_drop, false)
+	_drop = null
 
 func update(worker : Meeple, _delta : float) -> bool:
 	if not _carrying:
@@ -45,25 +57,11 @@ func abort(worker : Meeple) -> void:
 		var partner := _partner
 		_partner = null
 		JobSystem.requeue(partner, worker)
-	if _drop == null:
-		return
 	if _carrying:
 		_drop.global_position = worker.global_position
 		_drop.show()
 		worker.carry()
 		_carrying = false
-	Inventory.release(_drop)
-	_drop = null
-
-func _grab_partner() -> void:
-	var extra := _drop.storage.first_unclaimed()
-	if extra == null:
-		return
-	_partner = JobSystem.take_partner(self)
-	if _partner == null:
-		return
-	_partner._drop = extra
-	Inventory.claim_reserved(extra)
 
 func _pick_up() -> void:
 	_carrying = true

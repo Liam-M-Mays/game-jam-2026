@@ -8,6 +8,9 @@ func _init(target_tree : Harvestable) -> void:
 	target = target_tree
 	target.claim(self)
 
+func place() -> Vector2:
+	return target.global_position
+
 func start(worker : Meeple) -> void:
 	worker.move_to(target.global_position, target.cells)
 
