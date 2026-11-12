@@ -153,7 +153,7 @@ flowchart TD
     tooltip["ConstructionTooltip, created in code"]
     parallax["5 parallax background layers"]
     hud["HUD: instance of hud.tscn"]
-    hudKids["Counters, hunger bar, build menu, pause menu, death screen, toast feed"]
+    hudKids["Counters, hunger bar, worker panel, build menu, pause menu, death screen, toast feed"]
     giantAudio["GiantAudio (giant_audio.gd)"]
 
     game --> walk
@@ -213,7 +213,7 @@ sequenceDiagram
 
 ## Meeple job lifecycle
 
-From `meeple_movement.gd` and `job_system.gd`. A meeple is either a builder or a worker of one building. Once a frame, `JobSystem.match_jobs` gives each new job to the nearest free builder, and each builder that became free the nearest waiting job. There is no job limit. A worker asks its building for work with `find_work` at most every half second, and never takes the player's jobs. Until the building panel exists, an open worker slot takes the nearest free builder, but one builder always stays. A dead worker's slot opens again.
+From `meeple_movement.gd` and `job_system.gd`. A meeple is either a builder or a worker of one building. Once a frame, `JobSystem.match_jobs` gives each new job to the nearest free builder, and each builder that became free the nearest waiting job. There is no job limit. A worker asks its building for work with `find_work` at most every half second, and never takes the player's jobs. A click on a finished building with worker slots opens its `WorkerPanel` (a click on a farm or silo opens its barn's). The add arrow opens a slot, which the nearest free builder takes. The remove arrow drops a slot nobody took yet, or sends a worker back to being a builder. A new building starts with no workers (`Building.STARTS_FULL`). A dead worker's slot opens again.
 
 ```mermaid
 stateDiagram-v2
@@ -401,6 +401,7 @@ classDiagram
         +description: String
         +worker_slots: int
         +workers: Array[Meeple]
+        +wanted_workers: int
         +costs: Dictionary (computed)
         +start_construction()
         +deliver(kind)
@@ -410,6 +411,8 @@ classDiagram
         +missing() / next_stage_needs()
         +find_work(worker): Job
         +add_worker(meeple) / lose_worker(meeple)
+        +worker_building(): Building
+        +add_worker_slot() / remove_worker_slot()
         +icon(): Texture2D
         +can_place_at() / placement_area()
     }
@@ -484,7 +487,6 @@ classDiagram
         +food_per_harvest: int
         +harvest_time: float
         +is_ripe() / can_harvest_now()
-        +needs_harvest(): bool
         +harvest_crop()
         +grow_stages(): int
     }
@@ -537,7 +539,7 @@ classDiagram
         +finish(job)
         +requeue(job, worker)
         +cancel(job)
-        +open_slot(building)
+        +open_slot(building) / close_slot(building)
         +take_partner(job): HaulJob
         +recall_hauls(site)
         +reset()
@@ -558,6 +560,7 @@ classDiagram
         +tick(delta): bool
         +move_to(pos, stop_cells)
         +stop()
+        +leave_workplace()
         +has_arrived(): bool
         +carry(kind, amount)
         +abandon_job()
@@ -606,9 +609,6 @@ classDiagram
         +site: Building
         +kind: String
     }
-    class CollectCropJob {
-        +farm: Farm
-    }
     class ChopJob {
         +target: Harvestable
     }
@@ -620,7 +620,6 @@ classDiagram
     }
     Job <|-- HarvestJob
     Job <|-- HaulJob
-    Job <|-- CollectCropJob
     Job <|-- ChopJob
     Job <|-- FarmJob
     Job <|-- StoreJob
@@ -693,6 +692,10 @@ classDiagram
         +open() / close()
         +unlocked_names(level)
         +display_name(scene) static
+    }
+    class WorkerPanel {
+        +GROUP: worker_panel
+        +open(building) / close()
     }
     class PauseMenu {
         +restart_on_resume: bool

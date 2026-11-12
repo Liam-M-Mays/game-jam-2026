@@ -9,6 +9,7 @@
 [ext_resource type="Script" uid="uid://dlp8jhgi8mfut" path="res://assets/Scripts/UI/hunger_bar.gd" id="6_hungerbar"]
 [ext_resource type="Texture2D" uid="uid://7l08pat0qs54" path="res://ART/retry_button_thesequal.png" id="7_ghiih"]
 [ext_resource type="Texture2D" uid="uid://compi3rxl56bi" path="res://ART/GAMEOVER_text.png" id="8_mv3me"]
+[ext_resource type="PackedScene" uid="uid://c4wkpanel7b2xq" path="res://assets/worker_panel.tscn" id="9_workers"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_backplate"]
 content_margin_left = 12.0
@@ -267,6 +268,8 @@ texture_pressed = SubResource("AtlasTexture_mv3me")
 texture_hover = SubResource("AtlasTexture_brm57")
 ignore_texture_size = true
 stretch_mode = 5
+
+[node name="WorkerPanel" parent="." instance=ExtResource("9_workers")]
 
 [node name="BuildMenu" type="Control" parent="." unique_id=1423812792 node_paths=PackedStringArray("building_list")]
 layout_mode = 3

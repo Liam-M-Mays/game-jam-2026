@@ -1,6 +1,6 @@
 extends GameTest
-## Worker slots, from #7: a worker never takes the player's jobs, the dev rule fills an open slot
-## with the nearest builder but keeps one builder, and a dead worker is replaced.
+## Worker slots, from #7: the panel's add arrow takes the nearest builder, the remove arrow
+## makes the worker a builder again, a worker never takes the player's jobs, and a dead worker is replaced.
 
 const MEEPLE_SCENE := preload("res://assets/Scenes/Meeple/meeple.tscn")
 
@@ -29,6 +29,7 @@ func before_each() -> void:
 	_grid = Grid.new()
 	_look = MEEPLE_SCENE.instantiate()
 	_building = Building.new()
+	_building.worker_slots = 1
 	_building.position = Vector2(100, 0)
 
 
@@ -49,27 +50,30 @@ func _meeple_at(spot : Vector2) -> Meeple:
 	return meeple
 
 
-func test_worker_skips_player_jobs_and_one_builder_stays() -> void:
+func test_arrows_add_and_remove_a_worker() -> void:
 	var far := _meeple_at(Vector2(0, 0))
 	var near := _meeple_at(Vector2(90, 0))
-	JobSystem.open_slot(_building)
+	_building.add_worker_slot()
+	_building.add_worker_slot()
 	JobSystem.match_jobs()
 	check(near.workplace == _building, "the nearest builder took the slot")
-	JobSystem.open_slot(_building)
-	JobSystem.match_jobs()
-	check(far.workplace == null, "the last builder stayed a builder")
+	check(far.workplace == null, "the add arrow stops at the building's cap")
 	var job := SpotJob.new(Vector2(90, 0))
 	JobSystem.add(job)
 	JobSystem.match_jobs()
 	check(near.job == null, "the worker did not take the player's job")
 	check(far.job == job, "the builder took the player's job")
+	_building.remove_worker_slot()
+	JobSystem.match_jobs()
+	check(near.workplace == null and _building.workers.is_empty(), "the remove arrow made the worker a builder again")
+	check(near.is_free(), "the old worker is free for the player's jobs")
 
 
 func test_dead_worker_is_replaced_by_the_nearest_builder() -> void:
 	_meeple_at(Vector2(0, 0))
 	var worker := _meeple_at(Vector2(90, 0))
 	var next := _meeple_at(Vector2(150, 0))
-	JobSystem.open_slot(_building)
+	_building.add_worker_slot()
 	JobSystem.match_jobs()
 	check(worker.workplace == _building, "the nearest builder took the slot")
 	worker.die()
