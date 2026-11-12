@@ -5,7 +5,8 @@ class_name Cell
 const HIGHLIGHT_COLOR := Color(0.4, 0.4, 0.4)
 
 var position : Vector2
-var occupant : GridObject = null
+## A GridObject, or the Standing of a tree or rock.
+var occupant : Object = null
 
 var _layer : CellLayer
 
