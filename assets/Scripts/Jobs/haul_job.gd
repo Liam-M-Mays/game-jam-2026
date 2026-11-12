@@ -4,36 +4,45 @@ class_name HaulJob
 var site : Building
 var kind : String
 var _drop : ResourceDrop
+var _pile : Storage
 var _carrying := false
 var _partner : HaulJob
 
 func _init(target_site : Building, target_kind : String) -> void:
 	site = target_site
 	kind = target_kind
-	_drop = Inventory.claim_closest(kind, site.global_position)
+	var source := Inventory.claim_closest(kind, site.global_position)
+	_pile = source as Storage
+	_drop = source as ResourceDrop
 
 func place() -> Vector2:
+	if _pile != null:
+		return _pile.global_position
 	return _drop.global_position
 
 func start(_worker : Meeple) -> void:
-	if _drop.storage != null:
+	if _pile != null:
 		_partner = JobSystem.take_partner(self)
 
 ## True when `other` can be carried in the same trip: same site, same kind, from the same pile.
 func pairs_with(other : HaulJob) -> bool:
-	return other.site == site and other.kind == kind and other._drop.storage == _drop.storage
+	return other.site == site and other.kind == kind and other._pile == _pile
 
 ## Lets go of the drop this haul claimed. The building calls this when it drops a waiting haul.
 func release_drop() -> void:
-	Inventory.set_claimed(_drop, false)
+	if _pile != null:
+		_pile.unclaim()
+	else:
+		Inventory.set_claimed(_drop, false)
+	_pile = null
 	_drop = null
 
 func update(worker : Meeple, _delta : float) -> bool:
 	if not _carrying:
 		var stop : Array[Cell] = []
-		if _drop.storage != null:
-			stop = _drop.storage.cells
-		worker.move_to(_drop.global_position, stop)
+		if _pile != null:
+			stop = _pile.cells
+		worker.move_to(place(), stop)
 		if not worker.has_arrived():
 			return false
 		_pick_up()
@@ -65,12 +74,13 @@ func abort(worker : Meeple) -> void:
 
 func _pick_up() -> void:
 	_carrying = true
-	if _drop.storage != null:
-		_drop.storage.take(_drop)
+	if _pile != null:
+		_drop = _pile.take()
+		_pile = null
 	_drop.hide()
 
 func _deliver() -> void:
-	_drop.queue_free()
+	_drop.consume()
 	_drop = null
 	_carrying = false
 	site.deliver(kind)

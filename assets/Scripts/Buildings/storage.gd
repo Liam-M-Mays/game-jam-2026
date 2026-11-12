@@ -6,7 +6,9 @@ const GROUP := &"storages"
 @export var kind := "stone"
 @export var max_items := 0
 
-var _held : Array[ResourceDrop] = []
+## Drops kept here are a number, not nodes. `_claimed` of them are promised to hauls.
+var _stock := 0
+var _claimed := 0
 var _en_route := 0
 
 func capacity() -> int:
@@ -19,7 +21,11 @@ func _icon_frame() -> int:
 	return last_stage() + _fill_frames()
 
 func held() -> int:
-	return _held.size()
+	return _stock
+
+## Drops here that no haul has claimed yet.
+func unclaimed() -> int:
+	return _stock - _claimed
 
 func complete() -> void:
 	super()
@@ -27,22 +33,38 @@ func complete() -> void:
 	_refresh()
 
 func store(drop : ResourceDrop) -> void:
-	drop.storage = self
-	drop.global_position = global_position
-	drop.hide()
-	_held.append(drop)
+	drop.consume()
+	_stock += 1
+	Inventory.pile_changed(kind, 1, 0)
 	VillageAudio.play(&"log", global_position)
 	_pop()
 	_refresh()
-	Inventory.set_claimed(drop, false)
 
-func take(drop : ResourceDrop) -> void:
-	_held.erase(drop)
-	drop.storage = null
+## A haul claims one drop here. It picks it up later with `take`, or lets go with `unclaim`.
+func claim() -> void:
+	_claimed += 1
+	Inventory.pile_changed(kind, 0, 1)
+
+func unclaim() -> void:
+	_claimed -= 1
+	Inventory.pile_changed(kind, 0, -1)
+
+## A haul picks up the drop it claimed. It gets a hidden drop to carry, as it does from the ground,
+## so the stock count stays the same until the drop is delivered.
+func take() -> ResourceDrop:
+	_stock -= 1
+	_claimed -= 1
+	Inventory.pile_changed(kind, -1, -1)
 	_refresh()
+	var drop := ResourceDrop.make(kind)
+	drop.claimed = true
+	drop.hide()
+	get_parent().add_child(drop)
+	drop.global_position = global_position
+	return drop
 
 func has_room() -> bool:
-	return _held.size() + _en_route < capacity()
+	return _stock + _en_route < capacity()
 
 ## The worker carries a loose drop of this pile's kind to a pile of that kind.
 ## It picks the drop and the pile with the shortest total trip.
@@ -79,4 +101,4 @@ func _refresh() -> void:
 	if capacity() <= 0:
 		frame = last_stage()
 		return
-	_show_frame(last_stage() + ceili(float(_held.size()) * _fill_frames() / capacity()))
+	_show_frame(last_stage() + ceili(float(_stock) * _fill_frames() / capacity()))

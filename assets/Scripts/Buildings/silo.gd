@@ -8,4 +8,4 @@ const GROUP := &"silos"
 func complete() -> void:
 	super()
 	add_to_group(GROUP)
-	Inventory.changed.emit()
+	Inventory.mark_changed()
