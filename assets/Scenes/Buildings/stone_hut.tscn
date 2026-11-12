@@ -47,7 +47,7 @@ size = Vector2(14, 8)
 z_index = 1
 scale = Vector2(10, 10)
 texture = ExtResource("1_dcq31")
-offset = Vector2(5, -3)
+offset = Vector2(3, -3)
 hframes = 6
 script = ExtResource("2_7tv1p")
 description = "A bigger home. One meeple moves in when it's finished, and more join while they're well fed."
@@ -64,5 +64,5 @@ footprint = 2
 [node name="Area2D" type="Area2D" parent="." unique_id=725244253]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D" unique_id=1604481275]
-position = Vector2(5, -3)
+position = Vector2(3, -3)
 shape = SubResource("RectangleShape2D_nafr4")
