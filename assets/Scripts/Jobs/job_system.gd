@@ -62,6 +62,17 @@ func add(job : Job) -> void:
 ## Tells the jobs that `worker` has nothing to do, so it takes the nearest waiting job at the next match.
 func worker_freed(worker : Meeple) -> void:
 	_freed.push_back(worker)
+	# A worker sent back to being a builder lands here too, so the HUD counts it again.
+	_changed = true
+
+## How many alive meeples work in a building's slot. The rest are builders. The HUD asks at most
+## every CHANGED_EVERY_MS, so counting them each time is cheap even with thousands of meeples.
+func count_in_slots() -> int:
+	var count := 0
+	for worker in workers:
+		if worker.workplace != null:
+			count += 1
+	return count
 
 ## Gives new jobs to the nearest free meeple, then gives meeples that became free the nearest waiting job.
 ## Runs once a frame. Tests call it directly.
@@ -146,6 +157,7 @@ func _fill_slots() -> void:
 			return
 		_open_slots.pop_front()
 		building.add_worker(builder)
+		_changed = true
 
 func take_partner(job : HaulJob) -> HaulJob:
 	for other in _pending:

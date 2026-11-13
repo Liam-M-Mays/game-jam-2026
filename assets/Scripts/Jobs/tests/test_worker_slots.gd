@@ -1,6 +1,7 @@
 extends GameTest
 ## Worker slots, from #7: the panel's add arrow takes the nearest builder, the remove arrow
 ## makes the worker a builder again, a worker never takes the player's jobs, and a dead worker is replaced.
+## From #134: the HUD's count of workers follows the arrows and deaths.
 
 const MEEPLE_SCENE := preload("res://assets/Scenes/Meeple/meeple.tscn")
 
@@ -80,3 +81,18 @@ func test_dead_worker_is_replaced_by_the_nearest_builder() -> void:
 	JobSystem.match_jobs()
 	check(next.workplace == _building, "the nearest builder replaced the dead worker")
 	check_eq(_building.workers.size(), 1, "the building has one worker again")
+
+
+func test_count_in_slots_follows_the_arrows() -> void:
+	_meeple_at(Vector2(0, 0))
+	var worker := _meeple_at(Vector2(90, 0))
+	check_eq(JobSystem.count_in_slots(), 0, "two builders, no workers")
+	_building.add_worker_slot()
+	JobSystem.match_jobs()
+	check_eq(JobSystem.count_in_slots(), 1, "the slot made one worker")
+	_building.remove_worker_slot()
+	check_eq(JobSystem.count_in_slots(), 0, "the remove arrow made it a builder again")
+	_building.add_worker_slot()
+	JobSystem.match_jobs()
+	worker.die()
+	check_eq(JobSystem.count_in_slots(), 0, "a dead worker is not counted")

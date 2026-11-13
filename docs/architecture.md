@@ -156,7 +156,7 @@ flowchart TD
     tooltip["ConstructionTooltip, created in code"]
     parallax["5 parallax background layers"]
     hud["HUD: instance of hud.tscn"]
-    hudKids["Counters, jobs plate with Clear all, hunger bar, worker panel, build menu, pause menu, death screen, toast feed"]
+    hudKids["Counters, jobs plate with Clear all, workers and builders plate, hunger bar, worker panel, build menu, pause menu, death screen, toast feed"]
     giantAudio["GiantAudio (giant_audio.gd)"]
 
     game --> walk
@@ -249,7 +249,7 @@ The panel's Remove button asks first, then calls `Building.remove_building()`. W
 
 The panel's Move button calls `BuildSystem.start_move(building)`. The building lifts off its cells (`Building.lift`, `Grid.lift`), and its old cells stay kept for it. The player places it with the same rules as a new building, for free. A click lands it on the new cells (`Building.land`), and Escape or a right click lands it back on the old ones. Its workers stay, and a meeple on its way to it turns towards the new spot. A barn lifts and lands its farms and silos with it. A farm or silo answers false to `can_move()`, so it only moves with its barn.
 
-The HUD's jobs plate shows how many of the player's jobs wait for a meeple (`JobSystem.waiting_player_jobs`). Its Clear all button, or the C key, cancels them (`JobSystem.clear_waiting_player_jobs`). A meeple already on its way to a job keeps it.
+The HUD's jobs plate shows how many of the player's jobs wait for a meeple (`JobSystem.waiting_player_jobs`). Its Clear all button, or the C key, cancels them (`JobSystem.clear_waiting_player_jobs`). A meeple already on its way to a job keeps it. Under it, a second plate shows how many meeples are workers in a building's slot (`JobSystem.count_in_slots`) and how many are builders. It refreshes on `JobSystem.changed`, at most every 150 ms. When the last builder goes into a slot, the builders number turns red and one warning toast says so.
 
 ```mermaid
 stateDiagram-v2
@@ -625,6 +625,7 @@ classDiagram
         +job_count(): int
         +waiting_player_jobs(): int
         +clear_waiting_player_jobs()
+        +count_in_slots(): int
         +reset()
     }
     class Job {
@@ -764,6 +765,7 @@ classDiagram
         +camera: CameraControls
         +labels, hunger_bar, speed_button
         +jobs_label, clear_jobs_button
+        +workers_label, builders_label
         +OPENING_TIPS, TIPS, FUN_FACTS
     }
     class BuildMenu {

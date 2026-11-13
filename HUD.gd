@@ -11,6 +11,8 @@ const DEATH_SCREEN_DELAY := 1.0
 const DEATH_SCREEN_FADE := 2.0
 const DEATH_SCREEN_BLACK := 2.0
 const OPENING_TIP_GAP := 15.0
+## The builders number turns this red, the toast warning colour, when every meeple works in a building.
+const NO_BUILDERS_COLOR := Color("ff6b5b")
 const ZOOM_OUT_FACT := "Have you zoomed out all the way yet?"
 const PAUSE_BUILDING_TIP := "Right-click a building under construction to pause it, and right-click again to resume"
 const OPENING_TIPS := [
@@ -59,11 +61,14 @@ const FUN_FACTS := [
 @export var speed_button: Button
 @export var jobs_label: Label
 @export var clear_jobs_button: Button
+@export var workers_label: Label
+@export var builders_label: Label
 ## The giant's camera. The HUD hides when it is zoomed all the way out. Empty on the ground, where the HUD always stays.
 @export var camera: CameraControls
 
 var _building_scene: PackedScene
 var _last_meeple_count := 0
+var _last_builders := 0
 var _last_food := 0
 var _last_hunger_band := HungerBand.THRIVING
 var _upgrade_was_ready := false
@@ -80,11 +85,13 @@ func _ready() -> void:
 	GameState.hunger_changed.connect(_check_hunger_band)
 	JobSystem.changed.connect(_refresh_counters)
 	JobSystem.changed.connect(_check_meeples)
+	JobSystem.changed.connect(_refresh_roles)
 	Population.all_meeples_died.connect(_on_all_meeples_died)
 	_last_meeple_count = JobSystem.workers.size()
 	_last_food = Inventory.count("food")
 	_last_hunger_band = _hunger_band(GameState.hunger)
 	_refresh_counters()
+	_refresh_roles()
 	_setup_hunger_bar()
 	_setup_building()
 	_setup_speed_button()
@@ -140,6 +147,25 @@ func _refresh_counters() -> void:
 		jobs_label.text = "%d jobs waiting" % waiting
 	if clear_jobs_button:
 		clear_jobs_button.disabled = waiting == 0
+
+
+## Workers are meeples in a building's slot, builders are the rest. When the last builder goes into
+## a slot, the builders number turns red and one warning says so. It warns again only after a builder came back.
+func _refresh_roles() -> void:
+	var meeples := JobSystem.workers.size()
+	var in_slots := JobSystem.count_in_slots()
+	var builders := meeples - in_slots
+	if workers_label:
+		workers_label.text = "%d %s" % [in_slots, "worker" if in_slots == 1 else "workers"]
+	if builders_label:
+		builders_label.text = "%d %s" % [builders, "builder" if builders == 1 else "builders"]
+		if builders == 0 and meeples > 0:
+			builders_label.add_theme_color_override("font_color", NO_BUILDERS_COLOR)
+		else:
+			builders_label.remove_theme_color_override("font_color")
+	if builders == 0 and _last_builders > 0 and meeples > 0:
+		GameState.warn("No builders left! Every meeple works in a building. Click one and use its arrows to free a meeple")
+	_last_builders = builders
 
 
 func _setup_hunger_bar() -> void:
