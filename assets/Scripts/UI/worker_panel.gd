@@ -7,6 +7,7 @@ class_name WorkerPanel
 const GROUP := &"worker_panel"
 
 @export var title : Label
+@export var note_label : Label
 @export var count_label : Label
 @export var remove_button : Button
 @export var add_button : Button
@@ -37,6 +38,8 @@ func open(building : Building) -> void:
 	_workers_of = building.worker_building()
 	_building.set_selected(true)
 	title.text = building.display_name()
+	note_label.text = building.note()
+	note_label.visible = not note_label.text.is_empty()
 	arrows.visible = _workers_of != null
 	remove_building_button.disabled = not building.can_remove()
 	remove_building_button.tooltip_text = "" if building.can_remove() else "The %s cannot be removed" % building.display_name()

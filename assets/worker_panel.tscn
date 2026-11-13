@@ -13,7 +13,7 @@ corner_radius_top_right = 6
 corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
 
-[node name="WorkerPanel" type="PanelContainer" node_paths=PackedStringArray("title", "count_label", "remove_button", "add_button", "arrows", "remove_building_button", "confirm_row", "confirm_label", "confirm_button", "keep_button")]
+[node name="WorkerPanel" type="PanelContainer" node_paths=PackedStringArray("title", "note_label", "count_label", "remove_button", "add_button", "arrows", "remove_building_button", "confirm_row", "confirm_label", "confirm_button", "keep_button")]
 anchors_preset = 7
 anchor_left = 0.5
 anchor_top = 1.0
@@ -28,6 +28,7 @@ grow_vertical = 0
 theme_override_styles/panel = SubResource("StyleBoxFlat_menu")
 script = ExtResource("1_panel")
 title = NodePath("Rows/Title")
+note_label = NodePath("Rows/Note")
 count_label = NodePath("Rows/Arrows/Count")
 remove_button = NodePath("Rows/Arrows/RemoveButton")
 add_button = NodePath("Rows/Arrows/AddButton")
@@ -46,6 +47,12 @@ theme_override_constants/separation = 8
 layout_mode = 2
 theme_override_font_sizes/font_size = 24
 text = "Lumberjack"
+horizontal_alignment = 1
+
+[node name="Note" type="Label" parent="Rows"]
+visible = false
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
 horizontal_alignment = 1
 
 [node name="Arrows" type="HBoxContainer" parent="Rows"]

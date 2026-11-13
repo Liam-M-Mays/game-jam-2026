@@ -12,7 +12,37 @@ const GROUP := &"barns"
 	Vector2i(0, 2), Vector2i(1, 2),
 ]
 
+## What placing this barn goes on to place.
+@export var farm_scene : PackedScene
+
 var plots : Array[BarnPlot] = []
+
+## The whole plot area has to be on the ground, clear, and kept for no other barn.
+func can_place_at(at_grid : Grid, at_cells : Array[Cell]) -> bool:
+	var area := area_at(at_grid, at_cells[0])
+	return super(at_grid, at_cells) and area.size() == plot_offsets.size() \
+		and area.all(func(c : Cell): return c.occupant == null and c.kept_for == null)
+
+func placement_hint() -> String:
+	return "A barn needs its plot area clear of trees, rocks, bushes and buildings, and not shared with another barn"
+
+func area_at(at_grid : Grid, anchor : Cell) -> Array[Cell]:
+	return at_grid.cells_at_offsets(anchor, plot_offsets)
+
+func build_after(_scene : PackedScene) -> PackedScene:
+	return farm_scene
+
+func note() -> String:
+	var farms := plots.filter(func(p): return p is Farm).size()
+	var silos := plots.filter(func(p): return p is Silo).size()
+	return "Farms left: %d\nSilos left: %d" % [slots() - farms, slots() - silos]
+
+## Farms and silos can go up next to a barn that is still being built.
+func start_construction() -> void:
+	add_to_group(GROUP)
+	for cell in area_at(grid, cells[0]):
+		cell.kept_for = self
+	super()
 
 func complete() -> void:
 	add_to_group(GROUP)
@@ -54,6 +84,9 @@ func remove_building() -> void:
 		if is_instance_valid(plot):
 			plot.remove_building()
 	plots.clear()
+	for cell in area_at(grid, cells[0]):
+		if cell.kept_for == self:
+			cell.kept_for = null
 	super()
 
 func add_plot(plot : BarnPlot) -> void:
@@ -61,14 +94,10 @@ func add_plot(plot : BarnPlot) -> void:
 
 func plot_area() -> Array[Cell]:
 	var free : Array[Cell] = []
-	for cell in grid.cells_at_offsets(cells[0], plot_offsets):
-		if cell.occupant == null:
+	for cell in area_at(grid, cells[0]):
+		if cell.occupant == null and cell.kept_for == self:
 			free.append(cell)
 	return free
 
 func in_plot_range(plot : Array[Cell]) -> bool:
-	var allowed := grid.cells_at_offsets(cells[0], plot_offsets)
-	for cell in plot:
-		if not allowed.has(cell):
-			return false
-	return true
+	return plot.all(func(c : Cell): return c.kept_for == self)

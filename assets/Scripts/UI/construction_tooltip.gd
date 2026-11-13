@@ -7,6 +7,8 @@ const FONT_SIZE := 24
 const STUCK_COLOR := "ff6b6b"
 const PAUSED_COLOR := "ffd91a"
 
+## Shown next to the cursor in place of a site's needs. The build system sets it while placing.
+var note := ""
 var _panel : PanelContainer
 var _label : RichTextLabel
 
@@ -28,11 +30,11 @@ func _ready() -> void:
 	_panel.hide()
 
 func _process(_delta : float) -> void:
-	var site := _hovered_site()
-	if site == null:
+	var text := _text()
+	if text.is_empty():
 		_panel.hide()
 		return
-	_label.text = describe(site)
+	_label.text = text
 	_panel.show()
 	_panel.reset_size()
 	var screen := get_viewport().get_visible_rect().size
@@ -52,10 +54,13 @@ static func describe(site : Building) -> String:
 		lines.append("[color=#%s]Paused - right-click to resume[/color]" % PAUSED_COLOR)
 	return "\n".join(lines)
 
-func _hovered_site() -> Building:
+func _text() -> String:
 	if get_tree().paused or get_viewport().gui_get_hovered_control() != null:
-		return null
-	return site_under_mouse(get_tree())
+		return ""
+	if not note.is_empty():
+		return note
+	var site := site_under_mouse(get_tree())
+	return describe(site) if site != null else ""
 
 static func site_under_mouse(tree : SceneTree) -> Building:
 	var best : Building = null

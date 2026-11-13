@@ -163,8 +163,9 @@ func _cropped_icon(source : Texture2D, region : Rect2) -> Texture2D:
 	atlas.region = region
 	return atlas
 
-func can_place_at(_grid : Grid, _cells : Array[Cell]) -> bool:
-	return true
+## Land a barn keeps for its farms and silos takes nothing else.
+func can_place_at(_grid : Grid, at_cells : Array[Cell]) -> bool:
+	return at_cells.all(func(c : Cell): return c.kept_for == null)
 
 func restricts_placement() -> bool:
 	return false
@@ -173,6 +174,18 @@ func placement_area(_grid : Grid) -> Array[Cell]:
 	return []
 
 func placement_hint() -> String:
+	return "That land is kept for a barn's farms and silos"
+
+## Cells to light around the cursor while this is placed at `anchor`. A barn shows its plot area.
+func area_at(_grid : Grid, _anchor : Cell) -> Array[Cell]:
+	return []
+
+## What to place next after this was placed from `scene`, or null to end building.
+func build_after(_scene : PackedScene) -> PackedScene:
+	return null
+
+## A line under the name in the building's panel, and next to the cursor while placing.
+func note() -> String:
 	return ""
 
 func can_afford() -> bool:
