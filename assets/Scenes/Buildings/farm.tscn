@@ -6,6 +6,9 @@
 
 [sub_resource type="Resource" id="Frame_0"]
 script = ExtResource("3_phase")
+costs = Dictionary[String, int]({
+"wood": 2
+})
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
 size = Vector2(9, 6)
@@ -17,8 +20,13 @@ texture = ExtResource("1_tex")
 offset = Vector2(-0.5, -1)
 hframes = 6
 script = ExtResource("2_scr")
+grow_time = 10.0
+food_per_harvest = 3
 build_frames = 1
 frames = Array[ExtResource("3_phase")]([SubResource("Frame_0")])
+min_to_start = Dictionary[String, int]({
+"wood": 2
+})
 required_town_hall_level = 2
 description = "Grows crops that feed meeples when collected. Must be placed near a barn."
 area = NodePath("Area2D")

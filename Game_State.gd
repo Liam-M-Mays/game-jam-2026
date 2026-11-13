@@ -8,7 +8,6 @@ signal toast_requested(text: String, kind: int)
 signal speed_changed(speed: float)
 
 const MAX_HUNGER := 100.0
-const FULL_FOOD_PER_MEEPLE := 2.0
 const TOAST_REPEAT_COOLDOWN := 3.0
 const SPEEDS: Array[float] = [1.0, 1.5, 2.0, 3.0]
 
@@ -43,7 +42,7 @@ func _update_hunger() -> void:
 	var meeples := JobSystem.workers.size()
 	var value := MAX_HUNGER
 	if meeples > 0:
-		value = Inventory.count("food") / (meeples * FULL_FOOD_PER_MEEPLE) * MAX_HUNGER
+		value = Inventory.count("food") / (meeples * Population.RULES.food_per_meeple) * MAX_HUNGER
 	value = clampf(value, 0.0, MAX_HUNGER)
 	if not is_equal_approx(value, hunger):
 		hunger = value

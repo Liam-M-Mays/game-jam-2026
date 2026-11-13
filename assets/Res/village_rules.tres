@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="VillageRules" format=3 uid="uid://chp1hk3dg50ro"]
+
+[ext_resource type="Script" uid="uid://ditiakthji5av" path="res://assets/Scripts/Meeple/village_rules.gd" id="1_rules"]
+
+[resource]
+script = ExtResource("1_rules")
+start_stock = Dictionary[String, int]({
+"food": 10
+})
+base_food_cap = 20
+food_per_meeple = 2.0
+starve_below = 25.0
+grow_above = 50.0
+starve_tick = 4.0
+death_chance = 0.1
+grow_min_delay = 15.0
+grow_max_delay = 30.0

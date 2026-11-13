@@ -38,7 +38,8 @@ texture = ExtResource("1_tex")
 offset = Vector2(0, -3)
 hframes = 4
 script = ExtResource("2_scr")
-description = "A home for one meeple, who moves in as soon as it's finished."
+meeples_when_finished = 0
+description = "A home for one meeple, who moves in once it's finished and the village is well fed."
 frames = Array[ExtResource("3_phase")]([SubResource("Frame_0"), SubResource("Frame_1"), SubResource("Frame_2"), SubResource("Frame_3")])
 min_to_start = Dictionary[String, int]({
 "wood": 2

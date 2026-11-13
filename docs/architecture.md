@@ -27,7 +27,7 @@ This file is the source of truth. Older copies of the diagrams exist as Figma bo
 | Layer | What is in it | Where |
 | --- | --- | --- |
 | World scene | The grid, everything on it, meeples, drops, `BuildSystem`. On the giant all of it hangs under the giant's torso node. On the ground it sits on a round world | `assets/Scenes/Levels/game.tscn`, `assets/Scenes/Levels/ground.tscn`, `assets/Scripts/` |
-| Global singletons | `JobSystem`, `Inventory`, `Population` hold the simulation. `GameState` holds hunger, toasts and speed. `Music` and `VillageAudio` are support | The `[autoload]` section of `project.godot` |
+| Global singletons | `JobSystem`, `Inventory`, `Population` hold the simulation. `GameState` holds hunger, toasts and speed. `Music` and `VillageAudio` are support. Their food and growth numbers are a `VillageRules` resource tuned in the editor | The `[autoload]` section of `project.godot`; `assets/Res/village_rules.tres` |
 | UI scenes | Main menu and HUD | `Main_Menu.tscn`, `assets/hud.tscn`, scripts at the project root |
 
 The world registers with the singletons, and the singletons tell the UI what changed through signals. Four spots break that direction, and the system map shows them as thick arrows.
@@ -112,19 +112,19 @@ flowchart LR
     hall["Town Hall level"]
     unlocks["New buildings unlock"]
 
-    tree -->|"Harvest costs 1 food"| drops
+    tree -->|"Harvest costs 1 food, a big one 2"| drops
     drops -->|"Hauled one by one"| site
     drops -->|"Carried by free builders"| piles
     piles -->|"Hauled up to two at a time"| site
     site -->|"Completes"| huts
     bush -->|"Pick: plus 2"| food
-    farm -->|"Harvest: plus 1"| food
+    farm -->|"Harvest: plus 3"| food
     food --> hunger
     meeples --> hunger
     hunger -->|"Above 50: grow"| meeples
     hunger -->|"Below 25: starve"| meeples
     huts -->|"Housing capacity"| meeples
-    meeples -->|"3, 6, 10, 15 meeples"| hall
+    meeples -->|"4, 8, 12, 16 meeples"| hall
     hall --> unlocks
     unlocks --> site
 ```
@@ -503,6 +503,7 @@ classDiagram
     }
     class Hut {
         +meeple_capacity: int
+        +meeples_when_finished: int
         +spawn_meeple()
         +complete()
     }
@@ -667,18 +668,13 @@ classDiagram
         <<autoload>>
         +signal all_meeples_died
         +huts: Array[Hut]
-        +TICK = 4.0
-        +STARVE_BELOW = 25
-        +GROW_ABOVE = 50
-        +DEATH_CHANCE = 0.25
+        +RULES: VillageRules
         +capacity(): int
         +add_hut(hut) / remove_hut(hut)
     }
     class Inventory {
         <<autoload>>
         +signal changed
-        +START_STOCK = 10 food
-        +BASE_FOOD_CAP = 20
         +count(kind): int
         +available(kind): int
         +add(kind, n) / spend(kind, n)

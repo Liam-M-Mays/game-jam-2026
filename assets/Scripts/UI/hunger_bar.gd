@@ -52,9 +52,9 @@ func _apply_label_color(color: Color) -> void:
 
 
 func _fill_color() -> Color:
-	if GameState.hunger > Population.GROW_ABOVE:
+	if GameState.hunger > Population.RULES.grow_above:
 		return GREEN
-	if GameState.hunger < Population.STARVE_BELOW:
+	if GameState.hunger < Population.RULES.starve_below:
 		return RED
 	return YELLOW
 
@@ -86,14 +86,14 @@ func _tooltip_text() -> String:
 		return "\n".join(lines)
 	lines.append("%d food : %d meeples (%.2f each)" % [food, meeples, float(food) / meeples])
 	lines.append(_outcome_text(meeples))
-	lines.append("Under %.2f each meeples die, over %.2f each they reproduce" % [_ratio_at(Population.STARVE_BELOW), _ratio_at(Population.GROW_ABOVE)])
+	lines.append("Under %.2f each meeples die, over %.2f each they reproduce" % [_ratio_at(Population.RULES.starve_below), _ratio_at(Population.RULES.grow_above)])
 	return "\n".join(lines)
 
 
 func _outcome_text(meeples: int) -> String:
-	if GameState.hunger < Population.STARVE_BELOW:
+	if GameState.hunger < Population.RULES.starve_below:
 		return "[color=#%s]Meeples will die[/color]" % BAD_COLOR
-	if GameState.hunger <= Population.GROW_ABOVE:
+	if GameState.hunger <= Population.RULES.grow_above:
 		return "[color=#%s]Safe, won't reproduce[/color]" % OK_COLOR
 	if meeples >= Population.capacity():
 		return "[color=#%s]Safe, build huts to reproduce[/color]" % OK_COLOR
@@ -101,7 +101,7 @@ func _outcome_text(meeples: int) -> String:
 
 
 func _ratio_at(hunger: float) -> float:
-	return hunger / GameState.MAX_HUNGER * GameState.FULL_FOOD_PER_MEEPLE
+	return hunger / GameState.MAX_HUNGER * Population.RULES.food_per_meeple
 
 
 func _make_tooltip() -> void:
