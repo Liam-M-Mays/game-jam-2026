@@ -208,6 +208,7 @@ func deliver(kind : String) -> void:
 	VillageAudio.play(&"hammer", global_position)
 	_pop()
 	_advance()
+	_request_hauls()
 	_refresh_missing()
 
 func complete() -> void:
@@ -379,9 +380,9 @@ func _request_hauls() -> void:
 	if not _constructing or _paused or _requesting:
 		return
 	_requesting = true
-	var remaining := _remaining_costs()
-	for kind in remaining:
-		var want : int = remaining[kind] - _banked.get(kind, 0) - _incoming.get(kind, 0)
+	var next := _frame_cost(_built + 1)
+	for kind in next:
+		var want : int = next[kind] - _banked.get(kind, 0) - _incoming.get(kind, 0)
 		for i in range(mini(want, Inventory.available(kind))):
 			Inventory.reserve(kind, 1)
 			_incoming[kind] = _incoming.get(kind, 0) + 1
@@ -419,14 +420,6 @@ func _frame_cost(stage : int) -> Dictionary[String, int]:
 	if stage < 0 or stage >= frames.size() or frames[stage] == null:
 		return {}
 	return frames[stage].costs
-
-func _remaining_costs() -> Dictionary[String, int]:
-	var sum : Dictionary[String, int] = {}
-	for stage in range(_built + 1, last_stage() + 1):
-		var cost := _frame_cost(stage)
-		for kind in cost:
-			sum[kind] = sum.get(kind, 0) + cost[kind]
-	return sum
 
 func _covers(have : Dictionary, need : Dictionary[String, int]) -> bool:
 	for kind in need:

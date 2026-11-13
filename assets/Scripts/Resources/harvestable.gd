@@ -49,6 +49,7 @@ func _on_clicked() -> void:
 		_set_job(null)
 	elif _job != null:
 		reject()
+		GameState.warn("A lumberjack or miner is already working on this")
 	elif can_harvest():
 		var job := HarvestJob.new(self)
 		JobSystem.add(job)

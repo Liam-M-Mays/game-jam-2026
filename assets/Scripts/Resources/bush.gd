@@ -44,7 +44,7 @@ func _on_clicked() -> void:
 		_clearing = true
 	if _job == null and not _clearing and Inventory.food_full():
 		reject()
-		print("Food is full. Build a silo to store more")
+		GameState.warn("Food is full. Build a silo to store more")
 		return
 	super()
 	if _job == null:
