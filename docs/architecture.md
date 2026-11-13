@@ -155,7 +155,7 @@ flowchart TD
     tooltip["ConstructionTooltip, created in code"]
     parallax["5 parallax background layers"]
     hud["HUD: instance of hud.tscn"]
-    hudKids["Counters, jobs plate with Clear all, hunger bar, worker panel, build menu, pause menu, death screen, toast feed"]
+    hudKids["Counters, jobs plate with Clear all, workers and builders plate, hunger bar, worker panel, build menu, pause menu, death screen, toast feed"]
     giantAudio["GiantAudio (giant_audio.gd)"]
 
     game --> walk
@@ -247,7 +247,7 @@ The panel's Move button calls `BuildSystem.start_move(building)`. The building l
 
 The HUD's wood, stone and food counters show `Inventory.available(kind)`, the same number placing and the Build menu check (`Building.can_afford`). It leaves out drops a site has claimed. It keeps drops a builder is carrying to a pile, because a site can claim them from that pile (`Storage.unclaimed`); a haul that claimed one waits at the pile for it, and takes it from the ground if the store trip is dropped (`Storage.trip_dropped`).
 
-The HUD's jobs plate shows how many of the player's jobs wait for a meeple (`JobSystem.waiting_player_jobs`). Its Clear all button, or the C key, cancels them (`JobSystem.clear_waiting_player_jobs`). A meeple already on its way to a job keeps it.
+The HUD's jobs plate shows how many of the player's jobs wait for a meeple (`JobSystem.waiting_player_jobs`). Its Clear all button, or the C key, cancels them (`JobSystem.clear_waiting_player_jobs`). A meeple already on its way to a job keeps it. Under it, a second plate shows how many meeples are workers in a building's slot (`JobSystem.count_in_slots`) and how many are builders. It refreshes on `JobSystem.changed`, at most every 150 ms. When the last builder goes into a slot, the builders number turns red and one warning toast says so.
 
 ```mermaid
 stateDiagram-v2
@@ -616,6 +616,7 @@ classDiagram
         +job_count(): int
         +waiting_player_jobs(): int
         +clear_waiting_player_jobs()
+        +count_in_slots(): int
         +reset()
     }
     class Job {
@@ -756,6 +757,7 @@ classDiagram
         +camera: CameraControls
         +labels, hunger_bar, speed_button
         +jobs_label, clear_jobs_button
+        +workers_label, builders_label
         +OPENING_TIPS, TIPS, FUN_FACTS
     }
     class BuildMenu {
