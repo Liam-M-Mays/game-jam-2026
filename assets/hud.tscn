@@ -123,7 +123,7 @@ region = Rect2(79, 1, 45, 22)
 atlas = ExtResource("7_ghiih")
 region = Rect2(128, 1, 45, 22)
 
-[node name="HUD" type="CanvasLayer" unique_id=1588467611 node_paths=PackedStringArray("counters", "stone_label", "wood_label", "food_label", "meeple_label", "build_button", "build_menu", "pause_menu", "death_screen", "speed_button", "jobs_label", "clear_jobs_button")]
+[node name="HUD" type="CanvasLayer" unique_id=1588467611 node_paths=PackedStringArray("counters", "stone_label", "wood_label", "food_label", "meeple_label", "build_button", "build_menu", "pause_menu", "death_screen", "speed_button", "jobs_label", "clear_jobs_button", "workers_label", "builders_label")]
 script = ExtResource("1_uj4j1")
 counters = NodePath("CountersPanel")
 stone_label = NodePath("CountersPanel/Counters/Stone/StoneLabel")
@@ -137,6 +137,8 @@ death_screen = NodePath("DeathScreen")
 speed_button = NodePath("SpeedButton")
 jobs_label = NodePath("JobsPlate/Jobs/JobsLabel")
 clear_jobs_button = NodePath("JobsPlate/Jobs/ClearJobsButton")
+workers_label = NodePath("RolesPlate/Roles/WorkersLabel")
+builders_label = NodePath("RolesPlate/Roles/BuildersLabel")
 
 [node name="CountersPanel" type="PanelContainer" parent="." unique_id=279582240]
 anchors_preset = 5
@@ -225,6 +227,33 @@ layout_mode = 2
 tooltip_text = "Cancel every job no meeple has started"
 theme_override_font_sizes/font_size = 24
 text = "Clear all (C)"
+
+[node name="RolesPlate" type="PanelContainer" parent="." unique_id=1847302557]
+offset_left = 24.0
+offset_top = 80.0
+offset_right = 64.0
+offset_bottom = 120.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_backplate")
+
+[node name="Roles" type="HBoxContainer" parent="RolesPlate" unique_id=1847302558]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="WorkersLabel" type="Label" parent="RolesPlate/Roles" unique_id=1847302555]
+layout_mode = 2
+mouse_filter = 1
+tooltip_text = "Meeples working in a building"
+theme_override_font_sizes/font_size = 32
+text = "0 workers"
+vertical_alignment = 1
+
+[node name="BuildersLabel" type="Label" parent="RolesPlate/Roles" unique_id=1847302556]
+layout_mode = 2
+mouse_filter = 1
+tooltip_text = "Meeples free for your jobs"
+theme_override_font_sizes/font_size = 32
+text = "0 builders"
+vertical_alignment = 1
 
 [node name="Hunger" type="HBoxContainer" parent="." unique_id=644346435]
 custom_minimum_size = Vector2(100, 100)

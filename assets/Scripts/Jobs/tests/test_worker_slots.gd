@@ -2,6 +2,7 @@ extends GameTest
 ## Worker slots, from #7: the panel's add arrow takes the nearest builder, the remove arrow
 ## makes the worker a builder again, a worker never takes the player's jobs, and a dead worker is replaced.
 ## From #128: only the meeples the worker panel highlights get outline items.
+## From #134: the HUD's count of workers follows the arrows and deaths.
 
 const MEEPLE_SCENE := preload("res://assets/Scenes/Meeple/meeple.tscn")
 
@@ -101,3 +102,18 @@ func test_only_highlighted_meeples_get_an_outline() -> void:
 	worker.set_highlighted(true)
 	worker.free_item()
 	check(worker._outline.is_empty(), "freeing the meeple frees its outline too")
+
+
+func test_count_in_slots_follows_the_arrows() -> void:
+	_meeple_at(Vector2(0, 0))
+	var worker := _meeple_at(Vector2(90, 0))
+	check_eq(JobSystem.count_in_slots(), 0, "two builders, no workers")
+	_building.add_worker_slot()
+	JobSystem.match_jobs()
+	check_eq(JobSystem.count_in_slots(), 1, "the slot made one worker")
+	_building.remove_worker_slot()
+	check_eq(JobSystem.count_in_slots(), 0, "the remove arrow made it a builder again")
+	_building.add_worker_slot()
+	JobSystem.match_jobs()
+	worker.die()
+	check_eq(JobSystem.count_in_slots(), 0, "a dead worker is not counted")
