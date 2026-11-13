@@ -51,6 +51,8 @@ var _blueprint : Sprite2D = null
 ## Checks the land while the building waits for trees, rocks or bushes on its cells to be cleared.
 ## Null when it is not waiting.
 var _land_timer : Timer = null
+## When the player placed it, on JobSystem's clock. Its deliveries count their age from here.
+var ordered_at := 0.0
 
 func _ready() -> void:
 	super()
@@ -280,6 +282,7 @@ func _unmark_land(at_cells : Array[Cell]) -> void:
 				node.cancel_job()
 
 func start_construction() -> void:
+	ordered_at = JobSystem.now()
 	_built = EMPTY_STAGE
 	_constructing = true
 	_banked.clear()
