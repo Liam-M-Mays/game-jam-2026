@@ -3,6 +3,8 @@ class_name Building
 
 signal completed
 signal missing_changed
+## Its workers changed: one joined, left or died. The open panel listens, to outline the right meeples.
+signal workers_changed
 
 const BUILD_EFFECT := preload("res://assets/Scenes/Effects/cloud.tscn")
 const EMPTY_STAGE := -1
@@ -15,9 +17,9 @@ const POP_FALL := 0.13
 const PAUSED_OUTLINE := Color(1.0, 0.85, 0.1)
 ## How often a building waiting for its land looks whether the land is clear, in seconds.
 const LAND_CHECK_TIME := 0.25
-## True: a finished building fills all its worker slots by itself. False: it starts with no workers,
-## and the player adds them with the arrows in its panel.
-const STARTS_FULL := false
+## True: a finished building fills all its worker slots by itself, with the nearest free builders.
+## False: it starts with no workers, and the player adds them with the arrows in its panel.
+const STARTS_FULL := true
 
 @export var pop_amount := 0.05
 @export var reverse_frames := false
@@ -328,6 +330,7 @@ func remove_worker_slot() -> void:
 	wanted_workers -= 1
 	if not JobSystem.close_slot(self) and not workers.is_empty():
 		workers.pop_back().leave_workplace()
+		workers_changed.emit()
 
 ## The next task for `worker`, one of this building's workers, or null when there is nothing to do.
 func find_work(_worker : Meeple) -> Job:
@@ -337,11 +340,13 @@ func find_work(_worker : Meeple) -> Job:
 func add_worker(meeple : Meeple) -> void:
 	workers.append(meeple)
 	meeple.workplace = self
+	workers_changed.emit()
 
 ## Frees the slot of a worker who died, so another meeple takes it.
 func lose_worker(meeple : Meeple) -> void:
 	workers.erase(meeple)
 	JobSystem.open_slot(self)
+	workers_changed.emit()
 
 ## False hides nothing but dims the panel's Remove button. The Town Hall answers false.
 func can_remove() -> bool:

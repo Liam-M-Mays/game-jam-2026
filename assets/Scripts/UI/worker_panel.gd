@@ -2,7 +2,7 @@ extends PanelContainer
 class_name WorkerPanel
 ## Opens when a finished building is clicked. Its arrows add or remove a worker, between 0 and the
 ## building's `worker_slots`, and a building with no slots hides them. Its Remove button asks first.
-## Its Move button picks the building up to place it again.
+## Its Move button picks the building up to place it again. While it is open, the building's workers are outlined.
 ## Escape or a click anywhere else closes it.
 
 const GROUP := &"worker_panel"
@@ -23,6 +23,8 @@ const GROUP := &"worker_panel"
 var _building : Building = null
 ## The building the arrows set. A farm or a silo gives its barn, and a hut gives null.
 var _workers_of : Building = null
+## The meeples outlined now: the workers of `_workers_of`.
+var _outlined : Array[Meeple] = []
 
 func _ready() -> void:
 	add_to_group(GROUP)
@@ -49,6 +51,9 @@ func open(building : Building) -> void:
 	move_button.disabled = not building.can_move()
 	move_button.tooltip_text = "" if building.can_move() else "A %s moves with its barn" % building.display_name()
 	_show_confirm(false)
+	if _workers_of != null:
+		_workers_of.workers_changed.connect(_outline_workers)
+	_outline_workers()
 	_refresh()
 	show()
 
@@ -56,6 +61,9 @@ func open(building : Building) -> void:
 func close() -> void:
 	if is_instance_valid(_building):
 		_building.set_selected(false)
+	if is_instance_valid(_workers_of) and _workers_of.workers_changed.is_connected(_outline_workers):
+		_workers_of.workers_changed.disconnect(_outline_workers)
+	_set_outlined([] as Array[Meeple])
 	_building = null
 	_workers_of = null
 	hide()
@@ -93,6 +101,17 @@ func _on_move_pressed() -> void:
 	var building := _building
 	close()
 	get_tree().call_group(BuildSystem.GROUP, &"start_move", building)
+
+func _outline_workers() -> void:
+	_set_outlined(_workers_of.workers if _workers_of != null else [] as Array[Meeple])
+
+func _set_outlined(meeples : Array[Meeple]) -> void:
+	for meeple in _outlined:
+		if not meeples.has(meeple):
+			meeple.set_highlighted(false)
+	for meeple in meeples:
+		meeple.set_highlighted(true)
+	_outlined = meeples.duplicate()
 
 func _refresh() -> void:
 	if _workers_of == null:
