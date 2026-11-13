@@ -36,6 +36,21 @@ func reset() -> void:
 func job_count() -> int:
 	return _pending.size() + _active.size()
 
+## The player's jobs that no meeple has taken yet.
+func waiting_player_jobs() -> int:
+	var count := 0
+	for job in _pending:
+		if job is HarvestJob:
+			count += 1
+	return count
+
+## Cancels the player's jobs that no meeple has taken yet and takes their marks off.
+## A meeple already walking to a job or working on it keeps that job.
+func clear_waiting_player_jobs() -> void:
+	for job in _pending.duplicate():
+		if job is HarvestJob:
+			job.target.cancel_job()
+
 func add(job : Job) -> void:
 	_pending.push_back(job)
 	_fresh.push_back(job)

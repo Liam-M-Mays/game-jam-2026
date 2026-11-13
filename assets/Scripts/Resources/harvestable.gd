@@ -54,6 +54,11 @@ func _on_clicked() -> void:
 		JobSystem.add(job)
 		_set_job(job)
 
+## Cancels the job the player gave it and takes the mark off.
+func cancel_job() -> void:
+	JobSystem.cancel(_job)
+	_set_job(null)
+
 func can_harvest() -> bool:
 	return standing.wobbles < wobbles_to_break
 

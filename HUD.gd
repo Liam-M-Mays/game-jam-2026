@@ -3,6 +3,7 @@ extends CanvasLayer
 enum HungerBand { STARVING, FED, THRIVING }
 
 const SPEED_KEY := KEY_F
+const CLEAR_JOBS_KEY := KEY_C
 const FIRST_TIP_DELAY := 2.0
 const ROTATION_DELAY_MIN := 60.0
 const ROTATION_DELAY_MAX := 90.0
@@ -55,6 +56,8 @@ const FUN_FACTS := [
 @export var pause_menu: PauseMenu
 @export var death_screen: PauseMenu
 @export var speed_button: Button
+@export var jobs_label: Label
+@export var clear_jobs_button: Button
 @export var camera: CameraControls
 
 var _building_scene: PackedScene
@@ -83,6 +86,9 @@ func _ready() -> void:
 	_setup_hunger_bar()
 	_setup_building()
 	_setup_speed_button()
+	if clear_jobs_button:
+		clear_jobs_button.focus_mode = Control.FOCUS_NONE
+		clear_jobs_button.pressed.connect(JobSystem.clear_waiting_player_jobs)
 	_watch_existing_town_halls.call_deferred()
 	_wait(FIRST_TIP_DELAY).connect(_show_opening_tip.bind(0))
 
@@ -96,6 +102,11 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == SPEED_KEY:
 		if not get_tree().paused:
 			GameState.cycle_speed()
+			get_viewport().set_input_as_handled()
+		return
+	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == CLEAR_JOBS_KEY:
+		if not get_tree().paused:
+			JobSystem.clear_waiting_player_jobs()
 			get_viewport().set_input_as_handled()
 		return
 	if not event.is_action_pressed("ui_cancel") or _game_over:
@@ -120,6 +131,11 @@ func _refresh_counters() -> void:
 		food_label.text = "%d/%d food" % [Inventory.count("food"), Inventory.food_cap()]
 	if meeple_label:
 		meeple_label.text = "%d / %d" % [JobSystem.workers.size(), Population.capacity()]
+	var waiting := JobSystem.waiting_player_jobs()
+	if jobs_label:
+		jobs_label.text = "%d jobs waiting" % waiting
+	if clear_jobs_button:
+		clear_jobs_button.disabled = waiting == 0
 
 
 func _setup_hunger_bar() -> void:
