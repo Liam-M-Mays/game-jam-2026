@@ -11,9 +11,10 @@ class EmptyGrid extends Grid:
 		grid_size = 0
 
 	func _exit_tree() -> void:
-		pass
+		_clear_drops()
 
 var _world : Node2D
+var _grid : Grid
 var _pile : Storage
 
 
@@ -23,7 +24,10 @@ func _set_up() -> void:
 	Inventory.reset()
 	_world = Node2D.new()
 	tree.root.add_child(_world)
+	_grid = EmptyGrid.new()
+	_world.add_child(_grid)
 	_pile = PILE_SCENE.instantiate()
+	_pile.grid = _grid
 	_world.add_child(_pile)
 	_pile.add_to_group(Storage.GROUP)
 
@@ -35,9 +39,7 @@ func after_each() -> void:
 
 
 func _store_one() -> void:
-	var drop := ResourceDrop.make("wood")
-	_world.add_child(drop)
-	_pile.store(drop)
+	_pile.store(_grid.add_drop(ResourceDrop.scene_of("wood"), Vector2.ZERO))
 
 
 func test_a_haul_from_a_pile_keeps_the_count_until_delivery() -> void:
@@ -46,7 +48,7 @@ func test_a_haul_from_a_pile_keeps_the_count_until_delivery() -> void:
 	_store_one()
 	check_eq(_pile.held(), 2, "the pile holds both drops")
 	check_eq(Inventory.count("wood"), 2, "stored drops count once, not as nodes and a number")
-	check_eq(Inventory.all_drops().size(), 0, "no drop node is left for the stored drops")
+	check_eq(Inventory.all_drops().size(), 0, "no drop is left for the stored drops")
 	Inventory.reserve("wood", 1)
 	check(Inventory.claim_closest("wood", Vector2.ZERO) == _pile, "the haul claims from the pile")
 	check_eq(Inventory.available("wood"), 1, "one drop is left to claim")
@@ -75,9 +77,6 @@ func test_changed_fires_once_a_frame() -> void:
 
 func test_a_removed_pile_drops_what_it_held_and_a_haul_keeps_its_claim() -> void:
 	await _set_up()
-	var grid := EmptyGrid.new()
-	_world.add_child(grid)
-	_pile.grid = grid
 	for i in 3:
 		_store_one()
 	Inventory.reserve("wood", 1)

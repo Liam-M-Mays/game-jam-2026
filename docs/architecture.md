@@ -147,8 +147,9 @@ flowchart TD
     cells["2,091 cells: plain data, no node"]
     cellLayer["CellLayer: draws the lit cells in one node (cell_layer.gd)"]
     rows["StandingRow per grid row: draws the still trees, rocks and bushes of that row (standing_row.gd)"]
-    objects["Buildings, drops, and the trees, rocks and bushes that are hovered, hit, chosen or growing"]
+    objects["Buildings, and the trees, rocks and bushes that are hovered, hit, chosen or growing"]
     meeples["Meeples: plain data, one canvas item each, no node"]
+    drops["Drops on the ground: plain data, one canvas item each, no node"]
     cursor["Mouse: cell cursor, asks Grid for the cells near the mouse (mouse.gd)"]
     buildSystem["BuildSystem (build_system.gd)"]
     tooltip["ConstructionTooltip, created in code"]
@@ -173,6 +174,7 @@ flowchart TD
     grid --> rows
     grid --> objects
     grid --> meeples
+    grid --> drops
     buildSystem --> tooltip
     game --> parallax
     game --> hud
@@ -325,7 +327,7 @@ How to read them:
 - A dotted arrow means "holds or uses".
 - `+` is public, `#` is meant to be overridden. Private members are left out.
 - `<<autoload>>` is a global singleton, `<<resource>>` is a data resource, `<<unnamed>>` is a script without a `class_name`.
-- `<<scene>>` is the root script of a scene that the game reads once as a template (`MeepleLook` is `meeple.tscn`).
+- `<<scene>>` is the root script of a scene that the game reads once as a template (`MeepleLook` is `meeple.tscn`, `DropLook` is a drop scene in `Scenes/Resources/Drops`).
 
 ### Class diagram 1: world objects
 
@@ -348,6 +350,7 @@ classDiagram
         +place(obj, cells)
         +remove(obj)
         +spawn_meeple(at): Meeple
+        +add_drop(scene, at): ResourceDrop
         +standing: Array[Standing]
         +wake(item): Harvestable
     }
@@ -405,10 +408,21 @@ classDiagram
         +kind: String
         +claimed: bool
         +surplus_time: float
-        +make(kind)$: ResourceDrop
-        +launch(grid)
+        +position: Vector2
+        +global_position: Vector2
+        +scene_of(kind)$: PackedScene
+        +launch()
+        +show() / hide()
         +consume()
         +expire()
+        +is_in_world(): bool
+    }
+    class DropLook {
+        <<scene>>
+        +kind: String
+        +launch_distance_min / max: float
+        +launch_duration: float
+        +draw(item)
     }
     class Harvestable {
         +wobbles_to_break: int
@@ -560,6 +574,7 @@ classDiagram
     Cell ..> CellLayer : lit by
     CellCursor ..> Grid : cells_near
     Harvestable ..> ResourceDrop : breaks into
+    ResourceDrop ..> DropLook : reads look and numbers
     Building ..> BuildFrame : cost per stage
     BuildSystem ..> Building : previews and places
     BuildSystem ..> CellCursor : cursor
@@ -640,11 +655,11 @@ classDiagram
         +available(kind): int
         +add(kind, n) / spend(kind, n)
         +reserve(kind, n)
-        +claim_closest(kind, pos): ResourceDrop
-        +claim_reserved(drop)
+        +claim_closest(kind, pos): ResourceDrop or Storage
         +shortest_trip_loose(kind, from, to)
         +food_cap() / food_full()
         +register(drop) / unregister(drop)
+        +clear_drops()
         +reset()
     }
     class HarvestJob {
