@@ -14,6 +14,7 @@ var _aimed := Vector2.INF
 func _init(target_site : Building, target_kind : String) -> void:
 	site = target_site
 	kind = target_kind
+	ordered_at = site.ordered_at
 	var source := Inventory.claim_closest(kind, site.global_position)
 	_pile = source as Storage
 	_drop = source as ResourceDrop

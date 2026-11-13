@@ -44,6 +44,8 @@ var workers : Array[Meeple] = []
 ## How many workers the player set with the panel's arrows. A slot with nobody in it waits for a free builder.
 var wanted_workers := 0
 var _blueprint : Sprite2D = null
+## When the player placed it, on JobSystem's clock. Its deliveries count their age from here.
+var ordered_at := 0.0
 
 func _ready() -> void:
 	super()
@@ -192,6 +194,7 @@ func can_afford() -> bool:
 	return _has_resources(min_to_start)
 
 func start_construction() -> void:
+	ordered_at = JobSystem.now()
 	_built = EMPTY_STAGE
 	_constructing = true
 	_banked.clear()
