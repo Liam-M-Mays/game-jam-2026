@@ -13,7 +13,7 @@ corner_radius_top_right = 6
 corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
 
-[node name="WorkerPanel" type="PanelContainer" node_paths=PackedStringArray("title", "note_label", "count_label", "remove_button", "add_button", "arrows", "remove_building_button", "confirm_row", "confirm_label", "confirm_button", "keep_button")]
+[node name="WorkerPanel" type="PanelContainer" node_paths=PackedStringArray("title", "note_label", "count_label", "remove_button", "add_button", "arrows", "remove_building_button", "move_button", "confirm_row", "confirm_label", "confirm_button", "keep_button")]
 anchors_preset = 7
 anchor_left = 0.5
 anchor_top = 1.0
@@ -34,6 +34,7 @@ remove_button = NodePath("Rows/Arrows/RemoveButton")
 add_button = NodePath("Rows/Arrows/AddButton")
 arrows = NodePath("Rows/Arrows")
 remove_building_button = NodePath("Rows/RemoveBuildingButton")
+move_button = NodePath("Rows/MoveButton")
 confirm_row = NodePath("Rows/Confirm")
 confirm_label = NodePath("Rows/Confirm/Question")
 confirm_button = NodePath("Rows/Confirm/Buttons/YesButton")
@@ -80,6 +81,12 @@ layout_mode = 2
 focus_mode = 0
 theme_override_font_sizes/font_size = 32
 text = ">"
+
+[node name="MoveButton" type="Button" parent="Rows"]
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 20
+text = "Move"
 
 [node name="RemoveBuildingButton" type="Button" parent="Rows"]
 layout_mode = 2

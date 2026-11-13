@@ -10,6 +10,9 @@ func _init(target_drop : ResourceDrop, target_site : Storage) -> void:
 	site = target_site
 	Inventory.set_claimed(_drop, true)
 
+func goes_to(building : Building) -> bool:
+	return site == building
+
 func start(worker : Meeple) -> void:
 	worker.move_to(_drop.global_position)
 

@@ -207,7 +207,10 @@ func place(obj : GridObject, cells : Array[Cell]) -> void:
 	obj.cells = cells
 	for cell in cells:
 		cell.occupant = obj
-	add_child(obj)
+	if obj.get_parent() == self:
+		move_child(obj, -1)
+	else:
+		add_child(obj)
 	if obj is Building:
 		for cell in cells:
 			_building_cells.append(_coords_of[cell])
@@ -229,14 +232,18 @@ func _sort_into_row(obj : GridObject) -> void:
 			return
 
 func remove(obj : GridObject) -> void:
+	lift(obj)
+	if obj is Harvestable:
+		_forget((obj as Harvestable).standing)
+	obj.queue_free()
+
+## Takes `obj` off its cells but keeps the node. `place` puts it down again, on the same cells or new ones.
+func lift(obj : GridObject) -> void:
 	for cell in obj.cells:
 		cell.occupant = null
 		cell.highlight(0.0)
 		if obj is Building:
 			_building_cells.erase(_coords_of[cell])
-	if obj is Harvestable:
-		_forget((obj as Harvestable).standing)
-	obj.queue_free()
 
 func _build_cells() -> void:
 	for x in range(grid_size):

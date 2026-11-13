@@ -7,6 +7,10 @@ var cancelled := false
 func place() -> Vector2:
 	return Vector2.ZERO
 
+## True when the meeple doing this job walks to `building`. A moved building turns those meeples round.
+func goes_to(_building : Building) -> bool:
+	return false
+
 func start(_worker : Meeple) -> void:
 	pass
 
