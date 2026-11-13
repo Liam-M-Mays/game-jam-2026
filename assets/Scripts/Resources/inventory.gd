@@ -21,8 +21,8 @@ var _piled := {}
 var _pile_claims := {}
 var _dirty := false
 var _last_changed := -CHANGED_EVERY_MS
-## An AreaIndex of the drops per kind, in the grid's space, so the nearest one is found without
-## checking them all.
+## An AreaIndex of the loose drops per kind, in the grid's space, so the nearest one is found
+## without checking them all.
 var _areas := {}
 var _grid : Grid
 
@@ -83,8 +83,6 @@ func spend(kind : String, amount : int) -> void:
 
 func register(drop : ResourceDrop) -> void:
 	_grid = drop.grid
-	_area_of(drop.kind).add(drop, drop.position)
-	drop.listed = true
 	_drops_of(drop.kind).append(drop)
 	_all_drops.append(drop)
 	_count_loose(drop, 1)
@@ -94,8 +92,6 @@ func unregister(drop : ResourceDrop) -> void:
 	# Already gone: consumed before, or forgotten when the grid left.
 	if not drop.is_in_world():
 		return
-	_area_of(drop.kind).remove(drop, drop.position)
-	drop.listed = false
 	_drops_of(drop.kind).erase(drop)
 	_all_drops.erase(drop)
 	_count_loose(drop, -1)
@@ -189,10 +185,17 @@ func _claim(drop : ResourceDrop, on : bool) -> void:
 	if counted:
 		_count_loose(drop, 1)
 
-## Adds `sign` to the loose count of `drop`'s kind when nothing has claimed it.
+## Adds `sign` to the loose count of `drop`'s kind when nothing has claimed it, and puts the drop in
+## or takes it out of the search area of its kind.
 func _count_loose(drop : ResourceDrop, sign : int) -> void:
-	if not drop.claimed:
-		_loose[drop.kind] = _loose.get(drop.kind, 0) + sign
+	if drop.claimed:
+		return
+	_loose[drop.kind] = _loose.get(drop.kind, 0) + sign
+	if sign > 0 and not drop.listed:
+		_area_of(drop.kind).add(drop, drop.position)
+	elif sign < 0 and drop.listed:
+		_area_of(drop.kind).remove(drop, drop.position)
+	drop.listed = sign > 0
 
 func _drops_of(kind : String) -> Array:
 	return _drops.get_or_add(kind, [])

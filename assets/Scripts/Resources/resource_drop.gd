@@ -12,7 +12,7 @@ const SCENES := {
 var grid : Grid
 var kind : String
 var claimed := false
-## True while Inventory keeps it in its search areas.
+## True while it is loose, so Inventory keeps it in the search area of its kind.
 var listed := false
 var position : Vector2:
 	set(value):
