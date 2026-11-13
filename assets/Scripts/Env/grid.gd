@@ -39,8 +39,6 @@ class Spawnable:
 	## The click box around a tree or rock's position, read from the scene's Area2D.
 	var hit_box : Rect2
 	var count := 0
-	## Bushes stay real nodes until part 7b.
-	var as_data : bool
 
 var _cells : Array[Array] = []
 var _cell_scale : Vector2
@@ -62,6 +60,8 @@ var _awake : Array[Standing] = []
 var _hovered : Array[Standing] = []
 var _rows := {}
 var _reach_rows := 0
+## Bushes that grow back while their row draws them.
+var _regrowing : Array[Standing] = []
 
 func _ready() -> void:
 	_meeple_look = MEEPLE.instantiate()
@@ -334,7 +334,6 @@ func _load_spawnables() -> Array[Spawnable]:
 			var shape : CollisionShape2D = template.area.get_child(0)
 			s.hit_box = template.transform * template.area.transform * shape.transform * shape.shape.get_rect()
 			_reach_rows = maxi(_reach_rows, ceili(-s.hit_box.position.y / (_cell_scale.y * 5)))
-			s.as_data = not (template is Bush)
 			list.append(s)
 		else:
 			template.free()
@@ -349,6 +348,7 @@ func _process(delta : float) -> void:
 			_meeples.remove_at(i)
 	_update_hover()
 	_sleep_still()
+	_regrow_asleep(delta)
 	if _spawnables.is_empty():
 		return
 	_respawn_timer += delta
@@ -410,7 +410,7 @@ func _add_standing(kind : Spawnable, cells : Array[Cell]) -> Standing:
 		cell.occupant = item
 	standing.append(item)
 	kind.count += 1
-	if kind.as_data and not _under_building(item):
+	if not _under_building(item):
 		_row(item).add(item)
 	else:
 		wake(item)
@@ -438,16 +438,30 @@ func wake(item : Standing) -> Harvestable:
 	_awake.append(item)
 	return node
 
-## Hands the trees and rocks that are still again back to their rows.
+## Hands the trees, rocks and bushes that are still again back to their rows.
 func _sleep_still() -> void:
 	for item in _awake.duplicate():
-		if item.kind.as_data and not _hovered.has(item) and item.node.is_still() and not _under_building(item):
+		if not _hovered.has(item) and item.node.is_still() and not _under_building(item):
 			_awake.erase(item)
 			item.node.queue_free()
 			item.node = null
 			_row(item).add(item)
+			if item.stage > 0 and not _regrowing.has(item):
+				_regrowing.append(item)
 
-## The node that draws the still trees and rocks of `item`'s row. It goes first among the grid's
+## Counts down the regrow timers of picked bushes that have no node, and redraws a row when one grows back.
+func _regrow_asleep(delta : float) -> void:
+	var i := 0
+	while i < _regrowing.size():
+		var item := _regrowing[i]
+		if item.node != null or item.stage == 0:
+			_regrowing.remove_at(i)
+			continue
+		if (item.kind.template as Bush).regrow(item, delta):
+			_row(item).queue_redraw()
+		i += 1
+
+## The node that draws the still trees, rocks and bushes of `item`'s row. It goes first among the grid's
 ## children, so on a tie in y it draws behind buildings.
 func _row(item : Standing) -> StandingRow:
 	if not _rows.has(item.position.y):
@@ -489,7 +503,7 @@ func _update_hover() -> void:
 			wake(item)._set_hovered(true)
 	_hovered = under
 
-## The trees and rocks whose click box holds the mouse, found through the cells under it.
+## The trees, rocks and bushes whose click box holds the mouse, found through the cells under it.
 ## Tall ones reach up over the rows behind them, so this also looks a few rows further down.
 func _standing_under_mouse() -> Array[Standing]:
 	var found : Array[Standing] = []

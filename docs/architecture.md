@@ -145,8 +145,8 @@ flowchart TD
     grid["Grid (grid.gd)"]
     cells["2,091 cells: plain data, no node"]
     cellLayer["CellLayer: draws the lit cells in one node (cell_layer.gd)"]
-    rows["StandingRow per grid row: draws the still trees and rocks of that row (standing_row.gd)"]
-    objects["Buildings, drops, bushes, and the trees and rocks that are hovered, hit, chosen or growing"]
+    rows["StandingRow per grid row: draws the still trees, rocks and bushes of that row (standing_row.gd)"]
+    objects["Buildings, drops, and the trees, rocks and bushes that are hovered, hit, chosen or growing"]
     meeples["Meeples: plain data, one canvas item each, no node"]
     cursor["Mouse: cell cursor, asks Grid for the cells near the mouse (mouse.gd)"]
     buildSystem["BuildSystem (build_system.gd)"]
@@ -325,6 +325,7 @@ classDiagram
         +cells: Array[Cell]
         +position: Vector2
         +wobbles: int
+        +stage / regrow_timer / emptied: bushes only
         +node: Harvestable
         +is_free(): bool
     }
@@ -391,6 +392,7 @@ classDiagram
         +standing: Standing
         +harvest(): bool
         +grow_in()
+        +texture_for(item): Texture2D
         +is_still(): bool
     }
     class Building {
@@ -423,6 +425,8 @@ classDiagram
         +food_per_harvest: int
         +regrow_time: float
         +empties_to_destroy: int
+        +regrow(item, delta): bool
+        +texture_for(item): Texture2D
         +can_harvest(): bool
         #_hit(): bool
     }

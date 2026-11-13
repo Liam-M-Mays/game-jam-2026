@@ -34,6 +34,10 @@ func _ready() -> void:
 func is_still() -> bool:
 	return _job == null and _tweens.values().all(func(tween : Tween) -> bool: return not tween.is_running())
 
+## The picture its row draws for `item` while it has no node.
+func texture_for(_item : Standing) -> Texture2D:
+	return texture
+
 func grow_in() -> void:
 	scale = _base_scale * Vector2(0.4, 0.05)
 	var tween := _tween(&"squash").set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
