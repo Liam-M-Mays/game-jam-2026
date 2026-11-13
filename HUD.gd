@@ -15,7 +15,7 @@ const ZOOM_OUT_FACT := "Have you zoomed out all the way yet?"
 const PAUSE_BUILDING_TIP := "Right-click a building under construction to pause it, and right-click again to resume"
 const OPENING_TIPS := [
 	"Tap on trees and stones to begin harvesting resources",
-	"Use WASD or the mouse wheel to pan the camera around",
+	"Use WASD to move the camera and the mouse wheel to zoom",
 	"Picking berries will feed your meeple",
 	"Click the build button to start expanding your meeple village",
 	PAUSE_BUILDING_TIP,
@@ -23,7 +23,7 @@ const OPENING_TIPS := [
 
 const TIPS := [
 	"Press 'F' to toggle game speed",
-	"Berry bushes dissapear after collecting from them 3 times",
+	"Berry bushes disappear after collecting from them 3 times",
 	"Keep your hunger bar up to keep your meeples happy (and alive)",
 	"You can upgrade your Town Hall level by increasing your Meeple population",
 	"Hover over build sites to see what materials it still needs",
@@ -98,6 +98,8 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	if camera:
 		visible = not camera.is_zoomed_out() or get_tree().paused
+	if speed_button:
+		speed_button.disabled = get_tree().paused
 
 
 func _unhandled_input(event: InputEvent) -> void:

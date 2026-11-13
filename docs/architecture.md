@@ -27,7 +27,7 @@ This file is the source of truth. Older copies of the diagrams exist as Figma bo
 | Layer | What is in it | Where |
 | --- | --- | --- |
 | World scene | The grid, everything on it, meeples, drops, `BuildSystem`. On the giant all of it hangs under the giant's torso node. On the ground it sits on a round world | `assets/Scenes/Levels/game.tscn`, `assets/Scenes/Levels/ground.tscn`, `assets/Scripts/` |
-| Global singletons | `JobSystem`, `Inventory`, `Population` hold the simulation. `GameState` holds hunger, toasts and speed. `Music`, `VillageAudio`, `DevSpeed` are support | The `[autoload]` section of `project.godot` |
+| Global singletons | `JobSystem`, `Inventory`, `Population` hold the simulation. `GameState` holds hunger, toasts and speed. `Music` and `VillageAudio` are support | The `[autoload]` section of `project.godot` |
 | UI scenes | Main menu and HUD | `Main_Menu.tscn`, `assets/hud.tscn`, scripts at the project root |
 
 The world registers with the singletons, and the singletons tell the UI what changed through signals. Three spots break that direction, and the system map shows them as thick arrows.
@@ -736,11 +736,6 @@ classDiagram
         +LIBRARY: axe, pickaxe, grass, hammer, log, hurt
         +VOICE_COUNT = 6
         +play(sound_name, at)
-    }
-    class DevSpeed {
-        <<autoload>>
-        +FAST = 3.0
-        +KEY = X
     }
     class MainMenu {
         <<unnamed>>
