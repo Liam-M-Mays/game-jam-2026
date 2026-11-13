@@ -408,14 +408,12 @@ classDiagram
     class ResourceDrop {
         +kind: String
         +claimed: bool
-        +surplus_time: float
         +position: Vector2
         +global_position: Vector2
         +scene_of(kind)$: PackedScene
         +launch()
         +show() / hide()
         +consume()
-        +expire()
         +is_in_world(): bool
     }
     class DropLook {
@@ -655,7 +653,6 @@ classDiagram
         +signal changed
         +START_STOCK = 10 food
         +BASE_FOOD_CAP = 20
-        +MAX_GROUND_DROPS = 30
         +count(kind): int
         +available(kind): int
         +add(kind, n) / spend(kind, n)
@@ -663,6 +660,7 @@ classDiagram
         +claim_closest(kind, pos): ResourceDrop or Storage
         +shortest_trip_loose(kind, from, to)
         +food_cap() / food_full()
+        +room(kind): int
         +register(drop) / unregister(drop)
         +clear_drops()
         +reset()
@@ -779,7 +777,9 @@ classDiagram
     }
     class ConstructionTooltip {
         +describe(site) static
+        +describe_pile(pile) static
         +site_under_mouse(tree) static
+        +pile_under_mouse(tree) static
     }
     class CameraControls {
         +move_speed, min_zoom, max_zoom

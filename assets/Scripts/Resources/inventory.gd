@@ -4,18 +4,11 @@ signal changed
 
 const START_STOCK := { "food": 10 }
 const BASE_FOOD_CAP := 20
-const MAX_GROUND_DROPS := 30
-const GROUND_DROP_LIFETIME := 20.0
-## How often the drops past MAX_GROUND_DROPS move closer to fading, in seconds.
-const SURPLUS_CHECK := 0.5
 
 var _drops := {}
 var _all_drops : Array[ResourceDrop] = []
 ## Drops on the ground that nothing has claimed, per kind.
 var _loose := {}
-var _surplus_clock := 0.0
-## True while some drop has a surplus clock running, so the next check still resets it.
-var _counting_surplus := false
 var _stored := START_STOCK.duplicate()
 var _reserved := {}
 ## Drops kept in piles, and how many of those hauls have claimed, per kind.
@@ -27,34 +20,10 @@ func _ready() -> void:
 	process_priority = 100
 
 ## Runs after the game's nodes, so `changed` fires once a frame with every change of that frame.
-func _process(delta : float) -> void:
-	_surplus_clock += delta
-	if _surplus_clock >= SURPLUS_CHECK:
-		_fade_surplus(_surplus_clock)
-		_surplus_clock = 0.0
+func _process(_delta : float) -> void:
 	if _dirty:
 		_dirty = false
 		changed.emit()
-
-## Loose drops past MAX_GROUND_DROPS that nothing needs fade out after GROUND_DROP_LIFETIME, oldest first.
-## It walks the drops only while there are too many, and once more after, to reset their clocks.
-func _fade_surplus(elapsed : float) -> void:
-	var surplus : int = _loose.values().reduce(func(sum : int, n : int) -> int: return sum + n, 0) - MAX_GROUND_DROPS
-	if surplus <= 0 and not _counting_surplus:
-		return
-	_counting_surplus = surplus > 0
-	var spare := {}
-	for kind in _drops:
-		spare[kind] = available(kind)
-	for drop in _all_drops:
-		if surplus > 0 and _is_loose(drop) and spare[drop.kind] > 0:
-			surplus -= 1
-			spare[drop.kind] -= 1
-			drop.surplus_time += elapsed
-			if drop.surplus_time >= GROUND_DROP_LIFETIME:
-				drop.expire()
-		else:
-			drop.surplus_time = 0.0
 
 ## Asks for `changed` at the end of this frame. However often it is called, `changed` fires once.
 func mark_changed() -> void:
@@ -75,6 +44,14 @@ func food_cap() -> int:
 	for silo in get_tree().get_nodes_in_group(Silo.GROUP):
 		cap += silo.food_capacity
 	return cap
+
+## How much of `kind` the finished piles can hold. Drops on the ground can take "have" above it.
+func room(kind : String) -> int:
+	var total := 0
+	for pile : Storage in get_tree().get_nodes_in_group(Storage.GROUP):
+		if pile.kind == kind:
+			total += pile.capacity()
+	return total
 
 func food_full() -> bool:
 	return count("food") >= food_cap()
