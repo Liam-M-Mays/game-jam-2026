@@ -50,6 +50,10 @@ func _on_clicked() -> void:
 	if _job == null:
 		_clearing = false
 
+func cancel_job() -> void:
+	super()
+	_clearing = false
+
 func can_harvest() -> bool:
 	if _clearing:
 		return super()
