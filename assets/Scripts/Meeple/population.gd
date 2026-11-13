@@ -2,17 +2,16 @@ extends Node
 
 signal all_meeples_died
 
-const TICK := 4.0
-const DEATH_CHANCE := 0.25
-const STARVE_BELOW := 25.0
-const GROW_ABOVE := 50.0
-const GROW_MIN_DELAY := 8.0
-const GROW_MAX_DELAY := 16.0
+## The food and growth numbers, shared with Inventory and the food bar.
+const RULES : VillageRules = preload("res://assets/Res/village_rules.tres")
 
 var huts : Array[Hut] = []
 
 var _timer := 0.0
-var _grow_wait := randf_range(GROW_MIN_DELAY, GROW_MAX_DELAY)
+var _grow_wait := 0.0
+
+func _ready() -> void:
+	_grow_wait = randf_range(RULES.grow_min_delay, RULES.grow_max_delay)
 
 func capacity() -> int:
 	var total := 0
@@ -29,14 +28,14 @@ func remove_hut(hut : Hut) -> void:
 func _process(delta : float) -> void:
 	_update_growth(delta)
 	_timer += delta
-	if _timer < TICK:
+	if _timer < RULES.starve_tick:
 		return
-	_timer -= TICK
-	if GameState.hunger < STARVE_BELOW:
+	_timer -= RULES.starve_tick
+	if GameState.hunger < RULES.starve_below:
 		_starve()
 
 func _can_grow() -> bool:
-	return GameState.hunger > GROW_ABOVE and Inventory.count("food") > 0 and JobSystem.workers.size() < capacity()
+	return GameState.hunger > RULES.grow_above and Inventory.count("food") > 0 and JobSystem.workers.size() < capacity()
 
 func _update_growth(delta : float) -> void:
 	if not _can_grow():
@@ -44,11 +43,11 @@ func _update_growth(delta : float) -> void:
 	_grow_wait -= delta
 	if _grow_wait > 0.0:
 		return
-	_grow_wait = randf_range(GROW_MIN_DELAY, GROW_MAX_DELAY)
+	_grow_wait = randf_range(RULES.grow_min_delay, RULES.grow_max_delay)
 	huts.pick_random().spawn_meeple()
 
 func _starve() -> void:
-	if JobSystem.workers.is_empty() or randf() >= DEATH_CHANCE:
+	if JobSystem.workers.is_empty() or randf() >= RULES.death_chance:
 		return
 	var victim : Meeple = JobSystem.workers.pick_random()
 	victim.die()
