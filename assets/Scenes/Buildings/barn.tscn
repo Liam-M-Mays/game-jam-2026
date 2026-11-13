@@ -3,6 +3,7 @@
 [ext_resource type="Texture2D" uid="uid://bycvjokbbgjy4" path="res://ART/barn_build.png" id="1_tex"]
 [ext_resource type="Script" uid="uid://c5be5uborrvaj" path="res://assets/Scripts/Buildings/barn.gd" id="2_scr"]
 [ext_resource type="Script" uid="uid://cyj5e8cr4hrge" path="res://assets/Scripts/Buildings/build_frame.gd" id="3_phase"]
+[ext_resource type="PackedScene" uid="uid://mv7buf160tw2" path="res://assets/Scenes/Buildings/farm.tscn" id="4_farm"]
 
 [sub_resource type="Resource" id="Frame_0"]
 script = ExtResource("3_phase")
@@ -46,6 +47,7 @@ hframes = 5
 script = ExtResource("2_scr")
 description = "Lets you build farms and silos in the area around it. Its worker harvests the farms."
 worker_slots = 1
+farm_scene = ExtResource("4_farm")
 frames = Array[ExtResource("3_phase")]([SubResource("Frame_0"), SubResource("Frame_1"), SubResource("Frame_2"), SubResource("Frame_3"), SubResource("Frame_4")])
 min_to_start = Dictionary[String, int]({
 "stone": 2

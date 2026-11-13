@@ -474,7 +474,7 @@ func _spawn(s : Spawnable, blocked := {}) -> Standing:
 	for i in range(SPAWN_ATTEMPTS):
 		var coords : Vector2i = _spots[_rng.randi_range(0, _spots.size() - 1)]
 		var cells := _free_cells(coords, s.footprint)
-		if cells.is_empty() or cells.any(func(c): return blocked.has(c) or _keep_clear.has(c)):
+		if cells.is_empty() or cells.any(func(c): return blocked.has(c) or _keep_clear.has(c) or c.kept_for != null):
 			continue
 		var weight := _spawn_weight(s, coords) * _building_factor(s, coords, building_coords)
 		if _rng.randf() * s.max_weight >= weight:

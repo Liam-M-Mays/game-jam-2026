@@ -13,6 +13,7 @@ const AREA_COLOR := Color(1.0, 0.95, 0.6)
 const AREA_ALPHA := 0.7
 const AREA_HOVER_COLOR := Color(1.0, 1.0, 1.0)
 const AREA_HOVER_ALPHA := 1.0
+const AREA_TAKEN_COLOR := Color(1.0, 0.35, 0.3)
 const PAUSE_CLICK_MAX_DRAG := 6.0
 
 @export var grid : Grid
@@ -22,9 +23,10 @@ var _scene : PackedScene = null
 var _preview : Building = null
 var _area : Array[Cell] = []
 var _right_press_at := Vector2.ZERO
+var _tooltip := ConstructionTooltip.new()
 
 func _ready() -> void:
-	add_child(ConstructionTooltip.new())
+	add_child(_tooltip)
 	cursor.grid = grid
 
 func start_build(scene : PackedScene) -> void:
@@ -78,6 +80,7 @@ func _process(_delta : float) -> void:
 	var mouse := get_global_mouse_position()
 	var anchor := grid.cell_at(mouse)
 	var cells := grid.free_cells_at(mouse, _preview.footprint, _preview.footprint_depth)
+	_tooltip.note = _preview.note()
 	if _preview.restricts_placement():
 		var area := _preview.placement_area(grid)
 		var on_area := not cells.is_empty() and cells.all(func(c): return area.has(c))
@@ -90,17 +93,23 @@ func _process(_delta : float) -> void:
 			return
 	else:
 		_preview.visible = anchor != null
+		var area : Array[Cell] = []
+		if anchor != null:
+			area = _preview.area_at(grid, anchor)
+		_show_area(area, [], area.filter(func(c : Cell): return c.occupant != null or c.kept_for != null))
 	if anchor != null:
 		_preview.position = anchor.position
 	_preview.set_preview_blocked(_placement_error(cells) != PlacementError.NONE)
 
-func _show_area(cells : Array[Cell], hovered : Array[Cell] = []) -> void:
+func _show_area(cells : Array[Cell], hovered : Array[Cell] = [], taken : Array = []) -> void:
 	for cell in _area:
 		if is_instance_valid(cell) and not cells.has(cell):
 			cell.highlight(0.0)
 	for cell in cells:
 		if hovered.has(cell):
 			cell.highlight(AREA_HOVER_ALPHA, AREA_HOVER_COLOR)
+		elif taken.has(cell):
+			cell.highlight(AREA_ALPHA, AREA_TAKEN_COLOR)
 		else:
 			cell.highlight(AREA_ALPHA, AREA_COLOR)
 	_area = cells
@@ -128,10 +137,14 @@ func _try_place() -> void:
 	site.start_construction()
 	VillageAudio.play(&"hammer", site.global_position)
 	building_placed.emit(site)
+	var next := site.build_after(_scene)
 	end_build()
+	if next != null:
+		start_build(next)
 
 func _clear_preview() -> void:
 	_show_area([])
+	_tooltip.note = ""
 	if _preview != null:
 		_preview.queue_free()
 		_preview = null
