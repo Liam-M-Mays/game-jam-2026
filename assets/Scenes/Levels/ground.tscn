@@ -1,0 +1,51 @@
+[gd_scene format=3 uid="uid://dj03brdrypg2n"]
+
+[ext_resource type="Script" uid="uid://n6afu0v6fo7v" path="res://assets/Scripts/Env/ground_level.gd" id="1_level"]
+[ext_resource type="PackedScene" uid="uid://mcu65uoclrgs" path="res://assets/Scenes/Env/grid.tscn" id="2_grid"]
+[ext_resource type="Script" uid="uid://d13jmgqp0eyq8" path="res://assets/Scripts/Cam/mouse.gd" id="3_mouse"]
+[ext_resource type="Script" uid="uid://clnxifq5klc7h" path="res://assets/Scripts/Buildings/build_system.gd" id="4_build"]
+[ext_resource type="Material" uid="uid://bvwf5d3484eng" path="res://assets/Res/yard_ground.tres" id="5_yard"]
+[ext_resource type="Script" uid="uid://cw0qdpuqfhjiu" path="res://assets/Scripts/Env/yard_ground.gd" id="6_yardscript"]
+[ext_resource type="Script" uid="uid://cmwljon6ih0lq" path="res://assets/Scripts/Cam/camera_controls.gd" id="7_camera"]
+[ext_resource type="PackedScene" uid="uid://ikcvt7q7gjvs" path="res://assets/hud.tscn" id="8_hud"]
+
+[node name="Ground" type="Node2D" node_paths=PackedStringArray("camera")]
+script = ExtResource("1_level")
+camera = NodePath("Camera2D")
+
+[node name="World" type="Node2D" parent="."]
+y_sort_enabled = true
+scale = Vector2(0.1, 0.1)
+
+[node name="Grid" parent="World" node_paths=PackedStringArray("round_ground") instance=ExtResource("2_grid")]
+world_cells = 100000
+round_ground = NodePath("../../Yard")
+
+[node name="Mouse" type="Node2D" parent="World"]
+script = ExtResource("3_mouse")
+enabled = false
+
+[node name="BuildSystem" type="Node2D" parent="World" node_paths=PackedStringArray("grid", "cursor")]
+script = ExtResource("4_build")
+grid = NodePath("../Grid")
+cursor = NodePath("../Mouse")
+
+[node name="Yard" type="Sprite2D" parent="."]
+z_index = -5
+material = ExtResource("5_yard")
+script = ExtResource("6_yardscript")
+preset = 0
+frequency = 0.006
+
+[node name="Yard" type="Polygon2D" parent="Yard"]
+material = ExtResource("5_yard")
+polygon = PackedVector2Array(1055, 0, 975, 404, 746, 746, 404, 975, 0, 1055, -404, 975, -746, 746, -975, 404, -1055, 0, -975, -404, -746, -746, -404, -975, 0, -1055, 404, -975, 746, -746, 975, -404)
+
+[node name="Camera2D" type="Camera2D" parent="."]
+zoom = Vector2(8, 8)
+script = ExtResource("7_camera")
+min_zoom = 0.3
+max_zoom = 20.0
+
+[node name="HUD" parent="." node_paths=PackedStringArray("build_system") instance=ExtResource("8_hud")]
+build_system = NodePath("../World/BuildSystem")

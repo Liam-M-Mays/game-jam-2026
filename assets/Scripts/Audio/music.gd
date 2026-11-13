@@ -2,6 +2,7 @@ extends Node
 
 const MENU_SCENE := "res://Main_Menu.tscn"
 const GAME_SCENE := "res://assets/Scenes/Levels/game.tscn"
+const GROUND_SCENE := "res://assets/Scenes/Levels/ground.tscn"
 const MENU_MUSIC := preload("uid://ccekgjd0hy55i")
 const GAMEPLAY_MUSIC := preload("res://assets/Audio/Music/gameplay.wav")
 const SUCCESS_RIFF := preload("uid://bnv37hep82f8")
@@ -75,7 +76,7 @@ func _start_for_scene(path : String) -> void:
 	match path:
 		MENU_SCENE:
 			_start_track(MENU_MUSIC, MENU_DB)
-		GAME_SCENE:
+		GAME_SCENE, GROUND_SCENE:
 			_start_track(GAMEPLAY_MUSIC, GAMEPLAY_DB)
 		_:
 			_player.stop()
