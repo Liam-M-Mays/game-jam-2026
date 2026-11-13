@@ -15,6 +15,7 @@ This file is the source of truth. Older copies of the diagrams exist as Figma bo
 - [System map](#system-map)
 - [Economy loop](#economy-loop)
 - [Scene tree of the game scene](#scene-tree-of-the-game-scene)
+- [Scene tree of the ground scene](#scene-tree-of-the-ground-scene)
 - [From click to finished building](#from-click-to-finished-building)
 - [Meeple job lifecycle](#meeple-job-lifecycle)
 - [Building construction lifecycle](#building-construction-lifecycle)
@@ -25,7 +26,7 @@ This file is the source of truth. Older copies of the diagrams exist as Figma bo
 
 | Layer | What is in it | Where |
 | --- | --- | --- |
-| World scene | The grid, everything on it, meeples, drops, `BuildSystem`. All of it hangs under the giant's torso node | `assets/Scenes/Levels/game.tscn`, `assets/Scripts/` |
+| World scene | The grid, everything on it, meeples, drops, `BuildSystem`. On the giant all of it hangs under the giant's torso node. On the ground it sits on a round world | `assets/Scenes/Levels/game.tscn`, `assets/Scenes/Levels/ground.tscn`, `assets/Scripts/` |
 | Global singletons | `JobSystem`, `Inventory`, `Population` hold the simulation. `GameState` holds hunger, toasts and speed. `Music`, `VillageAudio`, `DevSpeed` are support | The `[autoload]` section of `project.godot` |
 | UI scenes | Main menu and HUD | `Main_Menu.tscn`, `assets/hud.tscn`, scripts at the project root |
 
@@ -179,6 +180,32 @@ flowchart TD
     game --> giantAudio
 ```
 
+## Scene tree of the ground scene
+
+How `assets/Scenes/Levels/ground.tscn` is nested. The same Grid, Mouse, BuildSystem and HUD, with no giant. The Grid's `world_cells` sets the size of the round world, and the Grid moves the Yard to the world's middle and gives its polygon the world's edge.
+
+```mermaid
+flowchart TD
+    ground["Ground: root of Levels/ground.tscn (ground_level.gd)"]
+    world["World: y-sorted container, scale 0.1"]
+    grid["Grid (grid.gd), world_cells = 100,000"]
+    cursor["Mouse (mouse.gd)"]
+    buildSystem["BuildSystem (build_system.gd)"]
+    yard["Yard: noise for the round world (yard_ground.gd)"]
+    shape["Yard: Polygon2D in the world's shape, drawn with yard_ground.gdshader"]
+    camera["Camera2D (camera_controls.gd)"]
+    hud["HUD: instance of hud.tscn"]
+
+    ground --> world
+    world --> grid
+    world --> cursor
+    world --> buildSystem
+    ground --> yard
+    yard --> shape
+    ground --> camera
+    ground --> hud
+```
+
 ## From click to finished building
 
 The order of calls when the player builds a Small Hut. Solid arrows are calls, dashed arrows are return values and signals.
@@ -270,11 +297,13 @@ stateDiagram-v2
     direction LR
     MainMenu: Main menu - Main_Menu.tscn
     Playing: Playing - Levels/game.tscn
+    Ground: Playing on the ground - Levels/ground.tscn
     Paused: Paused - tree paused
     GameOver: Game over - death screen
 
     [*] --> MainMenu
     MainMenu --> Playing: Start calls new_game
+    MainMenu --> Ground: Ground world button calls new_game
     Playing --> Paused: Esc
     Paused --> Playing: Resume
     Paused --> MainMenu: Menu button

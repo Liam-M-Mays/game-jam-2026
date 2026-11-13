@@ -22,9 +22,25 @@ const CELL_OUTLINE : Array[Vector2] = [
 
 @export var building_clearance := 4
 
+@export_group("Round world")
+## About how many cells a round world on the ground has. A dev setting. 0 keeps the cells on the
+## ground sprites, as on the giant.
+@export var world_cells := 0
+## How far the edge of a round world goes in and out, as a share of its radius.
+@export_range(0.0, 0.5) var edge_wobble := 0.08
+## The ground of a round world. It moves to the middle of the world and takes its shape.
+@export var round_ground : YardGround
+@export_group("")
+
 const SPAWN_ATTEMPTS := 100
 ## How many cells left of a building a tree or rock can be and still reach under its art.
 const PIN_REACH := 4
+## A cell covers 7 by 5 art pixels.
+const CELL_AREA := 35.0
+## The cells of the jam map on the giant. A round world gets more of each kind by its size compared to this.
+const JAM_CELLS := 2091
+## How many points along the edge of a round world get their own distance from the middle.
+const EDGE_POINTS := 360
 
 class Spawnable:
 	var scene : PackedScene
@@ -62,8 +78,12 @@ var _rows := {}
 var _reach_rows := 0
 ## Bushes that grow back while their row draws them.
 var _regrowing : Array[Standing] = []
+var _amount_scale := 1.0
+var _round_middle := Vector2.ZERO
+var _round_radius := 0.0
 
 func _ready() -> void:
+	var started := Time.get_ticks_usec()
 	_meeple_look = MEEPLE.instantiate()
 	var template : Sprite2D = CELL.instantiate()
 	_cell_scale = template.scale
@@ -71,11 +91,16 @@ func _ready() -> void:
 	_cell_layer = CellLayer.new(template)
 	template.free()
 	add_child(_cell_layer)
-	_build_cells()
-	_compute_edge_distance()
-	_seed_world()
+	if world_cells > 0:
+		_seed_world()
+		_build_round_world()
+	else:
+		_build_cells()
+		_compute_edge_distance()
+		_seed_world()
 	_place_start_building()
 	_generate_resources()
+	print("World built in %d ms, %d cells" % [(Time.get_ticks_usec() - started) / 1000, _coords_of.size()])
 
 func _exit_tree() -> void:
 	for meeple in _meeples:
@@ -204,9 +229,51 @@ func _build_cells() -> void:
 		for y in range(grid_size):
 			var pos := _cell_position(x, y)
 			if _fits_ground(pos):
-				var cell := Cell.new(pos, _cell_layer)
-				column[y] = cell
-				_coords_of[cell] = Vector2i(x, y)
+				_add_cell(x, y)
+
+func _add_cell(x : int, y : int) -> void:
+	var cell := Cell.new(_cell_position(x, y), _cell_layer)
+	_cells[x][y] = cell
+	_coords_of[cell] = Vector2i(x, y)
+
+## Makes a round world of about `world_cells` cells, with an uneven edge. The test is on the cell numbers
+## only, so it stays fast at any size. Each cell gets the shade of the ground in place of its distance to
+## the edge, so the spawn curves put the big trees and rocks in the dark areas and the small ones in the light.
+func _build_round_world() -> void:
+	var radius := sqrt(world_cells * CELL_AREA / PI)
+	var noise := FastNoiseLite.new()
+	noise.seed = _rng.seed
+	var edge := PackedFloat32Array()
+	for i in range(EDGE_POINTS):
+		var direction := Vector2.from_angle(TAU * i / EDGE_POINTS)
+		edge.append(radius * (1.0 + edge_wobble * noise.get_noise_2dv(direction * 150.0)))
+	# In art pixels a cell sits at (7x + 5y, 5y). The middle is placed so every cell number is 0 or more.
+	var reach := radius * (1.0 + edge_wobble)
+	var inner := radius * (1.0 - edge_wobble)
+	var rows := ceili(reach * 2.0 / 5.0) + 1
+	var middle := Vector2(reach + 5.0 * rows, reach)
+	grid_size = maxi(rows, ceili((middle.x + reach) / 7.0) + 1)
+	for x in range(grid_size):
+		var column : Array = []
+		column.resize(grid_size)
+		_cells.append(column)
+	for y in range(rows):
+		for x in range(maxi(floori((middle.x - reach - 5 * y) / 7.0), 0), mini(ceili((middle.x + reach - 5 * y) / 7.0), grid_size)):
+			var offset := Vector2(7 * x + 5 * y, 5 * y) - middle
+			var distance := offset.length()
+			if distance < inner or distance < edge[posmod(roundi(offset.angle() / TAU * EDGE_POINTS), EDGE_POINTS)]:
+				_add_cell(x, y)
+	_round_middle = middle * _cell_scale
+	_round_radius = radius * _cell_scale.x
+	round_ground.global_position = to_global(_round_middle).round()
+	var outline := PackedVector2Array()
+	for i in range(EDGE_POINTS):
+		var point := middle + Vector2.from_angle(TAU * i / EDGE_POINTS) * edge[i]
+		outline.append(to_global(point * _cell_scale) - round_ground.global_position)
+	round_ground.generate_round(_rng.seed, outline)
+	for cell : Cell in _coords_of:
+		_edge_distance[_coords_of[cell]] = round_ground.shade_at(to_global(cell.position))
+	_amount_scale = _coords_of.size() / float(JAM_CELLS)
 
 func _cell_position(x : int, y : int) -> Vector2:
 	return Vector2((x * 7 + y * 5) * _cell_scale.x, y * 5 * _cell_scale.y)
@@ -281,7 +348,10 @@ func _place_start_building() -> void:
 		return
 	var building : Building = start_building.instantiate()
 	var spots := _edge_distance.keys()
-	spots.sort_custom(func(a, b): return _edge_distance[a] > _edge_distance[b])
+	if world_cells > 0:
+		spots = [_middle_of_light_area()]
+	else:
+		spots.sort_custom(func(a, b): return _edge_distance[a] > _edge_distance[b])
 	for coords in spots:
 		var cells := _free_cells(coords, building.footprint, building.footprint_depth)
 		if not cells.is_empty():
@@ -290,6 +360,17 @@ func _place_start_building() -> void:
 			_keep_clear = cells_around(building)
 			return
 	building.free()
+
+## The lightest cell in the inner half of a round world, which is the middle of a light area.
+func _middle_of_light_area() -> Vector2i:
+	var best := Vector2i.ZERO
+	var best_shade := -INF
+	for coords : Vector2i in _edge_distance:
+		var shade : float = _edge_distance[coords]
+		if shade > best_shade and _cell_position(coords.x, coords.y).distance_to(_round_middle) < _round_radius * 0.5:
+			best = coords
+			best_shade = shade
+	return best
 
 func _seed_world() -> void:
 	if generation_seed != 0:
@@ -322,7 +403,7 @@ func _load_spawnables() -> Array[Spawnable]:
 		if template is Harvestable and template.target_count > 0:
 			var s := Spawnable.new()
 			s.scene = scene
-			s.target = template.target_count
+			s.target = roundi(template.target_count * _amount_scale)
 			s.respawn_chance = template.respawn_chance
 			s.footprint = template.footprint
 			s.curve = template.edge_distance_curve

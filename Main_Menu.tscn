@@ -77,7 +77,7 @@ region = Rect2(277, 201, 40, 22)
 atlas = SubResource("CompressedTexture2D_3kq1t")
 region = Rect2(210, 201, 40, 22)
 
-[node name="MainMenu" type="Control" unique_id=952734818 node_paths=PackedStringArray("start_button", "credits_button", "quit_button", "credits_panel", "credits_back_button")]
+[node name="MainMenu" type="Control" unique_id=952734818 node_paths=PackedStringArray("start_button", "ground_button", "credits_button", "quit_button", "credits_panel", "credits_back_button")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -86,6 +86,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_wugcc")
 start_button = NodePath("StartButton")
+ground_button = NodePath("GroundButton")
 credits_button = NodePath("CreditsButton")
 quit_button = NodePath("QuitButton")
 credits_panel = NodePath("CreditsPanel")
@@ -299,3 +300,12 @@ z_index = -1
 texture_filter = 2
 position = Vector2(0, 783)
 texture = ExtResource("5_domf7")
+
+[node name="GroundButton" type="Button" parent="."]
+layout_mode = 0
+offset_left = 1640.0
+offset_top = 40.0
+offset_right = 1880.0
+offset_bottom = 96.0
+theme_override_font_sizes/font_size = 28
+text = "Ground world"
