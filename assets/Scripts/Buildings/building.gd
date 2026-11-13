@@ -247,6 +247,7 @@ func remove_worker_slot() -> void:
 func find_work(_worker : Meeple) -> Job:
 	return null
 
+## Makes `meeple` a worker of this building.
 func add_worker(meeple : Meeple) -> void:
 	workers.append(meeple)
 	meeple.workplace = self

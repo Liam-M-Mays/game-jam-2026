@@ -6,7 +6,7 @@ class_name CellLayer
 var _texture : Texture2D
 var _scale : Vector2
 var _corner : Vector2
-var _lit := {}
+var _lit : Dictionary[Cell, Color] = {}
 
 func _init(look : Sprite2D) -> void:
 	name = "CellLayer"
@@ -14,6 +14,7 @@ func _init(look : Sprite2D) -> void:
 	_scale = look.scale
 	_corner = look.offset - _texture.get_size() / 2.0
 
+## Draws `cell` in `color`. An alpha of 0 stops drawing it.
 func set_lit(cell : Cell, color : Color) -> void:
 	if color.a <= 0.0:
 		if _lit.erase(cell):

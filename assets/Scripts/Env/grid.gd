@@ -75,12 +75,10 @@ var _cell_layer : CellLayer
 var _meeple_look : MeepleLook
 var _meeples : Array[Meeple] = []
 ## One copy of each drop scene, out of the tree. Every drop draws from the copy of its scene.
-var _drop_looks := {}
-## Every tree, rock and bush on the grid.
-var standing : Array[Standing] = []
+var _drop_looks : Dictionary[PackedScene, DropLook] = {}
 var _awake : Array[Standing] = []
 var _hovered : Array[Standing] = []
-var _rows := {}
+var _rows : Dictionary[float, StandingRow] = {}
 var _reach_rows := 0
 ## Bushes that grow back while their row draws them.
 var _regrowing : Array[Standing] = []
@@ -106,7 +104,8 @@ func _ready() -> void:
 		_seed_world()
 	_place_start_building()
 	_generate_resources()
-	print("World built in %d ms, %d cells" % [(Time.get_ticks_usec() - started) / 1000, _coords_of.size()])
+	if OS.is_debug_build():
+		print("World built in %d ms, %d cells" % [(Time.get_ticks_usec() - started) / 1000, _coords_of.size()])
 
 func _exit_tree() -> void:
 	_clear_drops()
@@ -408,7 +407,7 @@ func _place_start_building() -> void:
 	if world_cells > 0:
 		spots = [_middle_of_light_area()]
 	else:
-		spots.sort_custom(func(a, b): return _edge_distance[a] > _edge_distance[b])
+		spots.sort_custom(func(a : Vector2i, b : Vector2i) -> bool: return _edge_distance[a] > _edge_distance[b])
 	for coords in spots:
 		var cells := _free_cells(coords, building.footprint, building.footprint_depth)
 		if not cells.is_empty():
@@ -531,7 +530,7 @@ func _spawn(s : Spawnable, blocked := {}) -> Standing:
 	for i in range(SPAWN_ATTEMPTS):
 		var coords : Vector2i = _spots[_rng.randi_range(0, _spots.size() - 1)]
 		var cells := _free_cells(coords, s.footprint)
-		if cells.is_empty() or cells.any(func(c): return blocked.has(c) or _keep_clear.has(c) or c.kept_for != null):
+		if cells.is_empty() or cells.any(func(c : Cell) -> bool: return blocked.has(c) or _keep_clear.has(c) or c.kept_for != null):
 			continue
 		var weight := _spawn_weight(s, coords) * _building_factor(s, coords, building_coords)
 		if _rng.randf() * s.max_weight >= weight:
@@ -546,7 +545,6 @@ func _add_standing(kind : Spawnable, cells : Array[Cell]) -> Standing:
 	item.position = cells[0].position
 	for cell in cells:
 		cell.occupant = item
-	standing.append(item)
 	kind.count += 1
 	if kind.area == null:
 		kind.area = AreaIndex.new(area_size(STANDING_AREA_CELLS))
@@ -559,7 +557,6 @@ func _add_standing(kind : Spawnable, cells : Array[Cell]) -> Standing:
 
 func _forget(item : Standing) -> void:
 	item.kind.area.remove(item, item.position)
-	standing.erase(item)
 	_awake.erase(item)
 	_hovered.erase(item)
 	item.kind.count -= 1

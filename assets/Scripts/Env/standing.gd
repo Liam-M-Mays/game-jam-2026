@@ -15,6 +15,7 @@ var stage := 0
 var regrow_timer := 0.0
 var emptied := 0
 
+## True while no job has it and it can still be harvested.
 func is_free() -> bool:
 	if node != null:
 		return node.is_free()

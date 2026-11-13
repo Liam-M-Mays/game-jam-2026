@@ -46,6 +46,7 @@ func claim() -> void:
 	_claimed += 1
 	Inventory.pile_changed(kind, 0, 1)
 
+## Gives back a claim on a drop here, when the haul that made it is cancelled.
 func unclaim() -> void:
 	_claimed -= 1
 	Inventory.pile_changed(kind, 0, -1)
@@ -105,6 +106,7 @@ func make_store_job(drop : ResourceDrop) -> StoreJob:
 	_en_route += 1
 	return StoreJob.new(drop, self)
 
+## A store job made by `make_store_job` ended, delivered or not, so its drop no longer counts against the room.
 func trip_ended() -> void:
 	_en_route -= 1
 

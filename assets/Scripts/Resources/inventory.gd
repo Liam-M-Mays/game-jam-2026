@@ -13,17 +13,17 @@ const DROP_AREA_CELLS := 2
 var _drops := {}
 var _all_drops : Array[ResourceDrop] = []
 ## Drops on the ground that nothing has claimed, per kind.
-var _loose := {}
+var _loose : Dictionary[String, int] = {}
 var _stored := START_STOCK.duplicate()
 var _reserved := {}
 ## Drops kept in piles, and how many of those hauls have claimed, per kind.
-var _piled := {}
-var _pile_claims := {}
+var _piled : Dictionary[String, int] = {}
+var _pile_claims : Dictionary[String, int] = {}
 var _dirty := false
 var _last_changed := -CHANGED_EVERY_MS
 ## An AreaIndex of the loose drops per kind, in the grid's space, so the nearest one is found
 ## without checking them all.
-var _areas := {}
+var _areas : Dictionary[String, AreaIndex] = {}
 var _grid : Grid
 
 func _ready() -> void:

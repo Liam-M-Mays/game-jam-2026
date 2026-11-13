@@ -33,8 +33,8 @@ func build_after(_scene : PackedScene) -> PackedScene:
 	return farm_scene
 
 func note() -> String:
-	var farms := plots.filter(func(p): return p is Farm).size()
-	var silos := plots.filter(func(p): return p is Silo).size()
+	var farms := plots.filter(func(p : BarnPlot) -> bool: return p is Farm).size()
+	var silos := plots.filter(func(p : BarnPlot) -> bool: return p is Silo).size()
 	return "Farms left: %d\nSilos left: %d" % [slots() - farms, slots() - silos]
 
 ## Farms and silos can go up next to a barn that is still being built.
