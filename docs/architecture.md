@@ -55,7 +55,7 @@ flowchart LR
 
     subgraph globals ["Global singletons (autoloads)"]
         jobSystem["JobSystem: waiting jobs, workers, nearest-first matching"]
-        inventory["Inventory: stock, drops, reservations"]
+        inventory["Inventory: stock, drops, pile counts, reservations"]
         population["Population: growth, starvation"]
         gameState["GameState: hunger, toasts, speed"]
         audio["Music and UI sounds"]
@@ -85,7 +85,7 @@ flowchart LR
     population ==>|"Reads hunger"| gameState
     building ==>|"Calls warn"| gameState
     audio ==>|"Resets speed"| gameState
-    inventory -.->|"changed"| hud
+    inventory -.->|"changed, once a frame"| hud
     jobSystem -.->|"changed"| hud
     gameState -.->|"hunger_changed"| hud
     gameState -.->|"toast_requested"| toastFeed
@@ -372,9 +372,10 @@ classDiagram
     class ResourceDrop {
         +kind: String
         +claimed: bool
-        +storage: Storage
         +surplus_time: float
+        +make(kind)$: ResourceDrop
         +launch(grid)
+        +consume()
         +expire()
     }
     class Harvestable {
@@ -434,8 +435,11 @@ classDiagram
         +kind: String
         +max_items: int
         +capacity(): int
+        +held(): int
         +has_room(): bool
-        +store(drop) / take(drop)
+        +store(drop)
+        +claim() / unclaim()
+        +take(): ResourceDrop
         +find_work(worker): StoreJob
         +make_store_job(drop): StoreJob
     }

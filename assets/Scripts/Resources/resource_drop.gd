@@ -3,6 +3,10 @@ class_name ResourceDrop
 
 const LAND_ATTEMPTS := 8
 const EXPIRE_FADE := 0.4
+const SCENES := {
+	"wood": "res://assets/Scenes/Resources/Drops/wood.tscn",
+	"stone": "res://assets/Scenes/Resources/Drops/rock.tscn",
+}
 
 @export var kind := "wood"
 @export var launch_distance_min := 30.0
@@ -10,16 +14,22 @@ const EXPIRE_FADE := 0.4
 @export var launch_duration := 0.35
 
 var claimed := false
-var storage : Storage = null
 var surplus_time := 0.0
+
+## A new drop of `kind`, not yet in the tree.
+static func make(drop_kind : String) -> ResourceDrop:
+	return (load(SCENES[drop_kind]) as PackedScene).instantiate()
 
 func _enter_tree() -> void:
 	Inventory.register(self)
 
 func _exit_tree() -> void:
-	if storage != null:
-		storage.take(self)
 	Inventory.unregister(self)
+
+## Takes the drop out of the world now, so the stock count is right in this same frame.
+func consume() -> void:
+	get_parent().remove_child(self)
+	queue_free()
 
 func expire() -> void:
 	claimed = true
