@@ -4,7 +4,6 @@ class_name ResourceDrop
 ## canvas item under Grid, the way a meeple does. Positions are in Grid's space, apart from `global_position`.
 
 const LAND_ATTEMPTS := 8
-const EXPIRE_FADE := 0.4
 const SCENES := {
 	"wood": "res://assets/Scenes/Resources/Drops/wood.tscn",
 	"stone": "res://assets/Scenes/Resources/Drops/rock.tscn",
@@ -13,7 +12,6 @@ const SCENES := {
 var grid : Grid
 var kind : String
 var claimed := false
-var surplus_time := 0.0
 var position : Vector2:
 	set(value):
 		position = value
@@ -65,19 +63,9 @@ func free_item() -> void:
 		RenderingServer.free_rid(_item)
 	_item = RID()
 
-func expire() -> void:
-	Inventory.set_claimed(self, true)
-	var tween := grid.create_tween()
-	tween.tween_method(_fade, 1.0, 0.0, EXPIRE_FADE)
-	tween.tween_callback(consume)
-
 func launch() -> void:
 	var tween := grid.create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	tween.tween_property(self, "position", _pick_landing(), _look.launch_duration)
-
-func _fade(alpha : float) -> void:
-	if _item.is_valid():
-		RenderingServer.canvas_item_set_modulate(_item, Color(1, 1, 1, alpha))
 
 func _pick_landing() -> Vector2:
 	for i in range(LAND_ATTEMPTS):

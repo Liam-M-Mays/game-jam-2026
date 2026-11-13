@@ -126,9 +126,9 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _refresh_counters() -> void:
 	if stone_label:
-		stone_label.text = str(Inventory.count("stone"))
+		stone_label.text = "%d/%d" % [Inventory.count("stone"), Inventory.room("stone")]
 	if wood_label:
-		wood_label.text = str(Inventory.count("wood"))
+		wood_label.text = "%d/%d" % [Inventory.count("wood"), Inventory.room("wood")]
 	if food_label:
 		food_label.text = "%d/%d food" % [Inventory.count("food"), Inventory.food_cap()]
 	if meeple_label:

@@ -54,17 +54,31 @@ static func describe(site : Building) -> String:
 		lines.append("[color=#%s]Paused - right-click to resume[/color]" % PAUSED_COLOR)
 	return "\n".join(lines)
 
+## How full a finished pile is, shown while the mouse is over it.
+static func describe_pile(pile : Storage) -> String:
+	return "[b]%s[/b]\nHolds %d / %d %s" % [pile.display_name(), pile.held(), pile.capacity(), pile.kind]
+
 func _text() -> String:
 	if get_tree().paused or get_viewport().gui_get_hovered_control() != null:
 		return ""
 	if not note.is_empty():
 		return note
 	var site := site_under_mouse(get_tree())
-	return describe(site) if site != null else ""
+	if site != null:
+		return describe(site)
+	var pile := pile_under_mouse(get_tree())
+	return describe_pile(pile) if pile != null else ""
 
 static func site_under_mouse(tree : SceneTree) -> Building:
+	return _under_mouse(tree, Building.CONSTRUCTION_GROUP)
+
+## The finished pile under the mouse, so hovering it shows how full it is.
+static func pile_under_mouse(tree : SceneTree) -> Storage:
+	return _under_mouse(tree, Storage.GROUP) as Storage
+
+static func _under_mouse(tree : SceneTree, group : StringName) -> Building:
 	var best : Building = null
-	for site : Building in tree.get_nodes_in_group(Building.CONSTRUCTION_GROUP):
+	for site : Building in tree.get_nodes_in_group(group):
 		if not site.is_visible_in_tree() or not site.get_rect().has_point(site.get_local_mouse_position()):
 			continue
 		if best == null or site.global_position.y > best.global_position.y:

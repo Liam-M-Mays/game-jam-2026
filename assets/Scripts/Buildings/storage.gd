@@ -30,6 +30,7 @@ func unclaimed() -> int:
 func complete() -> void:
 	super()
 	add_to_group(GROUP)
+	Inventory.mark_changed()
 	_refresh()
 
 func store(drop : ResourceDrop) -> void:

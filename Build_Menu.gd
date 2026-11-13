@@ -175,6 +175,8 @@ func _tooltip_text(button: Button) -> String:
 	var building: Building = _templates[scene]
 	var building_name := display_name(scene)
 	var lines := [_tooltip_title(building_name), building.description, "Total cost: %s" % _cost_text(building.costs)]
+	if building is Storage:
+		lines.append("Adds room for %d %s" % [building.capacity(), building.kind])
 	var hotkey := _hotkey_label(scene)
 	if not hotkey.is_empty():
 		lines.append("Hotkey: %s" % hotkey)
