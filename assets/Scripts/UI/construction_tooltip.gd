@@ -64,10 +64,10 @@ func _text() -> String:
 	if not note.is_empty():
 		return note
 	var site := site_under_mouse(get_tree())
-	if site != null:
-		return describe(site)
 	var pile := pile_under_mouse(get_tree())
-	return describe_pile(pile) if pile != null else ""
+	if pile != null and (site == null or _in_front(pile, site)):
+		return describe_pile(pile)
+	return describe(site) if site != null else ""
 
 static func site_under_mouse(tree : SceneTree) -> Building:
 	return _under_mouse(tree, Building.CONSTRUCTION_GROUP)
@@ -76,11 +76,19 @@ static func site_under_mouse(tree : SceneTree) -> Building:
 static func pile_under_mouse(tree : SceneTree) -> Storage:
 	return _under_mouse(tree, Storage.GROUP) as Storage
 
+## The building of `group` whose drawn pixels are under the mouse. When two overlap, the one drawn in
+## front wins, so a see-through corner of a sprite never hides the building behind it.
 static func _under_mouse(tree : SceneTree, group : StringName) -> Building:
 	var best : Building = null
 	for site : Building in tree.get_nodes_in_group(group):
-		if not site.is_visible_in_tree() or not site.get_rect().has_point(site.get_local_mouse_position()):
+		if not site.is_visible_in_tree() or not site.is_pixel_opaque(site.get_local_mouse_position()):
 			continue
-		if best == null or site.global_position.y > best.global_position.y:
+		if best == null or _in_front(site, best):
 			best = site
 	return best
+
+## Whether `a` is drawn in front of `b` by the y-sort. On the same row, the one added later is drawn on top.
+static func _in_front(a : Building, b : Building) -> bool:
+	if not is_equal_approx(a.global_position.y, b.global_position.y):
+		return a.global_position.y > b.global_position.y
+	return a.get_index() > b.get_index()
