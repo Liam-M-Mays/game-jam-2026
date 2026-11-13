@@ -23,9 +23,9 @@ func _icon_frame() -> int:
 func held() -> int:
 	return _stock
 
-## Drops here that no haul has claimed yet.
+## Drops here or on their way here that no haul has claimed yet.
 func unclaimed() -> int:
-	return _stock - _claimed
+	return _stock + _en_route - _claimed
 
 func complete() -> void:
 	super()
@@ -64,7 +64,11 @@ func take() -> ResourceDrop:
 	return drop
 
 ## A removed pile drops what it held. A haul that claimed a drop here takes one of the spilled drops instead.
+## Store trips on their way here put their drops down first.
 func remove_building() -> void:
+	for meeple in JobSystem.workers:
+		if meeple.job is StoreJob and meeple.job.site == self:
+			meeple.job.abort(meeple)
 	var hauls := JobSystem.hauls_from(self)
 	var spill : Dictionary[String, int] = {kind: _stock}
 	Inventory.pile_changed(kind, -_stock, -_claimed)
@@ -78,37 +82,56 @@ func remove_building() -> void:
 func has_room() -> bool:
 	return _stock + _en_route < capacity()
 
-## The worker carries a loose drop of this pile's kind to a pile of that kind.
-## It picks the drop and the pile with the shortest total trip.
-func find_work(worker : Meeple) -> Job:
-	if Inventory.available(kind) <= 0:
+## A trip for a free builder: the loose drop nearest to it, carried to the nearest pile of its kind
+## that has room. Null when no drop lies loose or no pile has room for one.
+static func find_trip(builder : Meeple) -> StoreJob:
+	if not Inventory.has_loose():
 		return null
-	var from := worker.global_position
-	var best_pile : Storage = null
-	var best_drop : ResourceDrop = null
-	var best_trip := INF
-	for pile : Storage in get_tree().get_nodes_in_group(GROUP):
-		if pile.kind != kind or not pile.has_room():
+	var piles := builder.grid.get_tree().get_nodes_in_group(GROUP)
+	var from := builder.global_position
+	var drop : ResourceDrop = null
+	var looked : Array[String] = []
+	for pile : Storage in piles:
+		if looked.has(pile.kind) or not pile.has_room():
 			continue
-		var drop := Inventory.shortest_trip_loose(kind, from, pile.global_position)
-		if drop == null:
-			continue
-		var trip := from.distance_to(drop.global_position) + drop.global_position.distance_to(pile.global_position)
-		if trip < best_trip:
-			best_trip = trip
-			best_pile = pile
-			best_drop = drop
-	if best_pile == null:
+		looked.append(pile.kind)
+		var near := Inventory.nearest_loose(pile.kind, from)
+		if near != null and (drop == null or from.distance_squared_to(near.global_position) < from.distance_squared_to(drop.global_position)):
+			drop = near
+	if drop == null:
 		return null
-	return best_pile.make_store_job(best_drop)
+	var best : Storage = null
+	var best_dist := INF
+	for pile : Storage in piles:
+		if pile.kind != drop.kind or not pile.has_room():
+			continue
+		var dist := drop.global_position.distance_squared_to(pile.global_position)
+		if dist < best_dist:
+			best_dist = dist
+			best = pile
+	return best.make_store_job(drop)
 
 func make_store_job(drop : ResourceDrop) -> StoreJob:
 	_en_route += 1
+	Inventory.pile_changed(kind, 0, 0, 1)
 	return StoreJob.new(drop, self)
 
 ## A store job made by `make_store_job` ended, delivered or not, so its drop no longer counts against the room.
 func trip_ended() -> void:
 	_en_route -= 1
+	Inventory.pile_changed(kind, 0, 0, -1)
+
+## A store trip here ended with `drop` put down on the ground. When hauls claimed more here than the
+## pile will now get, one of them takes that drop instead.
+func trip_dropped(drop : ResourceDrop) -> void:
+	trip_ended()
+	if _claimed <= _stock + _en_route:
+		return
+	var hauls := JobSystem.hauls_from(self)
+	if hauls.is_empty():
+		return
+	unclaim()
+	hauls[0].take_spilled(drop)
 
 func _refresh() -> void:
 	if capacity() <= 0:

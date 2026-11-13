@@ -114,7 +114,7 @@ flowchart LR
 
     tree -->|"Harvest costs 1 food"| drops
     drops -->|"Hauled one by one"| site
-    drops -->|"Stored by pile workers"| piles
+    drops -->|"Carried by free builders"| piles
     piles -->|"Hauled up to two at a time"| site
     site -->|"Completes"| huts
     bush -->|"Pick: plus 2"| food
@@ -151,7 +151,6 @@ flowchart TD
     objects["Buildings, and the trees, rocks and bushes that are hovered, hit, chosen or growing"]
     meeples["Meeples: plain data, one canvas item each, no node"]
     drops["Drops on the ground: plain data, one canvas item each, no node"]
-    cursor["Mouse: cell cursor, asks Grid for the cells near the mouse (mouse.gd)"]
     buildSystem["BuildSystem (build_system.gd)"]
     tooltip["ConstructionTooltip, created in code"]
     parallax["5 parallax background layers"]
@@ -168,7 +167,6 @@ flowchart TD
     torso --> camera
     torso --> back
     back --> grid
-    back --> cursor
     back --> buildSystem
     grid --> cells
     grid --> cellLayer
@@ -185,14 +183,13 @@ flowchart TD
 
 ## Scene tree of the ground scene
 
-How `assets/Scenes/Levels/ground.tscn` is nested. The same Grid, Mouse, BuildSystem and HUD, with no giant. The Grid's `world_cells` sets the size of the round world, and the Grid moves the Yard to the world's middle and gives its polygon the world's edge.
+How `assets/Scenes/Levels/ground.tscn` is nested. The same Grid, BuildSystem and HUD, with no giant. The Grid's `world_cells` sets the size of the round world, and the Grid moves the Yard to the world's middle and gives its polygon the world's edge.
 
 ```mermaid
 flowchart TD
     ground["Ground: root of Levels/ground.tscn (ground_level.gd)"]
     world["World: y-sorted container, scale 0.1"]
     grid["Grid (grid.gd), world_cells = 100,000"]
-    cursor["Mouse (mouse.gd)"]
     buildSystem["BuildSystem (build_system.gd)"]
     yard["Yard: noise for the round world (yard_ground.gd)"]
     shape["Yard: Polygon2D in the world's shape, drawn with yard_ground.gdshader"]
@@ -201,7 +198,6 @@ flowchart TD
 
     ground --> world
     world --> grid
-    world --> cursor
     world --> buildSystem
     ground --> yard
     yard --> shape
@@ -243,11 +239,13 @@ sequenceDiagram
 
 ## Meeple job lifecycle
 
-From `meeple_movement.gd` and `job_system.gd`. A meeple is either a builder or a worker of one building. Once a frame, `JobSystem.match_jobs` gives each new job to the nearest free builder, and each builder that became free the nearest waiting job. There is no job limit. A worker asks its building for work with `find_work` at most every half second, and never takes the player's jobs. A click on a finished building opens the `WorkerPanel`. Its arrows set the workers of the building's `worker_building()`: a farm or silo gives its barn, and a building with no slots, like a hut, hides them. The add arrow opens a slot, which the nearest free builder takes. The remove arrow drops a slot nobody took yet, or sends a worker back to being a builder. A finished building fills all its slots by itself, so the nearest free builders become its workers (`Building.STARTS_FULL`). A dead worker's slot opens again. While the panel is open, the building's workers are outlined like a selected building: only those meeples get two extra canvas items with the outline shader (`Meeple.set_highlighted`), and the panel follows `Building.workers_changed`.
+From `meeple_movement.gd` and `job_system.gd`. A meeple is either a builder or a worker of one building. Once a frame, `JobSystem.match_jobs` gives each new job to the nearest free builder, and each builder that became free the nearest waiting job. There is no job limit. A worker asks its building for work with `find_work` at most every half second, and never takes the player's jobs. A builder with no job looks as often for a loose drop to carry to a pile (`Storage.find_trip`): the drop nearest to it, to the nearest pile of its kind with room. The piles have no worker slots. A builder on such a store trip still counts as free, so a player's job takes it and it puts the drop down. A click on a finished building opens the `WorkerPanel`. Its arrows set the workers of the building's `worker_building()`: a farm or silo gives its barn, and a building with no slots, like a hut, hides them. The add arrow opens a slot, which the nearest free builder takes. The remove arrow drops a slot nobody took yet, or sends a worker back to being a builder. A finished building fills all its slots by itself, so the nearest free builders become its workers (`Building.STARTS_FULL`). A dead worker's slot opens again. While the panel is open, the building's workers are outlined like a selected building: only those meeples get two extra canvas items with the outline shader (`Meeple.set_highlighted`), and the panel follows `Building.workers_changed`.
 
 The panel's Remove button asks first, then calls `Building.remove_building()`. What the building cost pops out as drops, the way a tree's drops do (a site pops out only what was delivered). Its workers go back to being builders, its hauls are recalled, and it leaves every group at once. A pile also drops what it held, and a haul that claimed a drop in it takes one of the dropped drops instead (`JobSystem.hauls_from`, `HaulJob.take_spilled`). A barn removes its farms and silos first. A removed hut leaves its meeples, so the village can be over its room. The Town Hall answers false to `can_remove()`, and its button is dimmed.
 
 The panel's Move button calls `BuildSystem.start_move(building)`. The building lifts off its cells (`Building.lift`, `Grid.lift`), and its old cells stay kept for it. The player places it with the same rules as a new building, for free. A click lands it on the new cells (`Building.land`), and Escape or a right click lands it back on the old ones. Its workers stay, and a meeple on its way to it turns towards the new spot. A barn lifts and lands its farms and silos with it. A farm or silo answers false to `can_move()`, so it only moves with its barn.
+
+The HUD's wood, stone and food counters show `Inventory.available(kind)`, the same number placing and the Build menu check (`Building.can_afford`). It leaves out drops a site has claimed. It keeps drops a builder is carrying to a pile, because a site can claim them from that pile (`Storage.unclaimed`); a haul that claimed one waits at the pile for it, and takes it from the ground if the store trip is dropped (`Storage.trip_dropped`).
 
 The HUD's jobs plate shows how many of the player's jobs wait for a meeple (`JobSystem.waiting_player_jobs`). Its Clear all button, or the C key, cancels them (`JobSystem.clear_waiting_player_jobs`). A meeple already on its way to a job keeps it.
 
@@ -353,6 +351,8 @@ classDiagram
         +cell_at(world_pos): Cell
         +cells_near(world_pos, radius)
         +free_cells_at(pos, width, depth)
+        +cells_under(pos, width, depth)
+        +cells_next_to(cells)
         +cells_around(obj, radius)
         +cells_at_offsets(origin, offsets)
         +place(obj, cells)
@@ -407,17 +407,10 @@ classDiagram
         +signal building_completed(building)
         +signal placement_failed(reason, hint)
         +grid: Grid
-        +cursor: CellCursor
         +start_build(scene)
         +end_build()
         +start_move(building)
         +is_building(): bool
-    }
-    class CellCursor {
-        +enabled: bool
-        +highlight_alpha: float
-        +radius: float
-        +grid: Grid
     }
     class ResourceDrop {
         +kind: String
@@ -513,7 +506,7 @@ classDiagram
         +store(drop)
         +claim() / unclaim()
         +take(): ResourceDrop
-        +find_work(worker): StoreJob
+        +find_trip(builder): StoreJob
         +make_store_job(drop): StoreJob
         +remove_building()
     }
@@ -593,12 +586,10 @@ classDiagram
     Standing ..> StandingRow : drawn by, while still
     Standing ..> Harvestable : node, while awake
     Cell ..> CellLayer : lit by
-    CellCursor ..> Grid : cells_near
     Harvestable ..> ResourceDrop : breaks into
     ResourceDrop ..> DropLook : reads look and numbers
     Building ..> BuildFrame : cost per stage
     BuildSystem ..> Building : previews and places
-    BuildSystem ..> CellCursor : cursor
     Barn ..> BarnPlot : plots
 ```
 
@@ -681,7 +672,8 @@ classDiagram
         +add(kind, n) / spend(kind, n)
         +reserve(kind, n)
         +claim_closest(kind, pos): ResourceDrop or Storage
-        +shortest_trip_loose(kind, from, to)
+        +has_loose(): bool
+        +nearest_loose(kind, pos): ResourceDrop
         +drop_moved(drop, from, to)
         +food_cap() / food_full()
         +room(kind): int
