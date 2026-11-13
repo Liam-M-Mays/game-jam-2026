@@ -163,9 +163,9 @@ func _cropped_icon(source : Texture2D, region : Rect2) -> Texture2D:
 	atlas.region = region
 	return atlas
 
-## Land a barn keeps for its farms and silos takes nothing else.
+## Land a barn keeps for its farms and silos takes nothing else. A building being moved may go back onto its own cells.
 func can_place_at(_grid : Grid, at_cells : Array[Cell]) -> bool:
-	return at_cells.all(func(c : Cell): return c.kept_for == null)
+	return at_cells.all(func(c : Cell): return c.kept_for == null or c.kept_for == self)
 
 func restricts_placement() -> bool:
 	return false
@@ -288,6 +288,31 @@ func remove_building() -> void:
 	spawn_effect(BUILD_EFFECT, 1)
 	grid.remove(self)
 	_pop_out(refund)
+
+## False dims the panel's Move button. A farm or a silo answers false: it moves with its barn.
+func can_move() -> bool:
+	return true
+
+## Takes the building off its cells while the player picks a new spot. Its old cells stay kept for it,
+## so no tree grows there and Escape can always put it back.
+func lift() -> void:
+	grid.lift(self)
+	for cell in cells:
+		if cell.kept_for == null:
+			cell.kept_for = self
+	modulate.a = PREVIEW_OPACITY
+
+## Puts a lifted building down on `at_cells`, new ones or its old ones. Its workers stay, and a meeple
+## walking to it with a drop or to work turns towards the new spot.
+func land(at_cells : Array[Cell]) -> void:
+	for cell in cells:
+		if cell.kept_for == self:
+			cell.kept_for = null
+	grid.place(self, at_cells)
+	modulate.a = 1.0
+	for meeple in JobSystem.workers:
+		if meeple.job != null and meeple.job.goes_to(self):
+			meeple.move_to(global_position, cells)
 
 ## Pops `amounts` out of the middle of the building in all directions, the way a tree's drops come out.
 func _pop_out(amounts : Dictionary[String, int]) -> Array[ResourceDrop]:

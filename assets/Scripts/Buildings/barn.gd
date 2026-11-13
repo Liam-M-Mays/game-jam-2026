@@ -21,7 +21,7 @@ var plots : Array[BarnPlot] = []
 func can_place_at(at_grid : Grid, at_cells : Array[Cell]) -> bool:
 	var area := area_at(at_grid, at_cells[0])
 	return super(at_grid, at_cells) and area.size() == plot_offsets.size() \
-		and area.all(func(c : Cell): return c.occupant == null and c.kept_for == null)
+		and area.all(func(c : Cell): return c.occupant == null and (c.kept_for == null or c.kept_for == self))
 
 func placement_hint() -> String:
 	return "A barn needs its plot area clear of trees, rocks, bushes and buildings, and not shared with another barn"
@@ -88,6 +88,24 @@ func remove_building() -> void:
 		if cell.kept_for == self:
 			cell.kept_for = null
 	super()
+
+## A moved barn lifts its farms and silos too, so its whole plot area moves as one shape.
+func lift() -> void:
+	super()
+	for plot in plots:
+		plot.lift()
+
+## Each farm and silo keeps its place in the plot area, and the kept cells move with the barn.
+func land(at_cells : Array[Cell]) -> void:
+	var old_area := area_at(grid, cells[0])
+	super(at_cells)
+	var new_area := area_at(grid, cells[0])
+	for cell in old_area:
+		cell.kept_for = null
+	for cell in new_area:
+		cell.kept_for = self
+	for plot in plots:
+		plot.land([new_area[old_area.find(plot.cells[0])]])
 
 func add_plot(plot : BarnPlot) -> void:
 	plots.append(plot)

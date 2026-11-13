@@ -2,6 +2,7 @@ extends PanelContainer
 class_name WorkerPanel
 ## Opens when a finished building is clicked. Its arrows add or remove a worker, between 0 and the
 ## building's `worker_slots`, and a building with no slots hides them. Its Remove button asks first.
+## Its Move button picks the building up to place it again.
 ## Escape or a click anywhere else closes it.
 
 const GROUP := &"worker_panel"
@@ -13,6 +14,7 @@ const GROUP := &"worker_panel"
 @export var add_button : Button
 @export var arrows : Control
 @export var remove_building_button : Button
+@export var move_button : Button
 @export var confirm_row : Control
 @export var confirm_label : Label
 @export var confirm_button : Button
@@ -30,6 +32,7 @@ func _ready() -> void:
 	remove_building_button.pressed.connect(_show_confirm.bind(true))
 	keep_button.pressed.connect(_show_confirm.bind(false))
 	confirm_button.pressed.connect(_on_confirm_pressed)
+	move_button.pressed.connect(_on_move_pressed)
 
 ## Shows the panel for `building`. Buildings call this through the group when clicked.
 func open(building : Building) -> void:
@@ -43,6 +46,8 @@ func open(building : Building) -> void:
 	arrows.visible = _workers_of != null
 	remove_building_button.disabled = not building.can_remove()
 	remove_building_button.tooltip_text = "" if building.can_remove() else "The %s cannot be removed" % building.display_name()
+	move_button.disabled = not building.can_move()
+	move_button.tooltip_text = "" if building.can_move() else "A %s moves with its barn" % building.display_name()
 	_show_confirm(false)
 	_refresh()
 	show()
@@ -75,12 +80,18 @@ func _on_arrow_pressed(add : bool) -> void:
 func _show_confirm(on : bool) -> void:
 	confirm_label.text = _building.remove_question()
 	remove_building_button.visible = not on
+	move_button.visible = not on
 	confirm_row.visible = on
 
 func _on_confirm_pressed() -> void:
 	var building := _building
 	close()
 	building.remove_building()
+
+func _on_move_pressed() -> void:
+	var building := _building
+	close()
+	get_tree().call_group(BuildSystem.GROUP, &"start_move", building)
 
 func _refresh() -> void:
 	if _workers_of == null:

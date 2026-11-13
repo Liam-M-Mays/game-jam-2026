@@ -7,7 +7,7 @@ const HIGHLIGHT_COLOR := Color(0.4, 0.4, 0.4)
 var position : Vector2
 ## A GridObject, or the Standing of a tree, rock or bush.
 var occupant : Object = null
-## The barn that keeps this cell for its farms and silos, or null.
+## The barn that keeps this cell for its farms and silos, a building being moved that keeps its old spot, or null.
 var kept_for : Object = null
 
 var _layer : CellLayer

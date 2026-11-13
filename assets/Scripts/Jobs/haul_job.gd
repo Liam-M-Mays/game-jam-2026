@@ -20,6 +20,9 @@ func place() -> Vector2:
 		return _pile.global_position
 	return _drop.global_position
 
+func goes_to(building : Building) -> bool:
+	return site == building
+
 func start(_worker : Meeple) -> void:
 	if _pile != null:
 		_partner = JobSystem.take_partner(self)

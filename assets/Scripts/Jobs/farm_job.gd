@@ -8,6 +8,9 @@ var _timer := 0.0
 func _init(target_farm : Farm) -> void:
 	farm = target_farm
 
+func goes_to(building : Building) -> bool:
+	return farm == building
+
 func start(worker : Meeple) -> void:
 	worker.move_to(farm.global_position, farm.cells)
 

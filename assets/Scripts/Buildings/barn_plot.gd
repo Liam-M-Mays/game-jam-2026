@@ -48,6 +48,9 @@ func note() -> String:
 			near = b
 	return near.note() if near != null else ""
 
+func can_move() -> bool:
+	return false
+
 func worker_building() -> Building:
 	return barn.worker_building() if barn != null else null
 
