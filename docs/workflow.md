@@ -19,7 +19,7 @@ flowchart LR
 | **Backlog** | Agreed and clear enough to start. Nobody is on it yet | Someone assigns themselves and makes a branch |
 | **In progress** | Someone is working on a branch | A pull request is opened |
 | **Testing** | A pull request is waiting for review and a play test | It is merged |
-| **Finished** | Merged into `master`, or closed | |
+| **Finished** | Merged into `master`, or closed. While the rework runs, merged into `rework` and then closed by hand | |
 
 - **Every `feature` starts as a suggestion.** It stays in Proposed until the team has talked it through. The text in a Proposed feature is a starting point for that talk, not a decision.
 - **A `fix` skips Proposed and starts in Backlog.** Something broken gets fixed, so there is nothing to agree on. If nobody can repeat the bug yet, the first job is to find the steps.
@@ -62,7 +62,7 @@ flowchart TD
 - GitHub calls these **sub-issues**. Open the parent and press **Create sub-issue**, or choose **Add existing issue**.
 - An issue has one parent at most.
 - The parent says what and why. The children say how. A parent is finished when all its children are.
-- A pull request closes a child (`Closes #31`), not the parent.
+- A pull request closes a child (`Closes #31`), not the parent. While the rework runs, write `Part of #31` instead and close the issue by hand after the merge, because GitHub only closes issues from `master` (see [CONTRIBUTING.md](../CONTRIBUTING.md)).
 - **No tasks for a Proposed feature.** While a feature is only a suggestion it stays one issue. Split it into tasks and art when it moves to Backlog, once the team has agreed on what it means. That keeps the board from filling up with tasks for things we may never build.
 - When one issue cannot start before another is done, mark it **blocked by** the other (issue sidebar, **Relationships**).
 

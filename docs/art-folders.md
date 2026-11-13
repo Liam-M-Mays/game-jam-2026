@@ -8,7 +8,7 @@
 
 The split is not finished yet.
 
-- 29 of the 43 files in `ART/` are used by scenes, so `ART/` is still a game folder and changes there get a normal review.
+- 28 of the 50 files in `ART/` are used by scenes, so `ART/` is still a game folder and changes there get a normal review.
 - CI already blocks **new** references from game files into `ART/`. The existing ones are listed in `.github/ci/known-problems.txt`.
 - Godot still imports `ART/`, so it writes a `.import` file next to each image there when someone opens the project. CI does not ask for those files in `ART/`, so art can be uploaded on GitHub without opening Godot.
 
@@ -16,7 +16,7 @@ The split is not finished yet.
 
 This is one pull request. It moves files and changes paths, nothing else.
 
-1. Move the 29 used files, each with its `.import` file, into `assets/Art/`. Keeping the `.import` file keeps the file's ID, so scenes keep working.
+1. Move the 28 used files, each with its `.import` file, into `assets/Art/`. Keeping the `.import` file keeps the file's ID, so scenes keep working.
 2. Update the `res://ART/...` paths in the scenes and resources that use them.
 3. In `Main_Menu.tscn` and `assets/Art/UI/mainmenuatlas.tres`, replace the five references to `res://.godot/imported/...ctex` with the PNG itself. Those point into Godot's cache and break as soon as the PNG moves.
 4. Add an empty file named `ART/.gdignore`, and delete the `.import` files left in `ART/`. From then on Godot ignores the folder.
@@ -40,7 +40,7 @@ If the pull request only touches `ART/` and comes from a team member, it is labe
 
 ## The files in `ART/` today
 
-### Used by the game (29)
+### Used by the game (28)
 
 | File | Used by |
 | --- | --- |
@@ -48,8 +48,7 @@ If the pull request only touches `ART/` and comes from a team member, it is labe
 | `ART/Farm_food_growing_ass_bih.png` | `assets/Scenes/Buildings/farm.tscn` |
 | `ART/GAMEOVER_text.png` | `assets/hud.tscn` |
 | `ART/George_Bush.png` | `assets/Scenes/Resources/george_bush.tscn` |
-| `ART/Meeple_holding_moreshizz.png` | `assets/Scenes/Meeple/meeple.tscn` |
-| `ART/Meeple_holding_shizz.png` | `assets/Res/rocks.tres`, `assets/Res/wood.tres`, `assets/Scenes/Meeple/meeple.tscn` |
+| `ART/Meeple_holding_shizz.png` | `assets/Res/rocks.tres`, `assets/Res/wood.tres` |
 | `ART/Mighty_meeple_logo_andbutons.png` | `Main_Menu.tscn` |
 | `ART/Silo_build.png` | `assets/Scenes/Buildings/silo.tscn` |
 | `ART/Spark_Spritesheet.png` | `assets/Scenes/Effects/break.tscn` |
@@ -74,10 +73,11 @@ If the pull request only touches `ART/` and comes from a team member, it is labe
 | `ART/stone_pile_sheet.png` | `assets/Scenes/Buildings/stone_pile.tscn` |
 | `ART/wood_pile_sheet.png` | `assets/Scenes/Buildings/wood_pile.tscn` |
 
-### Not used by anything (14)
+### Not used by anything (22)
 
 - `ART/Erection.png`
 - `ART/Itchpageart.png`
+- `ART/Meeple_holding_moreshizz.png` (the meeple scene stopped using it in the rework)
 - `ART/Mighty_meeple_logo.png`
 - `ART/Mighty_meeple_logo_shadow.png`
 - `ART/Other_UI_Stuff.aseprite`
@@ -90,3 +90,10 @@ If the pull request only touches `ART/` and comes from a team member, it is labe
 - `ART/notif_sprite.png`
 - `ART/questionmark.gif`
 - `ART/shi.aseprite`
+- `ART/fence.png`
+- `ART/paths.png`
+- `ART/sheep_pig.png`
+- `ART/Aseprite files/big_stone_guy.aseprite`
+- `ART/Aseprite files/mighty_meeple_logo.aseprite`
+- `ART/Aseprite files/statue_build.aseprite`
+- `ART/Aseprite files/storage_build.aseprite`

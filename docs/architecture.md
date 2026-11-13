@@ -1,6 +1,6 @@
 # Architecture (as built)
 
-**What this is:** diagrams of the code as it stands, not a plan. They were drawn from `master` at commit `3c9e6c8` on Nov 9, 2026.
+**What this is:** diagrams of the code as it stands, not a plan. They are kept up to date on `rework`. They were first drawn from `master` at commit `3c9e6c8` on Nov 9, 2026.
 
 **Keep it true:** when a pull request changes the structure, update the matching diagram in the same pull request. The diagrams are plain text, so the change shows up in the diff.
 
@@ -30,7 +30,7 @@ This file is the source of truth. Older copies of the diagrams exist as Figma bo
 | Global singletons | `JobSystem`, `Inventory`, `Population` hold the simulation. `GameState` holds hunger, toasts and speed. `Music` and `VillageAudio` are support | The `[autoload]` section of `project.godot` |
 | UI scenes | Main menu and HUD | `Main_Menu.tscn`, `assets/hud.tscn`, scripts at the project root |
 
-The world registers with the singletons, and the singletons tell the UI what changed through signals. Three spots break that direction, and the system map shows them as thick arrows.
+The world registers with the singletons, and the singletons tell the UI what changed through signals. Four spots break that direction, and the system map shows them as thick arrows.
 
 ## System map
 
@@ -85,6 +85,7 @@ flowchart LR
     gameState -->|"Reads food"| inventory
     population ==>|"Reads hunger"| gameState
     building ==>|"Calls warn"| gameState
+    harvestable ==>|"Calls warn"| gameState
     audio ==>|"Resets speed"| gameState
     inventory -.->|"changed, at most every 150 ms"| hud
     jobSystem -.->|"changed, at most every 150 ms"| hud
@@ -155,7 +156,7 @@ flowchart TD
     tooltip["ConstructionTooltip, created in code"]
     parallax["5 parallax background layers"]
     hud["HUD: instance of hud.tscn"]
-    hudKids["Counters, hunger bar, worker panel, build menu, pause menu, death screen, toast feed"]
+    hudKids["Counters, jobs plate with Clear all, hunger bar, worker panel, build menu, pause menu, death screen, toast feed"]
     giantAudio["GiantAudio (giant_audio.gd)"]
 
     game --> walk
@@ -246,11 +247,15 @@ From `meeple_movement.gd` and `job_system.gd`. A meeple is either a builder or a
 
 The panel's Remove button asks first, then calls `Building.remove_building()`. What the building cost pops out as drops, the way a tree's drops do (a site pops out only what was delivered). Its workers go back to being builders, its hauls are recalled, and it leaves every group at once. A pile also drops what it held, and a haul that claimed a drop in it takes one of the dropped drops instead (`JobSystem.hauls_from`, `HaulJob.take_spilled`). A barn removes its farms and silos first. A removed hut leaves its meeples, so the village can be over its room. The Town Hall answers false to `can_remove()`, and its button is dimmed.
 
+The panel's Move button calls `BuildSystem.start_move(building)`. The building lifts off its cells (`Building.lift`, `Grid.lift`), and its old cells stay kept for it. The player places it with the same rules as a new building, for free. A click lands it on the new cells (`Building.land`), and Escape or a right click lands it back on the old ones. Its workers stay, and a meeple on its way to it turns towards the new spot. A barn lifts and lands its farms and silos with it. A farm or silo answers false to `can_move()`, so it only moves with its barn.
+
+The HUD's jobs plate shows how many of the player's jobs wait for a meeple (`JobSystem.waiting_player_jobs`). Its Clear all button, or the C key, cancels them (`JobSystem.clear_waiting_player_jobs`). A meeple already on its way to a job keeps it.
+
 ```mermaid
 stateDiagram-v2
     direction LR
     Wandering: Builder, wandering near buildings
-    QueuedJob: Queued job - harvest, haul, collect crop
+    QueuedJob: Queued job - harvest, haul
     WorkerWandering: Worker, wandering
     Work: Work for its building - chop, farm, store
     Dead: Dead - topples and fades out
@@ -319,7 +324,7 @@ stateDiagram-v2
 
 ## Class diagrams
 
-Three diagrams cover 53 of the 57 scripts. The four left out are tiny: `walk.gd`, `Blink.gd`, `menu_meeple.gd` and `resource_ui.gd`.
+Three diagrams cover 58 of the 62 game scripts. The four left out are tiny: `walk.gd`, `Blink.gd`, `menu_meeple.gd` and `resource_ui.gd`. The test runner (`assets/Scripts/Dev/test_runner/`) and the tests are left out too.
 
 How to read them:
 
@@ -338,6 +343,9 @@ classDiagram
     direction TB
     class Grid {
         +grid_size: int = 50
+        +world_cells: int, 0 on the giant
+        +edge_wobble: float
+        +round_ground: YardGround
         +start_building: PackedScene
         +spawnables: Array[PackedScene]
         +generation_seed: int
@@ -349,6 +357,7 @@ classDiagram
         +cells_at_offsets(origin, offsets)
         +place(obj, cells)
         +remove(obj)
+        +lift(obj)
         +spawn_meeple(at): Meeple
         +add_drop(scene, at): ResourceDrop
         +wake(item): Harvestable
@@ -401,6 +410,7 @@ classDiagram
         +cursor: CellCursor
         +start_build(scene)
         +end_build()
+        +start_move(building)
         +is_building(): bool
     }
     class CellCursor {
@@ -458,7 +468,7 @@ classDiagram
         +deliver(kind)
         +complete()
         +toggle_paused()
-        +can_afford() / can_start()
+        +can_afford()
         +missing() / next_stage_needs()
         +find_work(worker): Job
         +add_worker(meeple) / lose_worker(meeple)
@@ -466,6 +476,8 @@ classDiagram
         +add_worker_slot() / remove_worker_slot()
         +can_remove(): bool
         +remove_building()
+        +can_move(): bool
+        +lift() / land(cells)
         +icon(): Texture2D
         +can_place_at() / placement_area()
         +area_at(grid, anchor): Array[Cell]
@@ -572,7 +584,7 @@ classDiagram
     Hut <|-- TownHall
     BarnPlot <|-- Farm
     BarnPlot <|-- Silo
-    Grid ..> Cell : 2,091 cells
+    Grid ..> Cell : one per spot, 2,091 on the giant, about 100,000 on the ground
     Cell ..> GridObject : occupant
     Cell ..> Standing : occupant
     Grid ..> Standing : trees, rocks, bushes
@@ -591,7 +603,7 @@ classDiagram
 
 ### Class diagram 2: jobs, meeples and the simulation singletons
 
-How work gets done: the waiting jobs, the six job types, the meeple that runs them, and the two singletons that hold the economy and the population.
+How work gets done: the waiting jobs, the five job types, the meeple that runs them, and the two singletons that hold the economy and the population.
 
 ```mermaid
 classDiagram
@@ -610,6 +622,9 @@ classDiagram
         +take_partner(job): HaulJob
         +recall_hauls(site)
         +hauls_from(pile): Array[HaulJob]
+        +job_count(): int
+        +waiting_player_jobs(): int
+        +clear_waiting_player_jobs()
         +reset()
     }
     class Job {
@@ -726,7 +741,7 @@ classDiagram
     }
     class Music {
         <<autoload>>
-        +MENU_SCENE, GAME_SCENE: String
+        +MENU_SCENE, GAME_SCENE, GROUND_SCENE: String
         +play_success_riff()
         +fade_out_game_over(seconds)
     }
@@ -738,7 +753,7 @@ classDiagram
     }
     class MainMenu {
         <<unnamed>>
-        +start_button, credits_button, quit_button
+        +start_button, ground_button, credits_button, quit_button
         +credits_panel, credits_back_button
     }
     class HUD {
@@ -748,6 +763,7 @@ classDiagram
         +pause_menu, death_screen: PauseMenu
         +camera: CameraControls
         +labels, hunger_bar, speed_button
+        +jobs_label, clear_jobs_button
         +OPENING_TIPS, TIPS, FUN_FACTS
     }
     class BuildMenu {
@@ -806,6 +822,8 @@ classDiagram
     class YardGround {
         +preset, frequency, preview_seed
         +generate(world_seed, is_ground)
+        +generate_round(world_seed, outline)
+        +shade_at(world_pos): float
         +band_at(world_pos)  (unused)
     }
     class MenuMeepleSpawner {
@@ -813,8 +831,15 @@ classDiagram
         +min_delay, max_delay
     }
     class GiantCamera {
-        <<unnamed>>
         +wide_position: Vector2
+    }
+    class GroundCamera {
+        <<unnamed>>
+        +world_edge: Polygon2D
+    }
+    class GroundLevel {
+        <<unnamed>>
+        +camera: Camera2D
     }
     class GiantStep {
         <<unnamed>>
@@ -826,6 +851,7 @@ classDiagram
         +starts_shifted: bool
     }
     CameraControls <|-- GiantCamera
+    CameraControls <|-- GroundCamera
     GiantPart <|-- GiantStep
     GiantPart <|-- GiantArmStep
     UISounds ..> GameState : resets speed
