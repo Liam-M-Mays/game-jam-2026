@@ -1,7 +1,8 @@
 extends PanelContainer
 class_name WorkerPanel
-## Opens when a building with worker slots is clicked. Its arrows add or remove a worker,
-## between 0 and the building's `worker_slots`. Escape or a click anywhere else closes it.
+## Opens when a finished building is clicked. Its arrows add or remove a worker, between 0 and the
+## building's `worker_slots`, and a building with no slots hides them. Its Remove button asks first.
+## Escape or a click anywhere else closes it.
 
 const GROUP := &"worker_panel"
 
@@ -9,21 +10,37 @@ const GROUP := &"worker_panel"
 @export var count_label : Label
 @export var remove_button : Button
 @export var add_button : Button
+@export var arrows : Control
+@export var remove_building_button : Button
+@export var confirm_row : Control
+@export var confirm_label : Label
+@export var confirm_button : Button
+@export var keep_button : Button
 
 var _building : Building = null
+## The building the arrows set. A farm or a silo gives its barn, and a hut gives null.
+var _workers_of : Building = null
 
 func _ready() -> void:
 	add_to_group(GROUP)
 	hide()
 	remove_button.pressed.connect(_on_arrow_pressed.bind(false))
 	add_button.pressed.connect(_on_arrow_pressed.bind(true))
+	remove_building_button.pressed.connect(_show_confirm.bind(true))
+	keep_button.pressed.connect(_show_confirm.bind(false))
+	confirm_button.pressed.connect(_on_confirm_pressed)
 
 ## Shows the panel for `building`. Buildings call this through the group when clicked.
 func open(building : Building) -> void:
 	close()
 	_building = building
+	_workers_of = building.worker_building()
 	_building.set_selected(true)
 	title.text = building.display_name()
+	arrows.visible = _workers_of != null
+	remove_building_button.disabled = not building.can_remove()
+	remove_building_button.tooltip_text = "" if building.can_remove() else "The %s cannot be removed" % building.display_name()
+	_show_confirm(false)
 	_refresh()
 	show()
 
@@ -31,6 +48,7 @@ func close() -> void:
 	if is_instance_valid(_building):
 		_building.set_selected(false)
 	_building = null
+	_workers_of = null
 	hide()
 
 func _unhandled_input(event : InputEvent) -> void:
@@ -46,12 +64,24 @@ func _unhandled_input(event : InputEvent) -> void:
 
 func _on_arrow_pressed(add : bool) -> void:
 	if add:
-		_building.add_worker_slot()
+		_workers_of.add_worker_slot()
 	else:
-		_building.remove_worker_slot()
+		_workers_of.remove_worker_slot()
 	_refresh()
 
+func _show_confirm(on : bool) -> void:
+	confirm_label.text = _building.remove_question()
+	remove_building_button.visible = not on
+	confirm_row.visible = on
+
+func _on_confirm_pressed() -> void:
+	var building := _building
+	close()
+	building.remove_building()
+
 func _refresh() -> void:
-	count_label.text = "%d / %d" % [_building.wanted_workers, _building.worker_slots]
-	remove_button.disabled = _building.wanted_workers <= 0
-	add_button.disabled = _building.wanted_workers >= _building.worker_slots
+	if _workers_of == null:
+		return
+	count_label.text = "%d / %d" % [_workers_of.wanted_workers, _workers_of.worker_slots]
+	remove_button.disabled = _workers_of.wanted_workers <= 0
+	add_button.disabled = _workers_of.wanted_workers >= _workers_of.worker_slots

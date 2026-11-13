@@ -45,6 +45,17 @@ func find_work(worker : Meeple) -> Job:
 			best = plot
 	return FarmJob.new(best) if best != null else null
 
+func remove_question() -> String:
+	return "Remove this Barn and its farms and silos?" if not plots.is_empty() else super()
+
+## A barn takes its farms and silos with it, and their cost pops out too.
+func remove_building() -> void:
+	for plot in plots.duplicate():
+		if is_instance_valid(plot):
+			plot.remove_building()
+	plots.clear()
+	super()
+
 func add_plot(plot : BarnPlot) -> void:
 	plots.append(plot)
 

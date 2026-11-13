@@ -28,6 +28,16 @@ func start(_worker : Meeple) -> void:
 func pairs_with(other : HaulJob) -> bool:
 	return other.site == site and other.kind == kind and other._pile == _pile
 
+## True when this haul claimed a drop in `pile` and has not picked it up yet.
+func takes_from(pile : Storage) -> bool:
+	return _pile == pile
+
+## Its pile was removed: it takes `drop`, one of the drops that spilled out, instead.
+func take_spilled(drop : ResourceDrop) -> void:
+	_pile = null
+	_drop = drop
+	Inventory.set_claimed(drop, true)
+
 ## Lets go of the drop this haul claimed. The building calls this when it drops a waiting haul.
 func release_drop() -> void:
 	if _pile != null:

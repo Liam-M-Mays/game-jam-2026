@@ -14,7 +14,7 @@ func start(worker : Meeple) -> void:
 	worker.move_to(_drop.global_position)
 
 func update(worker : Meeple, _delta : float) -> bool:
-	if not is_instance_valid(site):
+	if not is_instance_valid(site) or site.is_queued_for_deletion():
 		abort(worker)
 		return true
 	if not _carrying:

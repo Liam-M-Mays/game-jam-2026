@@ -207,9 +207,8 @@ func complete() -> void:
 	completed.emit()
 
 func _on_clicked() -> void:
-	var target := worker_building()
-	if target != null:
-		get_tree().call_group(WorkerPanel.GROUP, &"open", target)
+	if is_in_group(COMPLETED_GROUP):
+		get_tree().call_group(WorkerPanel.GROUP, &"open", self)
 
 ## The building whose workers a click on this one sets, or null. A farm or a silo answers with its barn.
 func worker_building() -> Building:
@@ -242,6 +241,67 @@ func add_worker(meeple : Meeple) -> void:
 func lose_worker(meeple : Meeple) -> void:
 	workers.erase(meeple)
 	JobSystem.open_slot(self)
+
+## False hides nothing but dims the panel's Remove button. The Town Hall answers false.
+func can_remove() -> bool:
+	return true
+
+## What the panel asks before it removes the building.
+func remove_question() -> String:
+	return "Remove this %s?" % display_name()
+
+## The panel's Remove button. What the building cost pops out as drops, its workers go back
+## to being builders, and the jobs that bring it drops are cancelled.
+func remove_building() -> void:
+	if not can_remove():
+		return
+	var refund := _spent()
+	if _constructing:
+		JobSystem.recall_hauls(self)
+		_drop_queued_hauls()
+		Inventory.changed.disconnect(_request_hauls)
+		_constructing = false
+	while JobSystem.close_slot(self):
+		pass
+	for worker in workers:
+		worker.leave_workplace()
+	workers.clear()
+	wanted_workers = 0
+	# Out of every group now, so nothing finds it as a barn, a pile or a silo before it is freed.
+	for group in get_groups():
+		if not String(group).begins_with("_"):
+			remove_from_group(group)
+	Inventory.mark_changed()
+	spawn_effect(BUILD_EFFECT, 1)
+	grid.remove(self)
+	_pop_out(refund)
+
+## Pops `amounts` out of the middle of the building in all directions, the way a tree's drops come out.
+func _pop_out(amounts : Dictionary[String, int]) -> Array[ResourceDrop]:
+	var middle := Vector2.ZERO
+	for cell in cells:
+		middle += cell.position
+	middle /= maxi(cells.size(), 1)
+	var dropped : Array[ResourceDrop] = []
+	for kind in amounts:
+		for i in range(amounts[kind]):
+			var drop := ResourceDrop.make(kind)
+			drop.position = middle
+			get_parent().add_child(drop)
+			drop.launch(grid)
+			dropped.append(drop)
+	return dropped
+
+## What the player put into it: its whole cost once it is finished, or else the stages built and the drops delivered.
+func _spent() -> Dictionary[String, int]:
+	if is_in_group(COMPLETED_GROUP):
+		return costs
+	var sum : Dictionary[String, int] = _banked.duplicate()
+	for stage in range(_built + 1):
+		var cost := _frame_cost(stage)
+		for kind in cost:
+			sum[kind] = sum.get(kind, 0) + cost[kind]
+	return sum
 
 func _pop() -> void:
 	var tween := _tween(&"pop").set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)

@@ -13,7 +13,7 @@ corner_radius_top_right = 6
 corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
 
-[node name="WorkerPanel" type="PanelContainer" node_paths=PackedStringArray("title", "count_label", "remove_button", "add_button")]
+[node name="WorkerPanel" type="PanelContainer" node_paths=PackedStringArray("title", "count_label", "remove_button", "add_button", "arrows", "remove_building_button", "confirm_row", "confirm_label", "confirm_button", "keep_button")]
 anchors_preset = 7
 anchor_left = 0.5
 anchor_top = 1.0
@@ -31,6 +31,12 @@ title = NodePath("Rows/Title")
 count_label = NodePath("Rows/Arrows/Count")
 remove_button = NodePath("Rows/Arrows/RemoveButton")
 add_button = NodePath("Rows/Arrows/AddButton")
+arrows = NodePath("Rows/Arrows")
+remove_building_button = NodePath("Rows/RemoveBuildingButton")
+confirm_row = NodePath("Rows/Confirm")
+confirm_label = NodePath("Rows/Confirm/Question")
+confirm_button = NodePath("Rows/Confirm/Buttons/YesButton")
+keep_button = NodePath("Rows/Confirm/Buttons/NoButton")
 
 [node name="Rows" type="VBoxContainer" parent="."]
 layout_mode = 2
@@ -67,3 +73,39 @@ layout_mode = 2
 focus_mode = 0
 theme_override_font_sizes/font_size = 32
 text = ">"
+
+[node name="RemoveBuildingButton" type="Button" parent="Rows"]
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 20
+text = "Remove"
+
+[node name="Confirm" type="VBoxContainer" parent="Rows"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Question" type="Label" parent="Rows/Confirm"]
+custom_minimum_size = Vector2(216, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Remove this Hut?"
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="Buttons" type="HBoxContainer" parent="Rows/Confirm"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="YesButton" type="Button" parent="Rows/Confirm/Buttons"]
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 20
+text = "Remove"
+
+[node name="NoButton" type="Button" parent="Rows/Confirm/Buttons"]
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 20
+text = "Keep"

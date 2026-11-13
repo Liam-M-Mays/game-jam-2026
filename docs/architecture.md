@@ -240,7 +240,9 @@ sequenceDiagram
 
 ## Meeple job lifecycle
 
-From `meeple_movement.gd` and `job_system.gd`. A meeple is either a builder or a worker of one building. Once a frame, `JobSystem.match_jobs` gives each new job to the nearest free builder, and each builder that became free the nearest waiting job. There is no job limit. A worker asks its building for work with `find_work` at most every half second, and never takes the player's jobs. A click on a finished building with worker slots opens its `WorkerPanel` (a click on a farm or silo opens its barn's). The add arrow opens a slot, which the nearest free builder takes. The remove arrow drops a slot nobody took yet, or sends a worker back to being a builder. A new building starts with no workers (`Building.STARTS_FULL`). A dead worker's slot opens again.
+From `meeple_movement.gd` and `job_system.gd`. A meeple is either a builder or a worker of one building. Once a frame, `JobSystem.match_jobs` gives each new job to the nearest free builder, and each builder that became free the nearest waiting job. There is no job limit. A worker asks its building for work with `find_work` at most every half second, and never takes the player's jobs. A click on a finished building opens the `WorkerPanel`. Its arrows set the workers of the building's `worker_building()`: a farm or silo gives its barn, and a building with no slots, like a hut, hides them. The add arrow opens a slot, which the nearest free builder takes. The remove arrow drops a slot nobody took yet, or sends a worker back to being a builder. A new building starts with no workers (`Building.STARTS_FULL`). A dead worker's slot opens again.
+
+The panel's Remove button asks first, then calls `Building.remove_building()`. What the building cost pops out as drops, the way a tree's drops do (a site pops out only what was delivered). Its workers go back to being builders, its hauls are recalled, and it leaves every group at once. A pile also drops what it held, and a haul that claimed a drop in it takes one of the dropped drops instead (`JobSystem.hauls_from`, `HaulJob.take_spilled`). A barn removes its farms and silos first. A removed hut leaves its meeples, so the village can be over its room. The Town Hall answers false to `can_remove()`, and its button is dimmed.
 
 ```mermaid
 stateDiagram-v2
@@ -445,6 +447,8 @@ classDiagram
         +add_worker(meeple) / lose_worker(meeple)
         +worker_building(): Building
         +add_worker_slot() / remove_worker_slot()
+        +can_remove(): bool
+        +remove_building()
         +icon(): Texture2D
         +can_place_at() / placement_area()
     }
@@ -478,6 +482,7 @@ classDiagram
         +take(): ResourceDrop
         +find_work(worker): StoreJob
         +make_store_job(drop): StoreJob
+        +remove_building()
     }
     class Lumberjack {
         +chops: PackedScene
@@ -493,6 +498,7 @@ classDiagram
         +add_plot(plot)
         +plot_area(): Array[Cell]
         +in_plot_range(cells): bool
+        +remove_building()
     }
     class BarnPlot {
         +barn: Barn
@@ -518,6 +524,7 @@ classDiagram
         +meeples_for_next_level(): int
         +find_town_hall() static
         +current_level() static
+        +can_remove(): false
     }
     class Farm {
         +grow_time: float
@@ -579,6 +586,7 @@ classDiagram
         +open_slot(building) / close_slot(building)
         +take_partner(job): HaulJob
         +recall_hauls(site)
+        +hauls_from(pile): Array[HaulJob]
         +reset()
     }
     class Job {

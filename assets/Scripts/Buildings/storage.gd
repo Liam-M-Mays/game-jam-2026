@@ -63,6 +63,18 @@ func take() -> ResourceDrop:
 	drop.global_position = global_position
 	return drop
 
+## A removed pile drops what it held. A haul that claimed a drop here takes one of the spilled drops instead.
+func remove_building() -> void:
+	var hauls := JobSystem.hauls_from(self)
+	var spill : Dictionary[String, int] = {kind: _stock}
+	Inventory.pile_changed(kind, -_stock, -_claimed)
+	_stock = 0
+	_claimed = 0
+	super()
+	var spilled := _pop_out(spill)
+	for i in range(mini(hauls.size(), spilled.size())):
+		hauls[i].take_spilled(spilled[i])
+
 func has_room() -> bool:
 	return _stock + _en_route < capacity()
 

@@ -19,6 +19,10 @@ static func current_level() -> int:
 	var hall := find_town_hall()
 	return hall.level() if hall != null else 1
 
+## The Town Hall cannot be removed. Part 15b lets the player move it.
+func can_remove() -> bool:
+	return false
+
 func level() -> int:
 	return _level
 
