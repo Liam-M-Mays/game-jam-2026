@@ -75,3 +75,30 @@ func test_freed_meeple_takes_the_nearest_waiting_job() -> void:
 	meeple.tick(0.0)
 	JobSystem.match_jobs()
 	check(meeple.job == near_tree, "the freed meeple took the near job, not the older far one")
+
+
+## #135: an older order counts as closer, so a slightly nearer newer job waits. At 0 the nearest wins.
+func test_older_job_beats_a_slightly_nearer_newer_one() -> void:
+	var bonus := JobSystem.age_bonus
+	for on : bool in [true, false]:
+		JobSystem.reset()
+		JobSystem.age_bonus = 0.5 if on else 0.0
+		var meeple := _meeple_at(Vector2(0, 0))
+		var first := SpotJob.new(Vector2(0, 0))
+		JobSystem.add(first)
+		JobSystem.match_jobs()
+		var older := SpotJob.new(Vector2(50, 0))
+		older.ordered_at = JobSystem.now() - 10.0
+		var newer := SpotJob.new(Vector2(40, 0))
+		JobSystem.add(newer)
+		JobSystem.add(older)
+		JobSystem.match_jobs()
+		first.done = true
+		meeple.tick(0.0)
+		JobSystem.match_jobs()
+		if on:
+			check(meeple.job == older, "with the bonus on, the older job won over the nearer newer one")
+		else:
+			check(meeple.job == newer, "with the bonus at 0, the nearest job won")
+		JobSystem.workers.clear()
+	JobSystem.age_bonus = bonus

@@ -6,6 +6,15 @@ extends Node
 
 signal changed
 
+## How many cells closer a waiting job counts for each second since the player ordered it, when a
+## free builder picks one. The first building placed then gets its deliveries first, and the others
+## still get theirs between its stages. 0 picks the nearest job, as before #135.
+var age_bonus := 0.5
+## Ages above this many seconds get no more bonus, so an old order cannot pull builders across the map.
+const AGE_BONUS_MAX_AGE := 20.0
+## The width of a cell in world space, the same on the giant and on the ground.
+const CELL_WIDTH := 7.0
+
 var workers : Array[Meeple] = []
 var _pending : Array[Job] = []
 var _active : Array[Job] = []
@@ -15,11 +24,14 @@ var _open_slots : Array[Building] = []
 var _slot_opened := false
 var _changed := false
 var _last_changed := -Inventory.CHANGED_EVERY_MS
+var _clock := 0.0
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
-func _process(_delta : float) -> void:
+func _process(delta : float) -> void:
+	if not get_tree().paused:
+		_clock += delta
 	match_jobs()
 	var now := Time.get_ticks_msec()
 	if _changed and now - _last_changed >= Inventory.CHANGED_EVERY_MS:
@@ -36,6 +48,11 @@ func reset() -> void:
 	_freed.clear()
 	_open_slots.clear()
 	_changed = true
+
+## Seconds of play so far, sped up with the game and stopped while it is paused. Jobs keep their
+## order time on this clock.
+func now() -> float:
+	return _clock
 
 func job_count() -> int:
 	return _pending.size() + _active.size()
@@ -125,12 +142,15 @@ func _nearest_free_worker(place : Vector2) -> Meeple:
 			best = worker
 	return best
 
+## The waiting job nearest `worker`, where an older order counts as closer by `age_bonus`.
 func _nearest_waiting_job(worker : Meeple) -> Job:
 	var from := worker.global_position
+	var per_second := age_bonus * CELL_WIDTH
 	var best : Job = null
 	var best_dist := INF
 	for job in _pending:
-		var dist := from.distance_squared_to(job.place())
+		var age := minf(_clock - job.ordered_at, AGE_BONUS_MAX_AGE)
+		var dist := from.distance_to(job.place()) - age * per_second
 		if dist < best_dist:
 			best_dist = dist
 			best = job
