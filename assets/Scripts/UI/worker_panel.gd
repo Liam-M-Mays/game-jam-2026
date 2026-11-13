@@ -52,6 +52,7 @@ func open(building : Building) -> void:
 	_refresh()
 	show()
 
+## Hides the panel and takes the selection off its building.
 func close() -> void:
 	if is_instance_valid(_building):
 		_building.set_selected(false)

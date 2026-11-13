@@ -351,7 +351,6 @@ classDiagram
         +remove(obj)
         +spawn_meeple(at): Meeple
         +add_drop(scene, at): ResourceDrop
-        +standing: Array[Standing]
         +wake(item): Harvestable
         +nearest_standing(at, accept): Standing
     }

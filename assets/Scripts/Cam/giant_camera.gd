@@ -1,5 +1,6 @@
 extends CameraControls
 class_name GiantCamera
+## The camera on the giant. The view stays inside the wide view at `wide_position`.
 
 @export var wide_position := Vector2(47, -86)
 

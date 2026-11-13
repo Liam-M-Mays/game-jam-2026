@@ -6,10 +6,12 @@ class_name StandingRow
 
 var _items : Array[Standing] = []
 
+## Starts drawing `item`.
 func add(item : Standing) -> void:
 	_items.append(item)
 	queue_redraw()
 
+## Stops drawing `item`.
 func remove(item : Standing) -> void:
 	if _items.has(item):
 		_items.erase(item)

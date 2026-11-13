@@ -44,10 +44,12 @@ func _init(owner : Grid, look : DropLook, at : Vector2) -> void:
 	look.draw(_item)
 	position = at
 
+## Draws the drop again.
 func show() -> void:
 	if _item.is_valid():
 		RenderingServer.canvas_item_set_visible(_item, true)
 
+## Stops drawing the drop, while a meeple carries it.
 func hide() -> void:
 	if _item.is_valid():
 		RenderingServer.canvas_item_set_visible(_item, false)

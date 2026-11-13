@@ -5,7 +5,7 @@ class_name AreaIndex
 ## Inventory keeps its drops in one per kind, and Grid its trees, rocks and bushes in one per kind.
 
 var _size : float
-var _buckets := {}
+var _buckets : Dictionary[Vector2i, Array] = {}
 var _low := Vector2i.MAX
 var _high := Vector2i.MIN
 
@@ -13,12 +13,14 @@ var _high := Vector2i.MIN
 func _init(bucket_size : float) -> void:
 	_size = bucket_size
 
+## Puts `item` in the bucket of `at`.
 func add(item : Object, at : Vector2) -> void:
 	var key := _key(at)
 	_buckets.get_or_add(key, []).append(item)
 	_low = _low.min(key)
 	_high = _high.max(key)
 
+## Takes `item` out of the bucket of `at`, the spot it was added at.
 func remove(item : Object, at : Vector2) -> void:
 	var key := _key(at)
 	var list : Array = _buckets.get(key, [])
@@ -34,6 +36,7 @@ func move(item : Object, from : Vector2, to : Vector2) -> void:
 		remove(item, from)
 		add(item, to)
 
+## Empties every bucket.
 func clear() -> void:
 	_buckets.clear()
 	_low = Vector2i.MAX
