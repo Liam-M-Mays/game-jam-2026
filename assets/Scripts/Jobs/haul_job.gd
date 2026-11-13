@@ -7,6 +7,9 @@ var _drop : ResourceDrop
 var _pile : Storage
 var _carrying := false
 var _partner : HaulJob
+## Where the meeple was last sent for the drop, in the grid's space. It is sent again only when the
+## drop or its pile moves.
+var _aimed := Vector2.INF
 
 func _init(target_site : Building, target_kind : String) -> void:
 	site = target_site
@@ -20,8 +23,9 @@ func place() -> Vector2:
 		return _pile.global_position
 	return _drop.global_position
 
+## Only once it carries the drop: before that it walks to the drop or the pile.
 func goes_to(building : Building) -> bool:
-	return site == building
+	return _carrying and site == building
 
 func start(_worker : Meeple) -> void:
 	if _pile != null:
@@ -52,10 +56,13 @@ func release_drop() -> void:
 
 func update(worker : Meeple, _delta : float) -> bool:
 	if not _carrying:
-		var stop : Array[Cell] = []
-		if _pile != null:
-			stop = _pile.cells
-		worker.move_to(place(), stop)
+		var spot := _pile.position if _pile != null else _drop.position
+		if spot != _aimed:
+			_aimed = spot
+			var stop : Array[Cell] = []
+			if _pile != null:
+				stop = _pile.cells
+			worker.move_to(place(), stop)
 		if not worker.has_arrived():
 			return false
 		_pick_up()

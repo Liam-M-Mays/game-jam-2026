@@ -12,8 +12,12 @@ const SCENES := {
 var grid : Grid
 var kind : String
 var claimed := false
+## True while Inventory keeps it in its search areas.
+var listed := false
 var position : Vector2:
 	set(value):
+		if listed:
+			Inventory.drop_moved(self, position, value)
 		position = value
 		if _item.is_valid():
 			RenderingServer.canvas_item_set_transform(_item, Transform2D(0.0, _look.scale, 0.0, value))

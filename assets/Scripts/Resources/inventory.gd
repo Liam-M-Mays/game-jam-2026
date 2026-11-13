@@ -4,6 +4,11 @@ signal changed
 
 const START_STOCK := { "food": 10 }
 const BASE_FOOD_CAP := 20
+## The shortest time between two `changed`, in milliseconds. Thousands of working meeples change
+## the stock almost every frame, and every HUD label and building site listens.
+const CHANGED_EVERY_MS := 150
+## The side of a bucket of drops, in cells.
+const DROP_AREA_CELLS := 2
 
 var _drops := {}
 var _all_drops : Array[ResourceDrop] = []
@@ -15,17 +20,25 @@ var _reserved := {}
 var _piled := {}
 var _pile_claims := {}
 var _dirty := false
+var _last_changed := -CHANGED_EVERY_MS
+## An AreaIndex of the drops per kind, in the grid's space, so the nearest one is found without
+## checking them all.
+var _areas := {}
+var _grid : Grid
 
 func _ready() -> void:
 	process_priority = 100
 
-## Runs after the game's nodes, so `changed` fires once a frame with every change of that frame.
+## Runs after the game's nodes, so `changed` fires once with every change since the last time.
 func _process(_delta : float) -> void:
-	if _dirty:
+	var now := Time.get_ticks_msec()
+	if _dirty and now - _last_changed >= CHANGED_EVERY_MS:
 		_dirty = false
+		_last_changed = now
 		changed.emit()
 
-## Asks for `changed` at the end of this frame. However often it is called, `changed` fires once.
+## Asks for `changed` at the end of this frame, or a little later when it fired a moment ago.
+## However often it is called, `changed` fires once.
 func mark_changed() -> void:
 	_dirty = true
 
@@ -69,6 +82,9 @@ func spend(kind : String, amount : int) -> void:
 	mark_changed()
 
 func register(drop : ResourceDrop) -> void:
+	_grid = drop.grid
+	_area_of(drop.kind).add(drop, drop.position)
+	drop.listed = true
 	_drops_of(drop.kind).append(drop)
 	_all_drops.append(drop)
 	_count_loose(drop, 1)
@@ -78,6 +94,8 @@ func unregister(drop : ResourceDrop) -> void:
 	# Already gone: consumed before, or forgotten when the grid left.
 	if not drop.is_in_world():
 		return
+	_area_of(drop.kind).remove(drop, drop.position)
+	drop.listed = false
 	_drops_of(drop.kind).erase(drop)
 	_all_drops.erase(drop)
 	_count_loose(drop, -1)
@@ -86,8 +104,10 @@ func unregister(drop : ResourceDrop) -> void:
 ## Forgets every drop and frees what they draw. The grid calls this when it leaves the game.
 func clear_drops() -> void:
 	for drop in _all_drops:
+		drop.listed = false
 		drop.free_item()
 	_all_drops.clear()
+	_areas.clear()
 	_drops.clear()
 	_loose.clear()
 	mark_changed()
@@ -114,13 +134,13 @@ func reserve(kind : String, amount : int) -> void:
 func claim_closest(kind : String, world_pos : Vector2) -> Object:
 	var closest : Object = null
 	var nearest := INF
-	for drop : ResourceDrop in _drops_of(kind):
-		if drop.claimed:
-			continue
-		var distance := world_pos.distance_squared_to(drop.global_position)
-		if distance < nearest:
-			nearest = distance
-			closest = drop
+	if _loose.get(kind, 0) > 0:
+		var local := _grid.to_local(world_pos)
+		closest = _area_of(kind).best(local, func(drop : ResourceDrop) -> float:
+			return INF if drop.claimed else local.distance_squared_to(drop.position),
+			func(away : float) -> float: return away * away)
+		if closest != null:
+			nearest = world_pos.distance_squared_to(closest.global_position)
 	for pile : Storage in get_tree().get_nodes_in_group(Storage.GROUP):
 		if pile.kind != kind or pile.unclaimed() <= 0:
 			continue
@@ -136,20 +156,26 @@ func claim_closest(kind : String, world_pos : Vector2) -> Object:
 	return closest
 
 ## The loose drop of `kind` with the shortest walk from `from` to it and on to `to`.
+## It looks near `from` first and stops once no drop farther away can make a shorter trip.
 func shortest_trip_loose(kind : String, from : Vector2, to : Vector2) -> ResourceDrop:
-	var best : ResourceDrop = null
-	var best_trip := INF
-	for drop in _drops_of(kind):
-		if not _is_loose(drop):
-			continue
-		var trip : float = from.distance_to(drop.global_position) + drop.global_position.distance_to(to)
-		if trip < best_trip:
-			best_trip = trip
-			best = drop
-	return best
+	if _loose.get(kind, 0) <= 0:
+		return null
+	var start := _grid.to_local(from)
+	var end := _grid.to_local(to)
+	var straight := start.distance_to(end)
+	return _area_of(kind).best(start, func(drop : ResourceDrop) -> float:
+		return INF if drop.claimed else start.distance_to(drop.position) + drop.position.distance_to(end),
+		# A drop `away` from the start makes a trip of at least `away`, and at least 2 * away - straight.
+		func(away : float) -> float: return maxf(away, 2.0 * away - straight))
 
-func _is_loose(drop : ResourceDrop) -> bool:
-	return not drop.claimed
+## A loose drop moved, in the grid's space. Its bucket follows it.
+func drop_moved(drop : ResourceDrop, from : Vector2, to : Vector2) -> void:
+	_area_of(drop.kind).move(drop, from, to)
+
+func _area_of(kind : String) -> AreaIndex:
+	if not _areas.has(kind):
+		_areas[kind] = AreaIndex.new(_grid.area_size(DROP_AREA_CELLS))
+	return _areas[kind]
 
 func set_claimed(drop : ResourceDrop, on : bool) -> void:
 	_claim(drop, on)

@@ -13,14 +13,17 @@ var _freed : Array[Meeple] = []
 var _open_slots : Array[Building] = []
 var _slot_opened := false
 var _changed := false
+var _last_changed := -Inventory.CHANGED_EVERY_MS
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
 func _process(_delta : float) -> void:
 	match_jobs()
-	if _changed:
+	var now := Time.get_ticks_msec()
+	if _changed and now - _last_changed >= Inventory.CHANGED_EVERY_MS:
 		_changed = false
+		_last_changed = now
 		changed.emit()
 
 func reset() -> void:

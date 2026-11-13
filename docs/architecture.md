@@ -86,8 +86,8 @@ flowchart LR
     population ==>|"Reads hunger"| gameState
     building ==>|"Calls warn"| gameState
     audio ==>|"Resets speed"| gameState
-    inventory -.->|"changed, once a frame"| hud
-    jobSystem -.->|"changed"| hud
+    inventory -.->|"changed, at most every 150 ms"| hud
+    jobSystem -.->|"changed, at most every 150 ms"| hud
     gameState -.->|"hunger_changed"| hud
     gameState -.->|"toast_requested"| toastFeed
 ```
@@ -353,6 +353,11 @@ classDiagram
         +add_drop(scene, at): ResourceDrop
         +standing: Array[Standing]
         +wake(item): Harvestable
+        +nearest_standing(at, accept): Standing
+    }
+    class AreaIndex {
+        +add(item, at) / remove(item, at) / move(item, from, to)
+        +best(from, score, bound): the lowest score, looking near first
     }
     class Standing {
         +kind: Spawnable
@@ -572,6 +577,7 @@ classDiagram
     Cell ..> GridObject : occupant
     Cell ..> Standing : occupant
     Grid ..> Standing : trees, rocks, bushes
+    Grid ..> AreaIndex : one per kind of tree, rock or bush
     Standing ..> StandingRow : drawn by, while still
     Standing ..> Harvestable : node, while awake
     Cell ..> CellLayer : lit by
@@ -659,6 +665,7 @@ classDiagram
         +reserve(kind, n)
         +claim_closest(kind, pos): ResourceDrop or Storage
         +shortest_trip_loose(kind, from, to)
+        +drop_moved(drop, from, to)
         +food_cap() / food_full()
         +room(kind): int
         +register(drop) / unregister(drop)
@@ -687,6 +694,7 @@ classDiagram
     Job <|-- FarmJob
     Job <|-- StoreJob
     JobSystem ..> Job : pending and active
+    Inventory ..> AreaIndex : one per kind of drop
     Meeple ..> Job : runs one job
     Meeple ..> MeepleLook : reads look and numbers
     Population ..> Meeple : starves
