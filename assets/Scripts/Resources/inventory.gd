@@ -130,13 +130,10 @@ func reserve(kind : String, amount : int) -> void:
 func claim_closest(kind : String, world_pos : Vector2) -> Object:
 	var closest : Object = null
 	var nearest := INF
-	if _loose.get(kind, 0) > 0:
-		var local := _grid.to_local(world_pos)
-		closest = _area_of(kind).best(local, func(drop : ResourceDrop) -> float:
-			return INF if drop.claimed else local.distance_squared_to(drop.position),
-			func(away : float) -> float: return away * away)
-		if closest != null:
-			nearest = world_pos.distance_squared_to(closest.global_position)
+	var drop := nearest_loose(kind, world_pos)
+	if drop != null:
+		closest = drop
+		nearest = world_pos.distance_squared_to(drop.global_position)
 	for pile : Storage in get_tree().get_nodes_in_group(Storage.GROUP):
 		if pile.kind != kind or pile.unclaimed() <= 0:
 			continue
@@ -151,18 +148,21 @@ func claim_closest(kind : String, world_pos : Vector2) -> Object:
 		_claim(closest as ResourceDrop, true)
 	return closest
 
-## The loose drop of `kind` with the shortest walk from `from` to it and on to `to`.
-## It looks near `from` first and stops once no drop farther away can make a shorter trip.
-func shortest_trip_loose(kind : String, from : Vector2, to : Vector2) -> ResourceDrop:
+## True when any drop lies on the ground with nothing claiming it.
+func has_loose() -> bool:
+	for kind in _loose:
+		if _loose[kind] > 0:
+			return true
+	return false
+
+## The loose drop of `kind` nearest to `from`, or null when none is loose.
+func nearest_loose(kind : String, from : Vector2) -> ResourceDrop:
 	if _loose.get(kind, 0) <= 0:
 		return null
-	var start := _grid.to_local(from)
-	var end := _grid.to_local(to)
-	var straight := start.distance_to(end)
-	return _area_of(kind).best(start, func(drop : ResourceDrop) -> float:
-		return INF if drop.claimed else start.distance_to(drop.position) + drop.position.distance_to(end),
-		# A drop `away` from the start makes a trip of at least `away`, and at least 2 * away - straight.
-		func(away : float) -> float: return maxf(away, 2.0 * away - straight))
+	var local := _grid.to_local(from)
+	return _area_of(kind).best(local, func(drop : ResourceDrop) -> float:
+		return INF if drop.claimed else local.distance_squared_to(drop.position),
+		func(away : float) -> float: return away * away)
 
 ## A loose drop moved, in the grid's space. Its bucket follows it.
 func drop_moved(drop : ResourceDrop, from : Vector2, to : Vector2) -> void:

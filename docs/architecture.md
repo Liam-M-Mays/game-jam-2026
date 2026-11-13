@@ -114,7 +114,7 @@ flowchart LR
 
     tree -->|"Harvest costs 1 food"| drops
     drops -->|"Hauled one by one"| site
-    drops -->|"Stored by pile workers"| piles
+    drops -->|"Carried by free builders"| piles
     piles -->|"Hauled up to two at a time"| site
     site -->|"Completes"| huts
     bush -->|"Pick: plus 2"| food
@@ -243,7 +243,7 @@ sequenceDiagram
 
 ## Meeple job lifecycle
 
-From `meeple_movement.gd` and `job_system.gd`. A meeple is either a builder or a worker of one building. Once a frame, `JobSystem.match_jobs` gives each new job to the nearest free builder, and each builder that became free the nearest waiting job. There is no job limit. A worker asks its building for work with `find_work` at most every half second, and never takes the player's jobs. A click on a finished building opens the `WorkerPanel`. Its arrows set the workers of the building's `worker_building()`: a farm or silo gives its barn, and a building with no slots, like a hut, hides them. The add arrow opens a slot, which the nearest free builder takes. The remove arrow drops a slot nobody took yet, or sends a worker back to being a builder. A new building starts with no workers (`Building.STARTS_FULL`). A dead worker's slot opens again.
+From `meeple_movement.gd` and `job_system.gd`. A meeple is either a builder or a worker of one building. Once a frame, `JobSystem.match_jobs` gives each new job to the nearest free builder, and each builder that became free the nearest waiting job. There is no job limit. A worker asks its building for work with `find_work` at most every half second, and never takes the player's jobs. A builder with no job looks as often for a loose drop to carry to a pile (`Storage.find_trip`): the drop nearest to it, to the nearest pile of its kind with room. The piles have no worker slots. A builder on such a store trip still counts as free, so a player's job takes it and it puts the drop down. A click on a finished building opens the `WorkerPanel`. Its arrows set the workers of the building's `worker_building()`: a farm or silo gives its barn, and a building with no slots, like a hut, hides them. The add arrow opens a slot, which the nearest free builder takes. The remove arrow drops a slot nobody took yet, or sends a worker back to being a builder. A new building starts with no workers (`Building.STARTS_FULL`). A dead worker's slot opens again.
 
 The panel's Remove button asks first, then calls `Building.remove_building()`. What the building cost pops out as drops, the way a tree's drops do (a site pops out only what was delivered). Its workers go back to being builders, its hauls are recalled, and it leaves every group at once. A pile also drops what it held, and a haul that claimed a drop in it takes one of the dropped drops instead (`JobSystem.hauls_from`, `HaulJob.take_spilled`). A barn removes its farms and silos first. A removed hut leaves its meeples, so the village can be over its room. The Town Hall answers false to `can_remove()`, and its button is dimmed.
 
@@ -512,7 +512,7 @@ classDiagram
         +store(drop)
         +claim() / unclaim()
         +take(): ResourceDrop
-        +find_work(worker): StoreJob
+        +find_trip(builder): StoreJob
         +make_store_job(drop): StoreJob
         +remove_building()
     }
@@ -678,7 +678,8 @@ classDiagram
         +add(kind, n) / spend(kind, n)
         +reserve(kind, n)
         +claim_closest(kind, pos): ResourceDrop or Storage
-        +shortest_trip_loose(kind, from, to)
+        +has_loose(): bool
+        +nearest_loose(kind, pos): ResourceDrop
         +drop_moved(drop, from, to)
         +food_cap() / food_full()
         +room(kind): int
