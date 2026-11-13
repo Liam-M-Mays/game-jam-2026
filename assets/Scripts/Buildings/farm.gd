@@ -18,8 +18,15 @@ func is_ripe() -> bool:
 func can_harvest_now() -> bool:
 	return is_ripe() and not Inventory.food_full()
 
+## A farm finished before its barn stays bare until the barn is finished too.
 func complete() -> void:
 	super()
+	if barn == null or barn.is_in_group(COMPLETED_GROUP):
+		start_growing()
+
+func start_growing() -> void:
+	if _growing:
+		return
 	_growing = true
 	_set_growth(0)
 

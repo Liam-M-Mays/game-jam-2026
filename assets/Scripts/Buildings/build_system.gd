@@ -16,6 +16,8 @@ const AREA_COLOR := Color(1.0, 0.95, 0.6, 0.7)
 ## The land of the barns already built, while placing a barn, so they can be lined up.
 const OTHER_AREA_COLOR := Color(1.0, 0.95, 0.6, 0.35)
 const AREA_TAKEN_COLOR := Color(1.0, 0.35, 0.3, 0.7)
+## A tree, rock or bush on that land, which meeples clear once the building is placed.
+const AREA_CLEAR_COLOR := Color(1.0, 0.7, 0.3, 0.7)
 ## The cells right next to the building, so the player sees the grid around it.
 const NEAR_COLOR := Color(Cell.HIGHLIGHT_COLOR, 0.5)
 ## The cells the building will stand on: green where it fits, red where it does not.
@@ -113,7 +115,7 @@ func _process(_delta : float) -> void:
 		_show_lights({})
 		return
 	_preview.position = anchor.position
-	var cells := grid.free_cells_at(mouse, _preview.footprint, _preview.footprint_depth)
+	var cells := _cells_at(mouse)
 	var blocked := _placement_error(cells) != PlacementError.NONE
 	_preview.set_preview_blocked(blocked)
 	var lights := _area_lights(anchor)
@@ -130,17 +132,38 @@ func _area_lights(anchor : Cell) -> Dictionary[Cell, Color]:
 	var lights : Dictionary[Cell, Color] = {}
 	if _preview.restricts_placement():
 		for cell in _preview.placement_area(grid):
-			lights[cell] = AREA_COLOR
+			lights[cell] = AREA_COLOR if cell.occupant == null else AREA_CLEAR_COLOR
 		return lights
 	if _preview is Barn:
 		for barn : Barn in get_tree().get_nodes_in_group(Barn.GROUP):
 			if barn != _moving:
 				for cell in barn.area_at(grid, barn.cells[0]):
 					lights[cell] = OTHER_AREA_COLOR
+	var clears := _clears_land()
 	for cell in _preview.area_at(grid, anchor):
-		var taken := cell.occupant != null or (cell.kept_for != null and cell.kept_for != _moving)
-		lights[cell] = AREA_TAKEN_COLOR if taken else AREA_COLOR
+		if cell.kept_for != null and cell.kept_for != _moving:
+			lights[cell] = AREA_TAKEN_COLOR
+		elif cell.occupant == null:
+			lights[cell] = AREA_COLOR
+		elif clears and cell.occupant is Standing:
+			lights[cell] = AREA_CLEAR_COLOR
+		else:
+			lights[cell] = AREA_TAKEN_COLOR
 	return lights
+
+## A new barn, farm or silo may go over trees, rocks and bushes. A building being moved may not.
+func _clears_land() -> bool:
+	return _moving == null and _preview.clears_land()
+
+## The cells the building would stand on, or none when it does not fit there.
+func _cells_at(mouse : Vector2) -> Array[Cell]:
+	if not _clears_land():
+		return grid.free_cells_at(mouse, _preview.footprint, _preview.footprint_depth)
+	var under := grid.cells_under(mouse, _preview.footprint, _preview.footprint_depth)
+	if under.size() < _preview.footprint * _preview.footprint_depth \
+			or not under.all(func(c : Cell) -> bool: return c.occupant == null or c.occupant is Standing):
+		return []
+	return under
 
 func _show_lights(lights : Dictionary[Cell, Color]) -> void:
 	for cell in _lit:
@@ -160,7 +183,7 @@ func _placement_error(cells : Array[Cell]) -> PlacementError:
 	return PlacementError.NONE
 
 func _try_place() -> void:
-	var cells := grid.free_cells_at(get_global_mouse_position(), _preview.footprint, _preview.footprint_depth)
+	var cells := _cells_at(get_global_mouse_position())
 	var error := _placement_error(cells)
 	if error != PlacementError.NONE:
 		_preview.reject()
@@ -173,9 +196,8 @@ func _try_place() -> void:
 		end_build()
 		return
 	var site : Building = _scene.instantiate()
-	grid.place(site, cells)
 	site.completed.connect(func(): building_completed.emit(site))
-	site.start_construction()
+	site.put_down(grid, cells)
 	VillageAudio.play(&"hammer", site.global_position)
 	building_placed.emit(site)
 	var next := site.build_after(_scene)

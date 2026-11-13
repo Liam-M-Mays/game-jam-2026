@@ -45,8 +45,7 @@ func grow_in() -> void:
 
 func _on_clicked() -> void:
 	if _job is HarvestJob:
-		JobSystem.cancel(_job)
-		_set_job(null)
+		cancel_job()
 	elif _job != null:
 		reject()
 		GameState.warn("A lumberjack or miner is already working on this")
@@ -55,10 +54,29 @@ func _on_clicked() -> void:
 		JobSystem.add(job)
 		_set_job(job)
 
-## Cancels the job the player gave it and takes the mark off.
+## Cancels the job the player gave it and takes the mark off. A building waiting for this land
+## to be cleared is told, so it can give up.
 func cancel_job() -> void:
+	# Clear all can reach a job that a cancelled building already took off.
+	if _job == null:
+		return
 	JobSystem.cancel(_job)
 	_set_job(null)
+	for cell in cells:
+		if cell.kept_for is Building:
+			(cell.kept_for as Building).land_not_cleared(cell)
+
+## True while a player's job or a clearing mark is on it.
+func is_marked() -> bool:
+	return _job is HarvestJob
+
+## Marks it to be cut down so a building can stand here, the same as a player's click.
+## Nothing changes when a job has it already.
+func mark_for_clearing() -> void:
+	if _job == null and can_harvest():
+		var job := HarvestJob.new(self)
+		JobSystem.add(job)
+		_set_job(job)
 
 func can_harvest() -> bool:
 	return standing.wobbles < wobbles_to_break
