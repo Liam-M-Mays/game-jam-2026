@@ -11,4 +11,4 @@ func find_work(_worker : Meeple) -> Job:
 
 func _closest_tree() -> Standing:
 	return grid.nearest_standing(position, func(look : Harvestable) -> bool:
-		return look.drops.has(chops) and Inventory.count("food") >= look.food_cost)
+		return look.drops.has(chops))
