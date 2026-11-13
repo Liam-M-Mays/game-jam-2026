@@ -97,12 +97,15 @@ func abandon_job() -> void:
 	stop()
 	JobSystem.worker_freed(self)
 
-## True when a player's job may take this meeple: it is an alive builder with no job.
+## True when a player's job may take this meeple: it is an alive builder with no job, or one carrying
+## a loose drop to a pile, which the player's job comes before.
 func is_free() -> bool:
-	return _dead_time < 0.0 and job == null and workplace == null
+	return _dead_time < 0.0 and workplace == null and (job == null or job is StoreJob)
 
-## Starts `new_job`. JobSystem calls this when it matches the two.
+## Starts `new_job`. JobSystem calls this when it matches the two. A builder on a store trip drops it.
 func take_job(new_job : Job) -> void:
+	if job != null:
+		job.abort(self)
 	job = new_job
 	_wandering = false
 	job.start(self)
@@ -118,7 +121,7 @@ func leave_workplace() -> void:
 
 func die() -> void:
 	VillageAudio.play(&"hurt", global_position)
-	if job != null and workplace != null:
+	if job != null and (workplace != null or job is StoreJob):
 		job.abort(self)
 	elif job != null:
 		JobSystem.requeue(job, self)
@@ -191,8 +194,7 @@ func _topple_angle(t : float) -> float:
 
 func _work(delta : float) -> void:
 	if job == null:
-		if workplace != null:
-			job = _ask_for_work(delta)
+		job = _ask_for_work(delta)
 		if job == null:
 			_wander(delta)
 			return
@@ -201,17 +203,21 @@ func _work(delta : float) -> void:
 	if not job.update(self, delta):
 		return
 	if workplace == null:
-		JobSystem.finish(job)
+		if not job is StoreJob:
+			JobSystem.finish(job)
 		JobSystem.worker_freed(self)
 	job = null
 
-## A worker asks its building for the next task at most every IDLE_CHECK_INTERVAL.
+## A worker asks its building for the next task at most every IDLE_CHECK_INTERVAL. A builder with
+## nothing to do looks as often for a loose drop to carry to a pile.
 func _ask_for_work(delta : float) -> Job:
 	_idle_check -= delta
 	if _idle_check > 0.0:
 		return null
 	# A little more or less each time, so workers who started together do not all ask in the same frame.
 	_idle_check = IDLE_CHECK_INTERVAL * randf_range(0.5, 1.5)
+	if workplace == null:
+		return Storage.find_trip(self)
 	return workplace.find_work(self)
 
 func _wander(delta : float) -> void:

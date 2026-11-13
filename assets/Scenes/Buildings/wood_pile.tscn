@@ -52,8 +52,7 @@ min_to_start = Dictionary[String, int]({
 "wood": 1
 })
 required_town_hall_level = 4
-description = "Its worker picks up wood lying on the ground and stacks it on a wood pile."
-worker_slots = 1
+description = "Free meeples carry wood lying on the ground here."
 area = NodePath("Area2D")
 
 [node name="Area2D" type="Area2D" parent="." unique_id=1383702269]
