@@ -366,6 +366,7 @@ classDiagram
     class Cell {
         +position: Vector2
         +occupant: GridObject or Standing
+        +kept_for: Barn or null
         +highlight(alpha, color)
     }
     class CellLayer {
@@ -451,6 +452,9 @@ classDiagram
         +remove_building()
         +icon(): Texture2D
         +can_place_at() / placement_area()
+        +area_at(grid, anchor): Array[Cell]
+        +build_after(scene): PackedScene
+        +note(): String
     }
     class BuildFrame {
         <<resource>>
@@ -492,6 +496,7 @@ classDiagram
         +base_slots: int = 3
         +plot_offsets: Array[Vector2i]
         +plots: Array[BarnPlot]
+        +farm_scene: PackedScene
         +slots(): int
         +has_room_for(plot): bool
         +find_work(worker): FarmJob
