@@ -25,6 +25,8 @@ Liam's list from 2026-11-10, kept as it was:
 
 The bar: **5,000 meeples at 60 frames a second** on Liam's Mac, on the ground world (#61).
 
+On 2026-11-13 Liam accepted the measured result instead. With #116, 5,000 working meeples take 17 to 22 ms a frame in an exported build, about 50 to 58 frames a second. 1,000 take about 6 ms. The tables are in #14.
+
 Not part of this: giants walking by, second villages, a world map, animals, roads, new ores, an ending after the statue, baby meeples, seasons, rivers, enemies, a settings menu, lighting, saving.
 
 ## Liam's earlier answers still count
@@ -62,6 +64,7 @@ Each line is one pull request into `rework`. "After" names the parts that must b
 | 4b | Roles: the building panel with the arrows | #7 | 4a | about 150 |
 | 5a | Stored drops become counts. The stock signal fires once a frame | #14 | 2 | 200 to 300 |
 | 5b | Loose drops as data. Measure 5,000 meeples in the jam scene | #14 | 4a, 5a | about 150 |
+| 5c | Script costs at 5,000, then measure again | #14 | 5b, 12, 15b | about 165 |
 | 6 | Cells as data: no node and no Area2D per cell | #92 | 2 | 150 to 200 |
 | 7a | Trees and rocks as data, drawn by row | #93 | 6 | about 250 |
 | 7b | Bushes as data | #93 | 7a | about 100 |
@@ -102,12 +105,13 @@ Each line is one pull request into `rework`. "After" names the parts that must b
 - "Holds 60" means the average frame takes 16.6 ms or less. Write down the 95th-percentile frame and the worst frame too.
 - Part 2 gives a first reading at 1,000 and 5,000 wandering meeples. Part 5b measures the jam scene with real work. Part 8b measures the ground world with all meeples in view. Paste each table into #14.
 - If the ground world misses the bar, the fallback is our own draw order with the sprite batch kept on `core-rewrite` (`addons/sprite_batch/`). That is a new part, decided with Liam.
+- The fallback was not taken. 5,000 meeples missed 60 even after part 5c, and Liam accepted the numbers on 2026-11-13.
 
 ## Changed on purpose
 
 These go against an earlier answer of Liam's. Liam agreed to all of them on 2026-11-11, when he approved this plan.
 
-- **Godot's y-sort, not our own draw order.** Liam asked for our own order on 2026-11-10. The y-sort is far less code, and the numbers above say it holds the bar when trees are drawn by row. The fallback is above.
+- **Godot's y-sort, not our own draw order.** Liam asked for our own order on 2026-11-10. The y-sort is far less code. With trees drawn by row it holds 60 at 1,000 meeples, but not at 5,000. Liam accepted that on 2026-11-13, so the fallback above was not taken.
 - **Meeples walk straight, as in the jam game.** Path-finding (#16) and its red flash for a target that cannot be reached wait until after the rework.
 - **Tools come after the rework:** the effects toolkit (#62), the building editor (#33), the debug overlay (#31) and the preset village (#32).
 - **No `gdlint` check.** #59 made it a third check. The jam code is not lint-clean, and the rework edits it in place.
