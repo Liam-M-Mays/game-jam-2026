@@ -21,7 +21,7 @@ Liam's list from 2026-11-10, kept as it was:
 - The open fixes are in.
 - The playtest points that do not transform the game are in.
 - All assets and the giant scene stay in the project.
-- The village also runs on the giant's back, as it does today. **Required before the switch** (#76).
+- The village also runs on the giant's back, as it does today. **Required before the switch** (#77).
 
 The bar: **5,000 meeples at 60 frames a second** on Liam's Mac, on the ground world (#61).
 
@@ -79,7 +79,7 @@ Each line is one pull request into `rework`. "After" names the parts that must b
 | 15a | Remove a building | #6 | 4a, 6 | about 150 |
 | 15b | Move a building | #6 | 15a | about 100 |
 | 16 | Small decided changes, a few per pull request | #89 | 1 | small each |
-| 17 | Finish: Liam plays both scenes, exports, one pull request into `master` | #77 | all | none |
+| 17 | Finish: Liam plays both scenes, exports, one pull request into `master`. On hold until playtesting (Liam, 2026-11-13) | #77 | all | none |
 
 - The sizes are rough guesses of game code. Tests and scenes are not counted.
 - Parts 9, 10, 11 and 16 can go any time. The others wait for the parts in "After" because they edit the same files.
@@ -121,7 +121,7 @@ These go against an earlier answer of Liam's. Liam agreed to all of them on 2026
 
 ## Branches
 
-- `master`: frozen until part 17. Only art into `ART/` lands there.
+- `master`: frozen until part 17. Only art into `ART/` lands there. Part 17 is on hold until playtesting (Liam, 2026-11-13).
 - `rework`: this work. It starts at `master` as it was on 2026-11-11. Pull requests only, base `rework`.
 - `core-rewrite`: the first attempt, kept as an archive. No new work goes there.
-- Part 17 lands as one pull request from `rework` into `master`.
+- Part 17 lands as one pull request from `rework` into `master`, after playtesting.

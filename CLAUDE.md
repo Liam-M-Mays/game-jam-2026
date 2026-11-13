@@ -45,7 +45,7 @@ Mighty Meeple is a Godot 4.7.2 game (GDScript, GL Compatibility renderer). Three
 
 ## Project facts
 
-- Main scene: `Main_Menu.tscn`. Game scene: `assets/Scenes/Levels/game.tscn`.
+- Main scene: `Main_Menu.tscn`. Game scenes: `assets/Scenes/Levels/game.tscn` (on the giant) and `assets/Scenes/Levels/ground.tscn` (the round ground world). The main menu opens either one. Play every change in both.
 - Autoloads: `JobSystem`, `Inventory`, `GameState`, `Population`, `VillageAudio`, `Music`.
 - Running Godot with `--script` does not load the autoloads, so most scripts fail to compile that way. Use a scene, like `.github/ci/load_check.tscn` does.
 - The first import of a fresh clone prints script errors. Import twice.

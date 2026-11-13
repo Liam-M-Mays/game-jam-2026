@@ -2,7 +2,7 @@
 
 A village-building game made with Godot 4.7. It started as a 49-hour entry for the 2026 UNCC Fall 49er Game Jam, and development continues.
 
-You run a village of meeples that lives on the back of a walking giant. Harvest wood, stone and food, build huts and farms, and keep everyone fed.
+You run a village of meeples that lives on the back of a walking giant, or on a large round world on the ground. Harvest wood, stone and food, build huts and farms, and keep everyone fed.
 
 ## Run it
 

@@ -21,12 +21,13 @@ Looks at files and references. It does not need Godot.
 
 ## Godot checks (a few minutes)
 
-Runs the real engine, with no window, in four steps:
+Runs the real engine, with no window, in five steps:
 
 1. **Import twice.** The first pass builds Godot's class cache and is allowed to print errors. The second pass has to be clean.
 2. **Load everything.** Every script, scene, resource and shader is loaded, and every scene is instantiated. A script that does not compile or a scene with a missing piece fails here.
-3. **Boot the entry scenes.** The scenes listed in `.github/ci/entry-scenes.txt` run for a few seconds. Any script error fails the check.
-4. **Read the logs.** `checks.py` turns Godot's log files into a pass or a fail. The logs are attached to the run as `godot-logs`.
+3. **Boot the entry scenes.** The scenes listed in `.github/ci/entry-scenes.txt` run for a few seconds: the main menu, the giant (`game.tscn`) and the ground world (`ground.tscn`). Any script error fails the check.
+4. **Run the tests.** `assets/Scripts/Dev/test_runner/run_tests.tscn` runs every `test_*.gd` file under `assets/` that extends `GameTest`. A failing test fails the check. See [Tests](#tests) below.
+5. **Read the logs.** `checks.py` turns Godot's log files into a pass or a fail. The logs are attached to the run as `godot-logs`.
 
 ## The known-problems list
 
@@ -55,7 +56,21 @@ They catch broken files. They do **not** catch a game that loads fine but plays 
 - A button that was hidden by accident still loads without errors.
 - A balance change, a wrong sprite or a job that never finishes all pass.
 
-So a human still plays the change before approving. Automated gameplay tests are the next step and are not set up yet.
+So a human still plays the change before approving. A few rule tests cover rules that can break without an error (see [Tests](#tests)), but they do not play the game.
+
+## Tests
+
+A test is a file named `test_<rule>.gd` in a `tests/` folder next to the code it tests, for example `assets/Scripts/Jobs/tests/test_job_matching.gd`. It extends `GameTest` (`assets/Scripts/Dev/test_runner/game_test.gd`), and every method whose name starts with `test_` is one test.
+
+Run all of them, or only the files whose path holds a text:
+
+```bash
+GODOT="/path/to/Godot" bash .github/ci/run_tests.sh
+```
+
+```bash
+GODOT="/path/to/Godot" bash .github/ci/run_tests.sh --only=job_matching
+```
 
 ## Other automation
 

@@ -15,7 +15,7 @@ The jam game is being fixed in place on the branch `rework`. The plan is [docs/r
 - Liam reviews and merges every pull request into `rework`.
 - `core-rewrite` is an old attempt kept as an archive. Do not build on it.
 
-The five steps below still apply, with `rework` in place of `master`.
+The five steps below still apply, with three swaps: `rework` in place of `master`, "Part of #N" in place of `Closes #N`, and Liam merging in place of step 5.
 
 ## The workflow in five steps
 
@@ -62,7 +62,7 @@ Say what changed and why, in one line. The history is how we find out later why 
 
 Godot rewrites parts of a `.tscn` file every time it saves, so scenes are where merges go wrong.
 
-- **Tell the team before you work in a shared scene**: `assets/hud.tscn`, `Main_Menu.tscn`, `assets/Scenes/Levels/game.tscn`.
+- **Tell the team before you work in a shared scene**: `assets/hud.tscn`, `assets/worker_panel.tscn`, `Main_Menu.tscn`, `assets/Scenes/Levels/game.tscn`, `assets/Scenes/Levels/ground.tscn`.
 - **Read the diff of every scene before you commit.** If a scene changed and you did not mean to touch it, throw the change away:
 
   ```bash
