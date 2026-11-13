@@ -52,7 +52,7 @@ min_to_start = Dictionary[String, int]({
 "wood": 1
 })
 required_town_hall_level = 4
-description = "Its worker stacks loose wood here."
+description = "Its worker picks up wood lying on the ground and stacks it on a wood pile."
 worker_slots = 1
 area = NodePath("Area2D")
 

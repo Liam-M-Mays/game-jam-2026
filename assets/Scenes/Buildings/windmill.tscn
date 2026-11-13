@@ -112,7 +112,7 @@ min_to_start = Dictionary[String, int]({
 "wood": 2
 })
 required_town_hall_level = 5
-description = "+1 farm plot and silo per farm"
+description = "Every barn in your village gets room for 1 more farm and 1 more silo, however far away it is. Each windmill adds more."
 area = NodePath("Area2D")
 footprint = 2
 
