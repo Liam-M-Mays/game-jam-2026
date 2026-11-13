@@ -103,7 +103,10 @@ func _on_move_pressed() -> void:
 	get_tree().call_group(BuildSystem.GROUP, &"start_move", building)
 
 func _outline_workers() -> void:
-	_set_outlined(_workers_of.workers if _workers_of != null else [] as Array[Meeple])
+	var workers : Array[Meeple] = []
+	if _workers_of != null:
+		workers = _workers_of.workers
+	_set_outlined(workers)
 
 func _set_outlined(meeples : Array[Meeple]) -> void:
 	for meeple in _outlined:
