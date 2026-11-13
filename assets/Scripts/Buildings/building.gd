@@ -15,6 +15,8 @@ const CONSTRUCTION_GROUP := &"construction_sites"
 const POP_RISE := 0.05
 const POP_FALL := 0.13
 const PAUSED_OUTLINE := Color(1.0, 0.85, 0.1)
+## How often a building waiting for its land looks whether the land is clear, in seconds.
+const LAND_CHECK_TIME := 0.25
 ## True: a finished building fills all its worker slots by itself, with the nearest free builders.
 ## False: it starts with no workers, and the player adds them with the arrows in its panel.
 const STARTS_FULL := true
@@ -46,6 +48,9 @@ var workers : Array[Meeple] = []
 ## How many workers the player set with the panel's arrows. A slot with nobody in it waits for a free builder.
 var wanted_workers := 0
 var _blueprint : Sprite2D = null
+## Checks the land while the building waits for trees, rocks or bushes on its cells to be cleared.
+## Null when it is not waiting.
+var _land_timer : Timer = null
 ## When the player placed it, on JobSystem's clock. Its deliveries count their age from here.
 var ordered_at := 0.0
 
@@ -195,6 +200,87 @@ func note() -> String:
 func can_afford() -> bool:
 	return _has_resources(min_to_start)
 
+## True when it may be placed over trees, rocks and bushes, which meeples then clear. Barns, farms and silos do.
+func clears_land() -> bool:
+	return false
+
+## Placing puts the building down on `at_cells` and starts building it. Trees, rocks or bushes on
+## those cells are marked to be cleared first. Until they are gone, the building waits as a ghost:
+## it keeps its cells and nothing is spent on it.
+func put_down(at_grid : Grid, at_cells : Array[Cell]) -> void:
+	if at_cells.all(func(c : Cell) -> bool: return c.occupant == null):
+		at_grid.place(self, at_cells)
+		start_construction()
+		return
+	grid = at_grid
+	cells = at_cells
+	position = at_cells[0].position
+	for cell in at_cells:
+		if cell.kept_for == null:
+			cell.kept_for = self
+	at_grid.add_child(self)
+	show_as_preview()
+	_land_timer = Timer.new()
+	_land_timer.wait_time = LAND_CHECK_TIME
+	_land_timer.timeout.connect(_check_land)
+	add_child(_land_timer)
+	_land_timer.start()
+	_check_land()
+
+func is_waiting_for_land() -> bool:
+	return _land_timer != null
+
+## Marks every tree, rock and bush on `at_cells` to be cleared.
+func mark_land(at_grid : Grid, at_cells : Array[Cell]) -> void:
+	for cell in at_cells:
+		if cell.occupant is Standing:
+			at_grid.wake(cell.occupant).mark_for_clearing()
+
+## Starts building once its cells are clear. Until then it marks what still stands on them, again,
+## in case a lumberjack or a bush picker let go of it.
+func _check_land() -> void:
+	if cells.any(func(c : Cell) -> bool: return c.occupant != null):
+		mark_land(grid, cells)
+		return
+	_land_timer.queue_free()
+	_land_timer = null
+	for cell in cells:
+		if cell.kept_for == self:
+			cell.kept_for = null
+	material = ShaderMaterial.new()
+	material.shader = OUTLINE_SHADER
+	grid.place(self, cells)
+	start_construction()
+
+## A clearing job on `cell` was cancelled. A building still waiting for that cell is not built.
+func land_not_cleared(cell : Cell) -> void:
+	if is_waiting_for_land() and cells.has(cell):
+		cancel_waiting()
+
+## Gives up waiting for the land: the building goes, and the clearing marks on its cells come off.
+## Nothing was spent on it yet. `say` shows a toast that tells the player why.
+func cancel_waiting(say := true) -> void:
+	_land_timer.queue_free()
+	_land_timer = null
+	for cell in cells:
+		if cell.kept_for == self:
+			cell.kept_for = null
+	for group in get_groups():
+		if not String(group).begins_with("_"):
+			remove_from_group(group)
+	_unmark_land(cells)
+	if say:
+		GameState.warn("%s cancelled: its land is not being cleared" % display_name())
+	queue_free()
+
+## Takes the clearing marks off the trees, rocks and bushes on `at_cells`.
+func _unmark_land(at_cells : Array[Cell]) -> void:
+	for cell in at_cells:
+		if cell.occupant is Standing:
+			var node := (cell.occupant as Standing).node
+			if node != null and node.is_marked():
+				node.cancel_job()
+
 func start_construction() -> void:
 	ordered_at = JobSystem.now()
 	_built = EMPTY_STAGE
@@ -277,6 +363,9 @@ func remove_question() -> String:
 ## to being builders, and the jobs that bring it drops are cancelled.
 func remove_building() -> void:
 	if not can_remove():
+		return
+	if is_waiting_for_land():
+		cancel_waiting(false)
 		return
 	var refund := _spent()
 	if _constructing:

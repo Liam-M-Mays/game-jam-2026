@@ -225,7 +225,7 @@ sequenceDiagram
     Player->>BuildMenu: Click Small Hut
     BuildMenu->>BuildSystem: start_build(scene)
     Player->>BuildSystem: Left click on free cells
-    BuildSystem->>Building: grid.place, start_construction
+    BuildSystem->>Building: put_down: grid.place, start_construction
     Building->>Inventory: reserve(wood)
     Building->>Inventory: claim_closest(wood), in HaulJob.new
     Building->>JobSystem: add(HaulJob)
@@ -445,6 +445,9 @@ classDiagram
         +grow_in()
         +texture_for(item): Texture2D
         +is_still(): bool
+        +cancel_job()
+        +is_marked(): bool
+        +mark_for_clearing()
     }
     class Building {
         +signal completed
@@ -458,6 +461,7 @@ classDiagram
         +workers: Array[Meeple]
         +wanted_workers: int
         +costs: Dictionary (computed)
+        +put_down(grid, cells)
         +start_construction()
         +deliver(kind)
         +complete()
@@ -477,6 +481,11 @@ classDiagram
         +area_at(grid, anchor): Array[Cell]
         +build_after(scene): PackedScene
         +note(): String
+        +clears_land(): bool
+        +is_waiting_for_land(): bool
+        +mark_land(grid, cells)
+        +land_not_cleared(cell)
+        +cancel_waiting(say)
     }
     class BuildFrame {
         <<resource>>
@@ -523,6 +532,7 @@ classDiagram
         +has_room_for(plot): bool
         +find_work(worker): FarmJob
         +add_plot(plot)
+        +plot_on(cell): BarnPlot
         +plot_area(): Array[Cell]
         +in_plot_range(cells): bool
         +remove_building()
@@ -560,6 +570,7 @@ classDiagram
         +is_ripe() / can_harvest_now()
         +harvest_crop()
         +grow_stages(): int
+        +start_growing()
     }
     class Silo {
         +food_capacity: int = 20

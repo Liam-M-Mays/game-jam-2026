@@ -22,11 +22,28 @@ func placement_hint() -> String:
 		return "%s needs a barn with a free slot. Build a barn or a windmill" % display_name()
 	return "%s has to go in the highlighted area around a barn" % display_name()
 
+func clears_land() -> bool:
+	return true
+
+## Joins its barn when placed, so the slot is taken even while it waits for its land.
+func put_down(at_grid : Grid, at_cells : Array[Cell]) -> void:
+	_join_barn(at_cells)
+	super(at_grid, at_cells)
+
 func start_construction() -> void:
-	barn = _barn_for(cells)
+	if barn == null:
+		_join_barn(cells)
+	super()
+
+func _join_barn(at_cells : Array[Cell]) -> void:
+	barn = _barn_for(at_cells)
 	if barn != null:
 		barn.add_plot(self)
-	super()
+
+func cancel_waiting(say := true) -> void:
+	if barn != null:
+		barn.plots.erase(self)
+	super(say)
 
 func remove_building() -> void:
 	if barn != null:

@@ -54,6 +54,12 @@ func cancel_job() -> void:
 	super()
 	_clearing = false
 
+## A bush in the way of a building is cut down, not picked.
+func mark_for_clearing() -> void:
+	if _job == null:
+		_clearing = true
+	super()
+
 func can_harvest() -> bool:
 	if _clearing:
 		return super()
