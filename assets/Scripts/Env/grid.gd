@@ -115,8 +115,13 @@ func _exit_tree() -> void:
 	_meeples.clear()
 	JobSystem.workers.clear()
 	_meeple_look.free()
+	# Trees, rocks and bushes are RefCounted data in two reference loops: kind -> area -> item -> kind,
+	# and item -> cell -> occupant -> item. Break both, or every item and its cells leak when the level closes.
 	for s in _spawnables:
 		s.template.free()
+		s.area = null
+	for cell : Cell in _coords_of:
+		cell.occupant = null
 
 ## Adds a meeple at `at`, in this grid's space, and gives it to the jobs.
 func spawn_meeple(at : Vector2) -> Meeple:
