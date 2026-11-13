@@ -108,7 +108,6 @@ front_chance = 0.1
 min_delay = 0.01
 max_delay = 0.05
 min_fall_speed = 250.0
-max_tilt_degrees = 0.48
 spin_chance = 0.75
 max_spin_degrees = 135.0
 
