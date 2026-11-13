@@ -11,19 +11,21 @@ enum PlacementError { NONE, BLOCKED, CANT_AFFORD, OUT_OF_AREA }
 
 const GROUP := &"build_system"
 
-const AREA_COLOR := Color(1.0, 0.95, 0.6)
-const AREA_ALPHA := 0.7
-const AREA_HOVER_COLOR := Color(1.0, 1.0, 1.0)
-const AREA_HOVER_ALPHA := 1.0
-const AREA_TAKEN_COLOR := Color(1.0, 0.35, 0.3)
+## Land a barn keeps for farms and silos: the barn being placed, or the land farms and silos can go on.
+const AREA_COLOR := Color(1.0, 0.95, 0.6, 0.7)
+## The land of the barns already built, while placing a barn, so they can be lined up.
+const OTHER_AREA_COLOR := Color(1.0, 0.95, 0.6, 0.35)
+const AREA_TAKEN_COLOR := Color(1.0, 0.35, 0.3, 0.7)
+## The cells the building will stand on: green where it fits, red where it does not.
+const FITS_COLOR := Color(0.45, 1.0, 0.45, 0.9)
+const BLOCKED_COLOR := Color(1.0, 0.3, 0.25, 0.9)
 const PAUSE_CLICK_MAX_DRAG := 6.0
 
 @export var grid : Grid
-@export var cursor : CellCursor
 
 var _scene : PackedScene = null
 var _preview : Building = null
-var _area : Array[Cell] = []
+var _lit : Array[Cell] = []
 var _right_press_at := Vector2.ZERO
 var _tooltip := ConstructionTooltip.new()
 ## The building the player is moving. It is lifted off its cells until it lands or goes back.
@@ -32,7 +34,6 @@ var _moving : Building = null
 func _ready() -> void:
 	add_to_group(GROUP)
 	add_child(_tooltip)
-	cursor.grid = grid
 
 func start_build(scene : PackedScene) -> void:
 	var preview : Building = scene.instantiate()
@@ -46,7 +47,6 @@ func start_build(scene : PackedScene) -> void:
 	_preview = preview
 	grid.add_child(_preview)
 	_preview.show_as_preview()
-	cursor.enabled = not _preview.restricts_placement()
 	build_started.emit(scene)
 
 func end_build() -> void:
@@ -55,7 +55,6 @@ func end_build() -> void:
 	_put_back()
 	_clear_preview()
 	_scene = null
-	cursor.enabled = false
 	build_ended.emit()
 
 func is_building() -> bool:
@@ -106,40 +105,44 @@ func _process(_delta : float) -> void:
 		return
 	var mouse := get_global_mouse_position()
 	var anchor := grid.cell_at(mouse)
-	var cells := grid.free_cells_at(mouse, _preview.footprint, _preview.footprint_depth)
 	_tooltip.note = _rules().note()
-	if _preview.restricts_placement():
-		var area := _preview.placement_area(grid)
-		var on_area := not cells.is_empty() and cells.all(func(c): return area.has(c))
-		var hovered : Array[Cell] = []
-		if on_area:
-			hovered = cells
-		_show_area(area, hovered)
-		_preview.visible = on_area
-		if not on_area:
-			return
-	else:
-		_preview.visible = anchor != null
-		var area : Array[Cell] = []
-		if anchor != null:
-			area = _preview.area_at(grid, anchor)
-		_show_area(area, [], area.filter(func(c : Cell): return c.occupant != null or (c.kept_for != null and c.kept_for != _moving)))
-	if anchor != null:
-		_preview.position = anchor.position
-	_preview.set_preview_blocked(_placement_error(cells) != PlacementError.NONE)
+	_preview.visible = anchor != null
+	if anchor == null:
+		_show_lights({})
+		return
+	_preview.position = anchor.position
+	var cells := grid.free_cells_at(mouse, _preview.footprint, _preview.footprint_depth)
+	var blocked := _placement_error(cells) != PlacementError.NONE
+	_preview.set_preview_blocked(blocked)
+	var lights := _area_lights(anchor)
+	for cell in grid.cells_under(mouse, _preview.footprint, _preview.footprint_depth):
+		lights[cell] = BLOCKED_COLOR if blocked else FITS_COLOR
+	_show_lights(lights)
 
-func _show_area(cells : Array[Cell], hovered : Array[Cell] = [], taken : Array = []) -> void:
-	for cell in _area:
-		if is_instance_valid(cell) and not cells.has(cell):
+## The land to show around the building: where a farm or silo may go, or a barn's plot area and the other barns' areas.
+func _area_lights(anchor : Cell) -> Dictionary[Cell, Color]:
+	var lights : Dictionary[Cell, Color] = {}
+	if _preview.restricts_placement():
+		for cell in _preview.placement_area(grid):
+			lights[cell] = AREA_COLOR
+		return lights
+	if _preview is Barn:
+		for barn : Barn in get_tree().get_nodes_in_group(Barn.GROUP):
+			if barn != _moving:
+				for cell in barn.area_at(grid, barn.cells[0]):
+					lights[cell] = OTHER_AREA_COLOR
+	for cell in _preview.area_at(grid, anchor):
+		var taken := cell.occupant != null or (cell.kept_for != null and cell.kept_for != _moving)
+		lights[cell] = AREA_TAKEN_COLOR if taken else AREA_COLOR
+	return lights
+
+func _show_lights(lights : Dictionary[Cell, Color]) -> void:
+	for cell in _lit:
+		if is_instance_valid(cell) and not lights.has(cell):
 			cell.highlight(0.0)
-	for cell in cells:
-		if hovered.has(cell):
-			cell.highlight(AREA_HOVER_ALPHA, AREA_HOVER_COLOR)
-		elif taken.has(cell):
-			cell.highlight(AREA_ALPHA, AREA_TAKEN_COLOR)
-		else:
-			cell.highlight(AREA_ALPHA, AREA_COLOR)
-	_area = cells
+	for cell in lights:
+		cell.highlight(lights[cell].a, lights[cell])
+	_lit.assign(lights.keys())
 
 func _placement_error(cells : Array[Cell]) -> PlacementError:
 	if cells.is_empty():
@@ -175,7 +178,7 @@ func _try_place() -> void:
 		start_build(next)
 
 func _clear_preview() -> void:
-	_show_area([])
+	_show_lights({})
 	_tooltip.note = ""
 	if _preview != null:
 		_preview.queue_free()

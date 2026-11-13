@@ -211,6 +211,17 @@ func _touches(cell : Cell, local : Vector2, radius : float) -> bool:
 func free_cells_at(world_pos : Vector2, width := 1, depth := 1) -> Array[Cell]:
 	return _free_cells(_coords_at(world_pos), width, depth)
 
+## Every cell a `width` by `depth` footprint at `world_pos` would stand on, taken or not.
+func cells_under(world_pos : Vector2, width := 1, depth := 1) -> Array[Cell]:
+	var found : Array[Cell] = []
+	var coords := _coords_at(world_pos)
+	for row in range(depth):
+		for i in range(width):
+			var cell := _cell_or_null(coords + Vector2i(i, row))
+			if cell != null:
+				found.append(cell)
+	return found
+
 func cells_around(obj : GridObject, radius := 1) -> Array[Cell]:
 	var found : Array[Cell] = []
 	for cell in obj.cells:

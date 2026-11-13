@@ -151,7 +151,6 @@ flowchart TD
     objects["Buildings, and the trees, rocks and bushes that are hovered, hit, chosen or growing"]
     meeples["Meeples: plain data, one canvas item each, no node"]
     drops["Drops on the ground: plain data, one canvas item each, no node"]
-    cursor["Mouse: cell cursor, asks Grid for the cells near the mouse (mouse.gd)"]
     buildSystem["BuildSystem (build_system.gd)"]
     tooltip["ConstructionTooltip, created in code"]
     parallax["5 parallax background layers"]
@@ -168,7 +167,6 @@ flowchart TD
     torso --> camera
     torso --> back
     back --> grid
-    back --> cursor
     back --> buildSystem
     grid --> cells
     grid --> cellLayer
@@ -185,14 +183,13 @@ flowchart TD
 
 ## Scene tree of the ground scene
 
-How `assets/Scenes/Levels/ground.tscn` is nested. The same Grid, Mouse, BuildSystem and HUD, with no giant. The Grid's `world_cells` sets the size of the round world, and the Grid moves the Yard to the world's middle and gives its polygon the world's edge.
+How `assets/Scenes/Levels/ground.tscn` is nested. The same Grid, BuildSystem and HUD, with no giant. The Grid's `world_cells` sets the size of the round world, and the Grid moves the Yard to the world's middle and gives its polygon the world's edge.
 
 ```mermaid
 flowchart TD
     ground["Ground: root of Levels/ground.tscn (ground_level.gd)"]
     world["World: y-sorted container, scale 0.1"]
     grid["Grid (grid.gd), world_cells = 100,000"]
-    cursor["Mouse (mouse.gd)"]
     buildSystem["BuildSystem (build_system.gd)"]
     yard["Yard: noise for the round world (yard_ground.gd)"]
     shape["Yard: Polygon2D in the world's shape, drawn with yard_ground.gdshader"]
@@ -201,7 +198,6 @@ flowchart TD
 
     ground --> world
     world --> grid
-    world --> cursor
     world --> buildSystem
     ground --> yard
     yard --> shape
@@ -353,6 +349,7 @@ classDiagram
         +cell_at(world_pos): Cell
         +cells_near(world_pos, radius)
         +free_cells_at(pos, width, depth)
+        +cells_under(pos, width, depth)
         +cells_around(obj, radius)
         +cells_at_offsets(origin, offsets)
         +place(obj, cells)
@@ -407,17 +404,10 @@ classDiagram
         +signal building_completed(building)
         +signal placement_failed(reason, hint)
         +grid: Grid
-        +cursor: CellCursor
         +start_build(scene)
         +end_build()
         +start_move(building)
         +is_building(): bool
-    }
-    class CellCursor {
-        +enabled: bool
-        +highlight_alpha: float
-        +radius: float
-        +grid: Grid
     }
     class ResourceDrop {
         +kind: String
@@ -592,12 +582,10 @@ classDiagram
     Standing ..> StandingRow : drawn by, while still
     Standing ..> Harvestable : node, while awake
     Cell ..> CellLayer : lit by
-    CellCursor ..> Grid : cells_near
     Harvestable ..> ResourceDrop : breaks into
     ResourceDrop ..> DropLook : reads look and numbers
     Building ..> BuildFrame : cost per stage
     BuildSystem ..> Building : previews and places
-    BuildSystem ..> CellCursor : cursor
     Barn ..> BarnPlot : plots
 ```
 
