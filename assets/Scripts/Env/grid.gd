@@ -643,8 +643,13 @@ func _wake_left_of(building : Building) -> void:
 		if item != null and _under_building(item):
 			wake(item)
 
+## While a building is being placed, trees, rocks and bushes do not light up under the mouse,
+## so only the building's own cells show.
 func _update_hover() -> void:
-	var under := _standing_under_mouse()
+	var placing := get_tree().get_first_node_in_group(BuildSystem.GROUP) as BuildSystem
+	var under : Array[Standing] = []
+	if placing == null or not placing.is_building():
+		under = _standing_under_mouse()
 	for item in _hovered:
 		if not under.has(item) and item.node != null:
 			item.node._set_hovered(false)
