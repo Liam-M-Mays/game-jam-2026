@@ -31,6 +31,10 @@ var global_position : Vector2:
 
 var _look : MeepleLook
 var _item : RID
+## Two canvas items behind `_item` that draw the outline, while the meeple is highlighted. Empty otherwise.
+var _outline : Array[RID] = []
+var _frame := 0
+var _head_offset := 0.0
 var _body_color := Color.from_hsv(randf(), 0.8, 0.9)
 var _rotation := 0.0
 var _stretch := 1.0
@@ -64,9 +68,26 @@ func _init(owner : Grid, look : MeepleLook, at : Vector2) -> void:
 
 ## Frees the canvas item. Grid calls this when it leaves the game.
 func free_item() -> void:
+	set_highlighted(false)
 	if _item.is_valid():
 		RenderingServer.free_rid(_item)
 	_item = RID()
+
+## Outlines the meeple, the way a selected building is outlined. Only the few meeples this is on pay for it.
+func set_highlighted(on : bool) -> void:
+	if on == not _outline.is_empty() or (on and not _item.is_valid()):
+		return
+	if not on:
+		for item in _outline:
+			RenderingServer.free_rid(item)
+		_outline.clear()
+		return
+	for i in range(2):
+		var item := RenderingServer.canvas_item_create()
+		RenderingServer.canvas_item_set_parent(item, _item)
+		RenderingServer.canvas_item_set_draw_behind_parent(item, true)
+		_outline.append(item)
+	_redraw()
 
 func move_to(world_pos : Vector2, stop_cells : Array[Cell] = []) -> void:
 	_target = grid.to_local(world_pos) + SORT_BIAS
@@ -135,9 +156,17 @@ func die() -> void:
 
 func carry(kind := "", amount := 1) -> void:
 	if amount >= 2 and DOUBLE_CARRY_FRAMES.has(kind):
-		_look.draw(_item, _body_color, DOUBLE_CARRY_FRAMES[kind], DOUBLE_CARRY_HEAD_OFFSET)
-		return
-	_look.draw(_item, _body_color, CARRY_FRAMES.get(kind, 0), CARRY_HEAD_OFFSET if CARRY_FRAMES.has(kind) else 0.0)
+		_frame = DOUBLE_CARRY_FRAMES[kind]
+		_head_offset = DOUBLE_CARRY_HEAD_OFFSET
+	else:
+		_frame = CARRY_FRAMES.get(kind, 0)
+		_head_offset = CARRY_HEAD_OFFSET if CARRY_FRAMES.has(kind) else 0.0
+	_redraw()
+
+func _redraw() -> void:
+	_look.draw(_item, _body_color, _frame, _head_offset)
+	if not _outline.is_empty():
+		_look.draw_outline(_outline, _body_color, _frame, _head_offset)
 
 ## Moves, works and draws for one frame. Returns false once a dead meeple has faded out and freed its item.
 func tick(delta : float) -> bool:
