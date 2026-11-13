@@ -16,6 +16,8 @@ const AREA_COLOR := Color(1.0, 0.95, 0.6, 0.7)
 ## The land of the barns already built, while placing a barn, so they can be lined up.
 const OTHER_AREA_COLOR := Color(1.0, 0.95, 0.6, 0.35)
 const AREA_TAKEN_COLOR := Color(1.0, 0.35, 0.3, 0.7)
+## The cells right next to the building, so the player sees the grid around it.
+const NEAR_COLOR := Color(Cell.HIGHLIGHT_COLOR, 0.5)
 ## The cells the building will stand on: green where it fits, red where it does not.
 const FITS_COLOR := Color(0.45, 1.0, 0.45, 0.9)
 const BLOCKED_COLOR := Color(1.0, 0.3, 0.25, 0.9)
@@ -115,7 +117,11 @@ func _process(_delta : float) -> void:
 	var blocked := _placement_error(cells) != PlacementError.NONE
 	_preview.set_preview_blocked(blocked)
 	var lights := _area_lights(anchor)
-	for cell in grid.cells_under(mouse, _preview.footprint, _preview.footprint_depth):
+	var under := grid.cells_under(mouse, _preview.footprint, _preview.footprint_depth)
+	for cell in grid.cells_next_to(under):
+		if not lights.has(cell):
+			lights[cell] = NEAR_COLOR
+	for cell in under:
 		lights[cell] = BLOCKED_COLOR if blocked else FITS_COLOR
 	_show_lights(lights)
 

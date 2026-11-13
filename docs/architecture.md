@@ -350,6 +350,7 @@ classDiagram
         +cells_near(world_pos, radius)
         +free_cells_at(pos, width, depth)
         +cells_under(pos, width, depth)
+        +cells_next_to(cells)
         +cells_around(obj, radius)
         +cells_at_offsets(origin, offsets)
         +place(obj, cells)

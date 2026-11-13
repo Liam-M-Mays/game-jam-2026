@@ -222,6 +222,16 @@ func cells_under(world_pos : Vector2, width := 1, depth := 1) -> Array[Cell]:
 				found.append(cell)
 	return found
 
+## The cells that touch `group` on any side, not counting the cells of `group` itself.
+func cells_next_to(group : Array[Cell]) -> Array[Cell]:
+	var found : Array[Cell] = []
+	for cell in group:
+		for offset in NEIGHBOURS:
+			var near := _cell_or_null(_coords_of[cell] + offset)
+			if near != null and not group.has(near) and not found.has(near):
+				found.append(near)
+	return found
+
 func cells_around(obj : GridObject, radius := 1) -> Array[Cell]:
 	var found : Array[Cell] = []
 	for cell in obj.cells:
