@@ -128,11 +128,11 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _refresh_counters() -> void:
 	if stone_label:
-		stone_label.text = "%d/%d" % [Inventory.count("stone"), Inventory.room("stone")]
+		stone_label.text = "%d/%d" % [Inventory.available("stone"), Inventory.room("stone")]
 	if wood_label:
-		wood_label.text = "%d/%d" % [Inventory.count("wood"), Inventory.room("wood")]
+		wood_label.text = "%d/%d" % [Inventory.available("wood"), Inventory.room("wood")]
 	if food_label:
-		food_label.text = "%d/%d food" % [Inventory.count("food"), Inventory.food_cap()]
+		food_label.text = "%d/%d food" % [Inventory.available("food"), Inventory.food_cap()]
 	if meeple_label:
 		meeple_label.text = "%d / %d" % [JobSystem.workers.size(), Population.capacity()]
 	var waiting := JobSystem.waiting_player_jobs()
