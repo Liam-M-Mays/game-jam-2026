@@ -7,49 +7,49 @@
 [sub_resource type="Resource" id="Frame_0"]
 script = ExtResource("3_oqh0i")
 costs = Dictionary[String, int]({
-"wood": 1
+"wood": 2
 })
 
 [sub_resource type="Resource" id="Frame_1"]
 script = ExtResource("3_oqh0i")
 costs = Dictionary[String, int]({
-"wood": 1
+"wood": 2
 })
 
 [sub_resource type="Resource" id="Frame_2"]
 script = ExtResource("3_oqh0i")
 costs = Dictionary[String, int]({
-"wood": 1
+"wood": 2
 })
 
 [sub_resource type="Resource" id="Frame_3"]
 script = ExtResource("3_oqh0i")
 costs = Dictionary[String, int]({
-"wood": 1
+"wood": 2
 })
 
 [sub_resource type="Resource" id="Frame_4"]
 script = ExtResource("3_oqh0i")
 costs = Dictionary[String, int]({
-"wood": 1
+"wood": 2
 })
 
 [sub_resource type="Resource" id="Frame_5"]
 script = ExtResource("3_oqh0i")
 costs = Dictionary[String, int]({
-"wood": 1
+"wood": 2
 })
 
 [sub_resource type="Resource" id="Frame_6"]
 script = ExtResource("3_oqh0i")
 costs = Dictionary[String, int]({
-"wood": 1
+"wood": 2
 })
 
 [sub_resource type="Resource" id="Frame_7"]
 script = ExtResource("3_oqh0i")
 costs = Dictionary[String, int]({
-"wood": 1
+"wood": 2
 })
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
@@ -67,7 +67,7 @@ min_to_start = Dictionary[String, int]({
 "wood": 4
 })
 required_town_hall_level = 3
-description = "Its worker cuts down the nearest tree and leaves the wood on the ground. Each tree costs 1 food."
+description = "Its worker cuts down the nearest tree and leaves the wood on the ground. A small tree costs 1 food, a big one 2."
 worker_slots = 1
 area = NodePath("Area2D")
 footprint = 2

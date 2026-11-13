@@ -8,31 +8,31 @@
 [sub_resource type="Resource" id="Frame_0"]
 script = ExtResource("3_phase")
 costs = Dictionary[String, int]({
-"stone": 1
+"stone": 2
 })
 
 [sub_resource type="Resource" id="Frame_1"]
 script = ExtResource("3_phase")
 costs = Dictionary[String, int]({
-"stone": 1
+"stone": 2
 })
 
 [sub_resource type="Resource" id="Frame_2"]
 script = ExtResource("3_phase")
 costs = Dictionary[String, int]({
-"wood": 1
+"wood": 2
 })
 
 [sub_resource type="Resource" id="Frame_3"]
 script = ExtResource("3_phase")
 costs = Dictionary[String, int]({
-"wood": 1
+"wood": 2
 })
 
 [sub_resource type="Resource" id="Frame_4"]
 script = ExtResource("3_phase")
 costs = Dictionary[String, int]({
-"wood": 1
+"wood": 2
 })
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_1"]
@@ -50,7 +50,7 @@ worker_slots = 1
 farm_scene = ExtResource("4_farm")
 frames = Array[ExtResource("3_phase")]([SubResource("Frame_0"), SubResource("Frame_1"), SubResource("Frame_2"), SubResource("Frame_3"), SubResource("Frame_4")])
 min_to_start = Dictionary[String, int]({
-"stone": 2
+"stone": 4
 })
 required_town_hall_level = 2
 area = NodePath("Area2D")

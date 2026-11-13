@@ -112,19 +112,19 @@ flowchart LR
     hall["Town Hall level"]
     unlocks["New buildings unlock"]
 
-    tree -->|"Harvest costs 1 food"| drops
+    tree -->|"Harvest costs 1 food, a big one 2"| drops
     drops -->|"Hauled one by one"| site
     drops -->|"Carried by free builders"| piles
     piles -->|"Hauled up to two at a time"| site
     site -->|"Completes"| huts
     bush -->|"Pick: plus 2"| food
-    farm -->|"Harvest: plus 1"| food
+    farm -->|"Harvest: plus 3"| food
     food --> hunger
     meeples --> hunger
     hunger -->|"Above 50: grow"| meeples
     hunger -->|"Below 25: starve"| meeples
     huts -->|"Housing capacity"| meeples
-    meeples -->|"3, 6, 10, 15 meeples"| hall
+    meeples -->|"4, 8, 12, 16 meeples"| hall
     hall --> unlocks
     unlocks --> site
 ```

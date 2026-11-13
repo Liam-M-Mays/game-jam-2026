@@ -7,13 +7,13 @@
 [sub_resource type="Resource" id="Frame_0"]
 script = ExtResource("3_phase")
 costs = Dictionary[String, int]({
-"stone": 1
+"stone": 2
 })
 
 [sub_resource type="Resource" id="Frame_1"]
 script = ExtResource("3_phase")
 costs = Dictionary[String, int]({
-"stone": 1
+"stone": 2
 })
 
 [sub_resource type="Resource" id="Frame_2"]
@@ -37,7 +37,7 @@ costs = Dictionary[String, int]({
 [sub_resource type="Resource" id="Frame_5"]
 script = ExtResource("3_phase")
 costs = Dictionary[String, int]({
-"stone": 1
+"stone": 2
 })
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_nafr4"]
@@ -50,12 +50,13 @@ texture = ExtResource("1_dcq31")
 offset = Vector2(3, -3)
 hframes = 6
 script = ExtResource("2_7tv1p")
-description = "A bigger home. One meeple moves in when it's finished, and more join while they're well fed."
+description = "A bigger home for three meeples, who move in while the village is well fed."
 meeple_capacity = 3
+meeples_when_finished = 0
 reverse_frames = true
 frames = Array[ExtResource("3_phase")]([SubResource("Frame_0"), SubResource("Frame_1"), SubResource("Frame_2"), SubResource("Frame_3"), SubResource("Frame_4"), SubResource("Frame_5")])
 min_to_start = Dictionary[String, int]({
-"stone": 2
+"stone": 4
 })
 required_town_hall_level = 3
 area = NodePath("Area2D")
