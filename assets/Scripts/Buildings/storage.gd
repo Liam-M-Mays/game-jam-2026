@@ -23,9 +23,9 @@ func _icon_frame() -> int:
 func held() -> int:
 	return _stock
 
-## Drops here that no haul has claimed yet.
+## Drops here or on their way here that no haul has claimed yet.
 func unclaimed() -> int:
-	return _stock - _claimed
+	return _stock + _en_route - _claimed
 
 func complete() -> void:
 	super()
@@ -64,7 +64,11 @@ func take() -> ResourceDrop:
 	return drop
 
 ## A removed pile drops what it held. A haul that claimed a drop here takes one of the spilled drops instead.
+## Store trips on their way here put their drops down first.
 func remove_building() -> void:
+	for meeple in JobSystem.workers:
+		if meeple.job is StoreJob and meeple.job.site == self:
+			meeple.job.abort(meeple)
 	var hauls := JobSystem.hauls_from(self)
 	var spill : Dictionary[String, int] = {kind: _stock}
 	Inventory.pile_changed(kind, -_stock, -_claimed)
@@ -109,11 +113,25 @@ static func find_trip(builder : Meeple) -> StoreJob:
 
 func make_store_job(drop : ResourceDrop) -> StoreJob:
 	_en_route += 1
+	Inventory.pile_changed(kind, 0, 0, 1)
 	return StoreJob.new(drop, self)
 
 ## A store job made by `make_store_job` ended, delivered or not, so its drop no longer counts against the room.
 func trip_ended() -> void:
 	_en_route -= 1
+	Inventory.pile_changed(kind, 0, 0, -1)
+
+## A store trip here ended with `drop` put down on the ground. When hauls claimed more here than the
+## pile will now get, one of them takes that drop instead.
+func trip_dropped(drop : ResourceDrop) -> void:
+	trip_ended()
+	if _claimed <= _stock + _en_route:
+		return
+	var hauls := JobSystem.hauls_from(self)
+	if hauls.is_empty():
+		return
+	unclaim()
+	hauls[0].take_spilled(drop)
 
 func _refresh() -> void:
 	if capacity() <= 0:

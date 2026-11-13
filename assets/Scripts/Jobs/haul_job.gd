@@ -63,7 +63,7 @@ func update(worker : Meeple, _delta : float) -> bool:
 			if _pile != null:
 				stop = _pile.cells
 			worker.move_to(place(), stop)
-		if not worker.has_arrived():
+		if not worker.has_arrived() or _waits_for_pile():
 			return false
 		_pick_up()
 		if _partner != null:
@@ -91,6 +91,17 @@ func abort(worker : Meeple) -> void:
 		_drop.show()
 		worker.carry()
 		_carrying = false
+
+## True while the pile this haul or its partner claimed from holds fewer drops than they take:
+## the rest are still being carried there.
+func _waits_for_pile() -> bool:
+	var need := 0
+	var pile : Storage = null
+	for haul : HaulJob in [self, _partner]:
+		if haul != null and haul._pile != null:
+			need += 1
+			pile = haul._pile
+	return pile != null and pile.held() < need
 
 func _pick_up() -> void:
 	_carrying = true

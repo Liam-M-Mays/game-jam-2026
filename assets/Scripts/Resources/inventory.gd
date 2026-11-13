@@ -16,8 +16,9 @@ var _all_drops : Array[ResourceDrop] = []
 var _loose : Dictionary[String, int] = {}
 var _stored := START_STOCK.duplicate()
 var _reserved := {}
-## Drops kept in piles, and how many of those hauls have claimed, per kind.
+## Drops kept in piles, drops on their way to a pile, and how many of those hauls have claimed, per kind.
 var _piled : Dictionary[String, int] = {}
+var _heading : Dictionary[String, int] = {}
 var _pile_claims : Dictionary[String, int] = {}
 var _dirty := false
 var _last_changed := -CHANGED_EVERY_MS
@@ -46,9 +47,12 @@ func reset() -> void:
 	_stored = START_STOCK.duplicate()
 	_reserved.clear()
 	_piled.clear()
+	_heading.clear()
 	_pile_claims.clear()
 	mark_changed()
 
+## Every drop of `kind` there is, claimed or not: on the ground, carried, in piles and in stock.
+## What the player can spend is `available`.
 func count(kind : String) -> int:
 	return _drops_of(kind).size() + _piled.get(kind, 0) + _stored.get(kind, 0)
 
@@ -108,19 +112,23 @@ func clear_drops() -> void:
 	_loose.clear()
 	mark_changed()
 
-## A pile tells this when its stock or its claims change.
-func pile_changed(kind : String, stock : int, claims : int) -> void:
+## A pile tells this when its stock, its claims or the drops on their way to it change.
+func pile_changed(kind : String, stock : int, claims : int, heading := 0) -> void:
 	_piled[kind] = _piled.get(kind, 0) + stock
 	_pile_claims[kind] = _pile_claims.get(kind, 0) + claims
+	_heading[kind] = _heading.get(kind, 0) + heading
 	mark_changed()
 
 ## Every drop in the world: on the ground, or carried. Drops in piles are counts.
 func all_drops() -> Array[ResourceDrop]:
 	return _all_drops
 
+## What the player can still spend: the HUD shows it, and placing and the build menu check it.
+## Drops a site or a job has claimed are not in it. Drops on their way to a pile are, because a haul
+## can claim them from that pile.
 func available(kind : String) -> int:
-	var in_piles : int = _piled.get(kind, 0) - _pile_claims.get(kind, 0)
-	return _loose.get(kind, 0) + in_piles - _reserved.get(kind, 0)
+	var in_piles : int = _piled.get(kind, 0) + _heading.get(kind, 0) - _pile_claims.get(kind, 0)
+	return _stored.get(kind, 0) + _loose.get(kind, 0) + in_piles - _reserved.get(kind, 0)
 
 func reserve(kind : String, amount : int) -> void:
 	_reserved[kind] = _reserved.get(kind, 0) + amount

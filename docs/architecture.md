@@ -249,6 +249,8 @@ The panel's Remove button asks first, then calls `Building.remove_building()`. W
 
 The panel's Move button calls `BuildSystem.start_move(building)`. The building lifts off its cells (`Building.lift`, `Grid.lift`), and its old cells stay kept for it. The player places it with the same rules as a new building, for free. A click lands it on the new cells (`Building.land`), and Escape or a right click lands it back on the old ones. Its workers stay, and a meeple on its way to it turns towards the new spot. A barn lifts and lands its farms and silos with it. A farm or silo answers false to `can_move()`, so it only moves with its barn.
 
+The HUD's wood, stone and food counters show `Inventory.available(kind)`, the same number placing and the Build menu check (`Building.can_afford`). It leaves out drops a site has claimed. It keeps drops a builder is carrying to a pile, because a site can claim them from that pile (`Storage.unclaimed`); a haul that claimed one waits at the pile for it, and takes it from the ground if the store trip is dropped (`Storage.trip_dropped`).
+
 The HUD's jobs plate shows how many of the player's jobs wait for a meeple (`JobSystem.waiting_player_jobs`). Its Clear all button, or the C key, cancels them (`JobSystem.clear_waiting_player_jobs`). A meeple already on its way to a job keeps it.
 
 ```mermaid
