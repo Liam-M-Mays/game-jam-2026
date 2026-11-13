@@ -28,6 +28,11 @@ func start_construction() -> void:
 		barn.add_plot(self)
 	super()
 
+func remove_building() -> void:
+	if barn != null:
+		barn.plots.erase(self)
+	super()
+
 func worker_building() -> Building:
 	return barn.worker_building() if barn != null else null
 

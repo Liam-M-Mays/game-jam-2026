@@ -142,6 +142,14 @@ func recall_hauls(site : Building) -> void:
 		if worker.job is HaulJob and worker.job.site == site:
 			worker.abandon_job()
 
+## The hauls, waiting or under way, that claimed a drop in `pile` and have not picked it up yet.
+func hauls_from(pile : Storage) -> Array[HaulJob]:
+	var found : Array[HaulJob] = []
+	for job in _pending + _active:
+		if job is HaulJob and job.takes_from(pile):
+			found.append(job)
+	return found
+
 func take_pending_hauls(site : Building) -> Array[HaulJob]:
 	var taken : Array[HaulJob] = []
 	for job in _pending.duplicate():
