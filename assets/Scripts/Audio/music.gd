@@ -86,8 +86,9 @@ func _start_track(stream : AudioStream, level_db : float) -> void:
 	_level_db = level_db
 	_player.play()
 
+## The music fades as the giant's camera zooms out. On the ground it stays at full level.
 func _zoom_db() -> float:
-	var camera := get_viewport().get_camera_2d() as CameraControls
+	var camera := get_viewport().get_camera_2d() as GiantCamera
 	if camera == null or _player.stream != GAMEPLAY_MUSIC:
 		return 0.0
 	var amount := inverse_lerp(log(camera.min_zoom), log(VillageAudio.VILLAGE_ZOOM), log(camera.zoom.x))

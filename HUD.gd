@@ -11,6 +11,7 @@ const DEATH_SCREEN_DELAY := 1.0
 const DEATH_SCREEN_FADE := 2.0
 const DEATH_SCREEN_BLACK := 2.0
 const OPENING_TIP_GAP := 15.0
+const ZOOM_OUT_FACT := "Have you zoomed out all the way yet?"
 const PAUSE_BUILDING_TIP := "Right-click a building under construction to pause it, and right-click again to resume"
 const OPENING_TIPS := [
 	"Tap on trees and stones to begin harvesting resources",
@@ -35,7 +36,7 @@ const FUN_FACTS := [
 	"Each Meeple has a real human soul trapped inside of them",
 	"Bananas are berries, but strawberries aren't",
 	"Oxford University is older than the Aztec Empire",
-	"Have you zoomed out all the way yet?",
+	ZOOM_OUT_FACT,
 	"Antarctica is technically a desert",
 	"Sharks are older than trees",
 	"Did you know that cashews came from a fruit?",
@@ -58,6 +59,7 @@ const FUN_FACTS := [
 @export var speed_button: Button
 @export var jobs_label: Label
 @export var clear_jobs_button: Button
+## The giant's camera. The HUD hides when it is zoomed all the way out. Empty on the ground, where the HUD always stays.
 @export var camera: CameraControls
 
 var _building_scene: PackedScene
@@ -316,6 +318,8 @@ func _refill_deck() -> void:
 	for text in TIPS:
 		_deck.append({"text": text, "fact": false})
 	for text in FUN_FACTS:
+		if text == ZOOM_OUT_FACT and camera == null:
+			continue
 		_deck.append({"text": text, "fact": true})
 	_deck.shuffle()
 
