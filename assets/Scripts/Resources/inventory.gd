@@ -6,7 +6,7 @@ signal changed
 ## the stock almost every frame, and every HUD label and building site listens.
 const CHANGED_EVERY_MS := 150
 ## The food numbers, shared with Population: start stock and the food cap with no silo.
-const RULES : VillageRules = preload("res://assets/Res/village_rules.tres")
+var rules : VillageRules = preload("res://assets/Res/village_rules.tres")
 ## The side of a bucket of drops, in cells.
 const DROP_AREA_CELLS := 2
 
@@ -14,7 +14,7 @@ var _drops := {}
 var _all_drops : Array[ResourceDrop] = []
 ## Drops on the ground that nothing has claimed, per kind.
 var _loose : Dictionary[String, int] = {}
-var _stored : Dictionary = RULES.start_stock.duplicate()
+var _stored : Dictionary = rules.start_stock.duplicate()
 var _reserved := {}
 ## Drops kept in piles, drops on their way to a pile, and how many of those hauls have claimed, per kind.
 var _piled : Dictionary[String, int] = {}
@@ -44,7 +44,7 @@ func mark_changed() -> void:
 	_dirty = true
 
 func reset() -> void:
-	_stored = RULES.start_stock.duplicate()
+	_stored = rules.start_stock.duplicate()
 	_reserved.clear()
 	_piled.clear()
 	_heading.clear()
@@ -57,7 +57,7 @@ func count(kind : String) -> int:
 	return _drops_of(kind).size() + _piled.get(kind, 0) + _stored.get(kind, 0)
 
 func food_cap() -> int:
-	var cap := RULES.base_food_cap
+	var cap := rules.base_food_cap
 	for silo in get_tree().get_nodes_in_group(Silo.GROUP):
 		cap += silo.food_capacity
 	return cap
