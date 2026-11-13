@@ -13,6 +13,9 @@ const CONSTRUCTION_GROUP := &"construction_sites"
 const POP_RISE := 0.05
 const POP_FALL := 0.13
 const PAUSED_OUTLINE := Color(1.0, 0.85, 0.1)
+## True: a finished building fills all its worker slots by itself. False: it starts with no workers,
+## and the player adds them with the arrows in its panel.
+const STARTS_FULL := false
 
 @export var pop_amount := 0.05
 @export var reverse_frames := false
@@ -38,6 +41,8 @@ var _requesting := false
 var _banked : Dictionary[String, int] = {}
 var _incoming : Dictionary[String, int] = {}
 var workers : Array[Meeple] = []
+## How many workers the player set with the panel's arrows. A slot with nobody in it waits for a free builder.
+var wanted_workers := 0
 var _blueprint : Sprite2D = null
 
 func _ready() -> void:
@@ -197,9 +202,33 @@ func complete() -> void:
 	area.input_pickable = true
 	spawn_effect(BUILD_EFFECT, 1)
 	add_to_group(COMPLETED_GROUP)
-	for i in range(worker_slots):
-		JobSystem.open_slot(self)
+	for i in range(worker_slots if STARTS_FULL else 0):
+		add_worker_slot()
 	completed.emit()
+
+func _on_clicked() -> void:
+	var target := worker_building()
+	if target != null:
+		get_tree().call_group(WorkerPanel.GROUP, &"open", target)
+
+## The building whose workers a click on this one sets, or null. A farm or a silo answers with its barn.
+func worker_building() -> Building:
+	return self if worker_slots > 0 and is_in_group(COMPLETED_GROUP) else null
+
+## The panel's add arrow: one more slot, which the nearest free builder takes.
+func add_worker_slot() -> void:
+	if wanted_workers >= worker_slots:
+		return
+	wanted_workers += 1
+	JobSystem.open_slot(self)
+
+## The panel's remove arrow: drops a slot nobody took yet, or else sends a worker back to being a builder.
+func remove_worker_slot() -> void:
+	if wanted_workers <= 0:
+		return
+	wanted_workers -= 1
+	if not JobSystem.close_slot(self) and not workers.is_empty():
+		workers.pop_back().leave_workplace()
 
 ## The next task for `worker`, one of this building's workers, or null when there is nothing to do.
 func find_work(_worker : Meeple) -> Job:

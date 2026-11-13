@@ -39,7 +39,7 @@ func find_work(worker : Meeple) -> Job:
 	var from := worker.global_position
 	var best : Farm = null
 	for plot in plots:
-		if not is_instance_valid(plot) or not plot is Farm or not plot.needs_harvest():
+		if not is_instance_valid(plot) or not plot is Farm or not plot.can_harvest_now():
 			continue
 		if best == null or from.distance_squared_to(plot.global_position) < from.distance_squared_to(best.global_position):
 			best = plot

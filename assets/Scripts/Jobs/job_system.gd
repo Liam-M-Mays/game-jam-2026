@@ -111,21 +111,23 @@ func open_slot(building : Building) -> void:
 	_open_slots.append(building)
 	_slot_opened = true
 
-## Dev rule until the building panel of part 4b: an open slot takes the nearest free builder,
-## but one builder always stays for the player's jobs.
+## Takes back one of `building`'s slots that nobody filled yet. Returns false when it had none.
+func close_slot(building : Building) -> bool:
+	var index := _open_slots.rfind(building)
+	if index < 0:
+		return false
+	_open_slots.remove_at(index)
+	return true
+
+## Each open slot takes the nearest free builder, as long as there is one.
 func _fill_slots() -> void:
-	var builders := 0
-	for worker in workers:
-		if worker.workplace == null:
-			builders += 1
-	while not _open_slots.is_empty() and builders > 1:
+	while not _open_slots.is_empty():
 		var building : Building = _open_slots[0]
 		var builder := _nearest_free_worker(building.global_position)
 		if builder == null:
 			return
 		_open_slots.pop_front()
 		building.add_worker(builder)
-		builders -= 1
 
 func take_partner(job : HaulJob) -> HaulJob:
 	for other in _pending:

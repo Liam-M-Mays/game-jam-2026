@@ -28,6 +28,9 @@ func start_construction() -> void:
 		barn.add_plot(self)
 	super()
 
+func worker_building() -> Building:
+	return barn.worker_building() if barn != null else null
+
 func _barns_with_room() -> Array[Barn]:
 	var list : Array[Barn] = []
 	var tree := Engine.get_main_loop() as SceneTree

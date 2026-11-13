@@ -1,0 +1,69 @@
+[gd_scene format=3 uid="uid://c4wkpanel7b2xq"]
+
+[ext_resource type="Script" uid="uid://6u0xn782i0ga" path="res://assets/Scripts/UI/worker_panel.gd" id="1_panel"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_menu"]
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.16, 0.18, 0.16, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[node name="WorkerPanel" type="PanelContainer" node_paths=PackedStringArray("title", "count_label", "remove_button", "add_button")]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -120.0
+offset_top = -260.0
+offset_right = 120.0
+offset_bottom = -152.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_menu")
+script = ExtResource("1_panel")
+title = NodePath("Rows/Title")
+count_label = NodePath("Rows/Arrows/Count")
+remove_button = NodePath("Rows/Arrows/RemoveButton")
+add_button = NodePath("Rows/Arrows/AddButton")
+
+[node name="Rows" type="VBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Title" type="Label" parent="Rows"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Lumberjack"
+horizontal_alignment = 1
+
+[node name="Arrows" type="HBoxContainer" parent="Rows"]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="RemoveButton" type="Button" parent="Rows/Arrows"]
+custom_minimum_size = Vector2(56, 56)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 32
+text = "<"
+
+[node name="Count" type="Label" parent="Rows/Arrows"]
+custom_minimum_size = Vector2(96, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "0 / 1"
+horizontal_alignment = 1
+
+[node name="AddButton" type="Button" parent="Rows/Arrows"]
+custom_minimum_size = Vector2(56, 56)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 32
+text = ">"

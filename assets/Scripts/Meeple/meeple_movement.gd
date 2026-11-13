@@ -95,6 +95,15 @@ func take_job(new_job : Job) -> void:
 	_wandering = false
 	job.start(self)
 
+## Sends a worker back to being a builder. Its building's remove arrow calls this.
+func leave_workplace() -> void:
+	if job != null:
+		job.abort(self)
+	job = null
+	workplace = null
+	stop()
+	JobSystem.worker_freed(self)
+
 func die() -> void:
 	VillageAudio.play(&"hurt", global_position)
 	if job != null and workplace != null:
