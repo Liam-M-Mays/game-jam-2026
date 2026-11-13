@@ -6,7 +6,7 @@
 [ext_resource type="Script" uid="uid://clnxifq5klc7h" path="res://assets/Scripts/Buildings/build_system.gd" id="4_build"]
 [ext_resource type="Material" uid="uid://bvwf5d3484eng" path="res://assets/Res/yard_ground.tres" id="5_yard"]
 [ext_resource type="Script" uid="uid://cw0qdpuqfhjiu" path="res://assets/Scripts/Env/yard_ground.gd" id="6_yardscript"]
-[ext_resource type="Script" uid="uid://cmwljon6ih0lq" path="res://assets/Scripts/Cam/camera_controls.gd" id="7_camera"]
+[ext_resource type="Script" uid="uid://bl0k3b4jvv0t1" path="res://assets/Scripts/Cam/ground_camera.gd" id="7_camera"]
 [ext_resource type="PackedScene" uid="uid://ikcvt7q7gjvs" path="res://assets/hud.tscn" id="8_hud"]
 
 [node name="Ground" type="Node2D" node_paths=PackedStringArray("camera")]
@@ -41,10 +41,11 @@ frequency = 0.006
 material = ExtResource("5_yard")
 polygon = PackedVector2Array(1055, 0, 975, 404, 746, 746, 404, 975, 0, 1055, -404, 975, -746, 746, -975, 404, -1055, 0, -975, -404, -746, -746, -404, -975, 0, -1055, 404, -975, 746, -746, 975, -404)
 
-[node name="Camera2D" type="Camera2D" parent="."]
+[node name="Camera2D" type="Camera2D" parent="." node_paths=PackedStringArray("world_edge")]
 zoom = Vector2(8, 8)
 script = ExtResource("7_camera")
-min_zoom = 0.3
+world_edge = NodePath("../Yard/Yard")
+min_zoom = 0.5
 max_zoom = 20.0
 
 [node name="HUD" parent="." node_paths=PackedStringArray("build_system") instance=ExtResource("8_hud")]

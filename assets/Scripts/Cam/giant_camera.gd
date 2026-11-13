@@ -1,4 +1,5 @@
 extends CameraControls
+class_name GiantCamera
 
 @export var wide_position := Vector2(47, -86)
 

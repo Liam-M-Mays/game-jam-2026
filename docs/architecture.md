@@ -193,7 +193,7 @@ flowchart TD
     buildSystem["BuildSystem (build_system.gd)"]
     yard["Yard: noise for the round world (yard_ground.gd)"]
     shape["Yard: Polygon2D in the world's shape, drawn with yard_ground.gdshader"]
-    camera["Camera2D (camera_controls.gd)"]
+    camera["Camera2D (ground_camera.gd): view held inside the world"]
     hud["HUD: instance of hud.tscn"]
 
     ground --> world
