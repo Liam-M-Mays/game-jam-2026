@@ -70,6 +70,8 @@ var _building_cells : Array[Vector2i] = []
 var _cell_layer : CellLayer
 var _meeple_look : MeepleLook
 var _meeples : Array[Meeple] = []
+## One copy of each drop scene, out of the tree. Every drop draws from the copy of its scene.
+var _drop_looks := {}
 ## Every tree, rock and bush on the grid.
 var standing : Array[Standing] = []
 var _awake : Array[Standing] = []
@@ -103,6 +105,7 @@ func _ready() -> void:
 	print("World built in %d ms, %d cells" % [(Time.get_ticks_usec() - started) / 1000, _coords_of.size()])
 
 func _exit_tree() -> void:
+	_clear_drops()
 	for meeple in _meeples:
 		meeple.free_item()
 	_meeples.clear()
@@ -117,6 +120,20 @@ func spawn_meeple(at : Vector2) -> Meeple:
 	_meeples.append(meeple)
 	JobSystem.add_worker(meeple)
 	return meeple
+
+## Adds a drop of `scene` at `at`, in this grid's space, and gives it to Inventory.
+func add_drop(scene : PackedScene, at : Vector2) -> ResourceDrop:
+	if not _drop_looks.has(scene):
+		_drop_looks[scene] = scene.instantiate()
+	var drop := ResourceDrop.new(self, _drop_looks[scene], at)
+	Inventory.register(drop)
+	return drop
+
+func _clear_drops() -> void:
+	Inventory.clear_drops()
+	for look in _drop_looks.values():
+		look.free()
+	_drop_looks.clear()
 
 func _unhandled_input(event : InputEvent) -> void:
 	var click := event as InputEventMouseButton

@@ -285,10 +285,8 @@ func _pop_out(amounts : Dictionary[String, int]) -> Array[ResourceDrop]:
 	var dropped : Array[ResourceDrop] = []
 	for kind in amounts:
 		for i in range(amounts[kind]):
-			var drop := ResourceDrop.make(kind)
-			drop.position = middle
-			get_parent().add_child(drop)
-			drop.launch(grid)
+			var drop := grid.add_drop(ResourceDrop.scene_of(kind), middle)
+			drop.launch()
 			dropped.append(drop)
 	return dropped
 

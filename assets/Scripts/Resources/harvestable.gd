@@ -118,7 +118,4 @@ func _break() -> void:
 	grid.remove(self)
 	for scene in drops:
 		for i in range(drops[scene]):
-			var drop : ResourceDrop = scene.instantiate()
-			drop.position = position + Vector2(_base_offset.x * _base_scale.x, 0)
-			get_parent().add_child(drop)
-			drop.launch(grid)
+			grid.add_drop(scene, position + Vector2(_base_offset.x * _base_scale.x, 0)).launch()

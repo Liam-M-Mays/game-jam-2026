@@ -56,11 +56,9 @@ func take() -> ResourceDrop:
 	_claimed -= 1
 	Inventory.pile_changed(kind, -1, -1)
 	_refresh()
-	var drop := ResourceDrop.make(kind)
-	drop.claimed = true
+	var drop := grid.add_drop(ResourceDrop.scene_of(kind), grid.to_local(global_position))
+	Inventory.set_claimed(drop, true)
 	drop.hide()
-	get_parent().add_child(drop)
-	drop.global_position = global_position
 	return drop
 
 ## A removed pile drops what it held. A haul that claimed a drop here takes one of the spilled drops instead.
