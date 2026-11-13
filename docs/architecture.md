@@ -122,7 +122,7 @@ flowchart LR
     food --> hunger
     meeples --> hunger
     hunger -->|"Above 50: grow"| meeples
-    hunger -->|"Below 25: starve"| meeples
+    food -->|"None: a working meeple may die, 2% per action"| meeples
     huts -->|"Housing capacity"| meeples
     meeples -->|"4, 8, 12, 16 meeples"| hall
     hall --> unlocks
@@ -654,6 +654,7 @@ classDiagram
         +abandon_job()
         +is_free(): bool
         +take_job(job)
+        +did_work()
         +set_highlighted(on)
         +die()
     }
@@ -668,7 +669,8 @@ classDiagram
         <<autoload>>
         +signal all_meeples_died
         +huts: Array[Hut]
-        +RULES: VillageRules
+        +rules: VillageRules
+        +after_work(meeple)
         +capacity(): int
         +add_hut(hut) / remove_hut(hut)
     }

@@ -80,6 +80,7 @@ func update(worker : Meeple, _delta : float) -> bool:
 		JobSystem.finish(_partner)
 		_partner = null
 	worker.carry()
+	worker.did_work()
 	return true
 
 func abort(worker : Meeple) -> void:

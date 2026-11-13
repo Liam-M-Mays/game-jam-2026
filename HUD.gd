@@ -300,9 +300,9 @@ func _check_food_empty() -> void:
 
 
 func _hunger_band(value: float) -> HungerBand:
-	if value < Population.RULES.starve_below:
+	if value < Population.rules.starve_below:
 		return HungerBand.STARVING
-	if value <= Population.RULES.grow_above:
+	if value <= Population.rules.grow_above:
 		return HungerBand.FED
 	return HungerBand.THRIVING
 

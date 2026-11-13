@@ -49,6 +49,8 @@ var _wander_pause := 0.0
 var _wander_building : Building = null
 var _idle_check := 0.0
 var _dead_time := -1.0
+## Set by a job when this meeple did some work this frame, so Population can ask whether it dies of hunger.
+var _worked := false
 var _feet : Vector2
 var _arm : Vector2
 var _lying := 0.0
@@ -229,13 +231,19 @@ func _work(delta : float) -> void:
 			return
 		_wandering = false
 		job.start(self)
-	if not job.update(self, delta):
-		return
-	if workplace == null:
-		if not job is StoreJob:
-			JobSystem.finish(job)
-		JobSystem.worker_freed(self)
-	job = null
+	if job.update(self, delta):
+		if workplace == null:
+			if not job is StoreJob:
+				JobSystem.finish(job)
+			JobSystem.worker_freed(self)
+		job = null
+	if _worked:
+		_worked = false
+		Population.after_work(self)
+
+## A job calls this after each action: a hit on a tree, rock or bush, a farm harvest, a delivery to a site.
+func did_work() -> void:
+	_worked = true
 
 ## A worker asks its building for the next task at most every IDLE_CHECK_INTERVAL. A builder with
 ## nothing to do looks as often for a loose drop to carry to a pile.

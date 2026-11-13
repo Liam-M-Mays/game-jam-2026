@@ -42,7 +42,7 @@ func _update_hunger() -> void:
 	var meeples := JobSystem.workers.size()
 	var value := MAX_HUNGER
 	if meeples > 0:
-		value = Inventory.count("food") / (meeples * Population.RULES.food_per_meeple) * MAX_HUNGER
+		value = Inventory.count("food") / (meeples * Population.rules.food_per_meeple) * MAX_HUNGER
 	value = clampf(value, 0.0, MAX_HUNGER)
 	if not is_equal_approx(value, hunger):
 		hunger = value

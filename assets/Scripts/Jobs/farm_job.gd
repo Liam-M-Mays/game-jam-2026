@@ -23,6 +23,7 @@ func update(worker : Meeple, delta : float) -> bool:
 	if _timer < farm.harvest_time:
 		return false
 	farm.harvest_crop()
+	worker.did_work()
 	return true
 
 func abort(_worker : Meeple) -> void:
