@@ -16,8 +16,9 @@ var _all_drops : Array[ResourceDrop] = []
 var _loose : Dictionary[String, int] = {}
 var _stored := START_STOCK.duplicate()
 var _reserved := {}
-## Drops kept in piles, and how many of those hauls have claimed, per kind.
+## Drops kept in piles, drops on their way to a pile, and how many of those hauls have claimed, per kind.
 var _piled : Dictionary[String, int] = {}
+var _heading : Dictionary[String, int] = {}
 var _pile_claims : Dictionary[String, int] = {}
 var _dirty := false
 var _last_changed := -CHANGED_EVERY_MS
@@ -46,9 +47,12 @@ func reset() -> void:
 	_stored = START_STOCK.duplicate()
 	_reserved.clear()
 	_piled.clear()
+	_heading.clear()
 	_pile_claims.clear()
 	mark_changed()
 
+## Every drop of `kind` there is, claimed or not: on the ground, carried, in piles and in stock.
+## What the player can spend is `available`.
 func count(kind : String) -> int:
 	return _drops_of(kind).size() + _piled.get(kind, 0) + _stored.get(kind, 0)
 
@@ -108,19 +112,23 @@ func clear_drops() -> void:
 	_loose.clear()
 	mark_changed()
 
-## A pile tells this when its stock or its claims change.
-func pile_changed(kind : String, stock : int, claims : int) -> void:
+## A pile tells this when its stock, its claims or the drops on their way to it change.
+func pile_changed(kind : String, stock : int, claims : int, heading := 0) -> void:
 	_piled[kind] = _piled.get(kind, 0) + stock
 	_pile_claims[kind] = _pile_claims.get(kind, 0) + claims
+	_heading[kind] = _heading.get(kind, 0) + heading
 	mark_changed()
 
 ## Every drop in the world: on the ground, or carried. Drops in piles are counts.
 func all_drops() -> Array[ResourceDrop]:
 	return _all_drops
 
+## What the player can still spend: the HUD shows it, and placing and the build menu check it.
+## Drops a site or a job has claimed are not in it. Drops on their way to a pile are, because a haul
+## can claim them from that pile.
 func available(kind : String) -> int:
-	var in_piles : int = _piled.get(kind, 0) - _pile_claims.get(kind, 0)
-	return _loose.get(kind, 0) + in_piles - _reserved.get(kind, 0)
+	var in_piles : int = _piled.get(kind, 0) + _heading.get(kind, 0) - _pile_claims.get(kind, 0)
+	return _stored.get(kind, 0) + _loose.get(kind, 0) + in_piles - _reserved.get(kind, 0)
 
 func reserve(kind : String, amount : int) -> void:
 	_reserved[kind] = _reserved.get(kind, 0) + amount
@@ -130,13 +138,10 @@ func reserve(kind : String, amount : int) -> void:
 func claim_closest(kind : String, world_pos : Vector2) -> Object:
 	var closest : Object = null
 	var nearest := INF
-	if _loose.get(kind, 0) > 0:
-		var local := _grid.to_local(world_pos)
-		closest = _area_of(kind).best(local, func(drop : ResourceDrop) -> float:
-			return INF if drop.claimed else local.distance_squared_to(drop.position),
-			func(away : float) -> float: return away * away)
-		if closest != null:
-			nearest = world_pos.distance_squared_to(closest.global_position)
+	var drop := nearest_loose(kind, world_pos)
+	if drop != null:
+		closest = drop
+		nearest = world_pos.distance_squared_to(drop.global_position)
 	for pile : Storage in get_tree().get_nodes_in_group(Storage.GROUP):
 		if pile.kind != kind or pile.unclaimed() <= 0:
 			continue
@@ -151,18 +156,21 @@ func claim_closest(kind : String, world_pos : Vector2) -> Object:
 		_claim(closest as ResourceDrop, true)
 	return closest
 
-## The loose drop of `kind` with the shortest walk from `from` to it and on to `to`.
-## It looks near `from` first and stops once no drop farther away can make a shorter trip.
-func shortest_trip_loose(kind : String, from : Vector2, to : Vector2) -> ResourceDrop:
+## True when any drop lies on the ground with nothing claiming it.
+func has_loose() -> bool:
+	for kind in _loose:
+		if _loose[kind] > 0:
+			return true
+	return false
+
+## The loose drop of `kind` nearest to `from`, or null when none is loose.
+func nearest_loose(kind : String, from : Vector2) -> ResourceDrop:
 	if _loose.get(kind, 0) <= 0:
 		return null
-	var start := _grid.to_local(from)
-	var end := _grid.to_local(to)
-	var straight := start.distance_to(end)
-	return _area_of(kind).best(start, func(drop : ResourceDrop) -> float:
-		return INF if drop.claimed else start.distance_to(drop.position) + drop.position.distance_to(end),
-		# A drop `away` from the start makes a trip of at least `away`, and at least 2 * away - straight.
-		func(away : float) -> float: return maxf(away, 2.0 * away - straight))
+	var local := _grid.to_local(from)
+	return _area_of(kind).best(local, func(drop : ResourceDrop) -> float:
+		return INF if drop.claimed else local.distance_squared_to(drop.position),
+		func(away : float) -> float: return away * away)
 
 ## A loose drop moved, in the grid's space. Its bucket follows it.
 func drop_moved(drop : ResourceDrop, from : Vector2, to : Vector2) -> void:

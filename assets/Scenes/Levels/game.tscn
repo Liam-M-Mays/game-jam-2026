@@ -6,7 +6,6 @@
 [ext_resource type="PackedScene" uid="uid://mcu65uoclrgs" path="res://assets/Scenes/Env/grid.tscn" id="3_xomjc"]
 [ext_resource type="Texture2D" uid="uid://cqui0s7tsra0a" path="res://assets/Art/Characters/Big_back_diddy_eyes.png" id="4_aah2l"]
 [ext_resource type="Script" uid="uid://b5fecyvq8x7ho" path="res://assets/Scripts/Giant/Blink.gd" id="5_8ptjo"]
-[ext_resource type="Script" uid="uid://d13jmgqp0eyq8" path="res://assets/Scripts/Cam/mouse.gd" id="5_ci4bg"]
 [ext_resource type="Texture2D" uid="uid://da8ldifciodhe" path="res://assets/Art/Characters/Big_back_diddy_torso.png" id="6_vbtyo"]
 [ext_resource type="Script" uid="uid://dh1q7oir02v0t" path="res://assets/Scripts/Giant/Giant_arm_step.gd" id="7_1g62p"]
 [ext_resource type="Texture2D" uid="uid://dqt5vqxk0sdc6" path="res://assets/Art/Characters/Big_back_diddy_arm_foreground.png" id="7_ux80a"]
@@ -118,14 +117,9 @@ grid_size = 110
 ground_sprites = [NodePath("../../Yard"), NodePath("../../Yard/Yard")]
 ground_cover = NodePath("../..")
 
-[node name="Mouse" type="Node2D" parent="Node2D2/Node2D/Torso/Back" unique_id=1782876279]
-script = ExtResource("5_ci4bg")
-enabled = false
-
-[node name="BuildSystem" type="Node2D" parent="Node2D2/Node2D/Torso/Back" unique_id=783348263 node_paths=PackedStringArray("grid", "cursor")]
+[node name="BuildSystem" type="Node2D" parent="Node2D2/Node2D/Torso/Back" unique_id=783348263 node_paths=PackedStringArray("grid")]
 script = ExtResource("7_xomjc")
 grid = NodePath("../Grid")
-cursor = NodePath("../Mouse")
 
 [node name="Crumble Shoulder" type="Marker2D" parent="Node2D2/Node2D/Torso" unique_id=1610034477]
 position = Vector2(-350, -24)

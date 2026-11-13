@@ -2,6 +2,7 @@ extends Node
 ## Holds the jobs and the meeples that do them. Once a frame it gives each new job to the
 ## nearest free builder, and each builder that became free the nearest waiting job.
 ## Meeples with a workplace never take these jobs: their building gives them work.
+## A builder carrying a loose drop to a pile counts as free: these jobs come first.
 
 signal changed
 

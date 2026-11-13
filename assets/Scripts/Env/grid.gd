@@ -211,6 +211,27 @@ func _touches(cell : Cell, local : Vector2, radius : float) -> bool:
 func free_cells_at(world_pos : Vector2, width := 1, depth := 1) -> Array[Cell]:
 	return _free_cells(_coords_at(world_pos), width, depth)
 
+## Every cell a `width` by `depth` footprint at `world_pos` would stand on, taken or not.
+func cells_under(world_pos : Vector2, width := 1, depth := 1) -> Array[Cell]:
+	var found : Array[Cell] = []
+	var coords := _coords_at(world_pos)
+	for row in range(depth):
+		for i in range(width):
+			var cell := _cell_or_null(coords + Vector2i(i, row))
+			if cell != null:
+				found.append(cell)
+	return found
+
+## The cells that touch `group` on any side, not counting the cells of `group` itself.
+func cells_next_to(group : Array[Cell]) -> Array[Cell]:
+	var found : Array[Cell] = []
+	for cell in group:
+		for offset in NEIGHBOURS:
+			var near := _cell_or_null(_coords_of[cell] + offset)
+			if near != null and not group.has(near) and not found.has(near):
+				found.append(near)
+	return found
+
 func cells_around(obj : GridObject, radius := 1) -> Array[Cell]:
 	var found : Array[Cell] = []
 	for cell in obj.cells:
@@ -632,8 +653,13 @@ func _wake_left_of(building : Building) -> void:
 		if item != null and _under_building(item):
 			wake(item)
 
+## While a building is being placed, trees, rocks and bushes do not light up under the mouse,
+## so only the building's own cells show.
 func _update_hover() -> void:
-	var under := _standing_under_mouse()
+	var placing := get_tree().get_first_node_in_group(BuildSystem.GROUP) as BuildSystem
+	var under : Array[Standing] = []
+	if placing == null or not placing.is_building():
+		under = _standing_under_mouse()
 	for item in _hovered:
 		if not under.has(item) and item.node != null:
 			item.node._set_hovered(false)

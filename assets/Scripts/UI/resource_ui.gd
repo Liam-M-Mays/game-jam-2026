@@ -15,6 +15,6 @@ func _ready() -> void:
 
 func _refresh() -> void:
 	for kind in _resource_labels:
-		_resource_labels[kind].text = "%s: %d" % [kind.capitalize(), Inventory.count(kind)]
+		_resource_labels[kind].text = "%s: %d" % [kind.capitalize(), Inventory.available(kind)]
 	_meeple_label.text = "Meeples: %d / %d" % [JobSystem.workers.size(), Population.capacity()]
 	_job_label.text = "Jobs: %d" % JobSystem.job_count()

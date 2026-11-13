@@ -46,15 +46,17 @@ func _aim(worker : Meeple) -> void:
 	_aimed = _drop.position
 	worker.move_to(_drop.global_position)
 
+## Puts the drop down. A haul that counted on it reaching the pile may take it from the ground.
 func abort(worker : Meeple) -> void:
 	if _drop == null:
 		return
-	if is_instance_valid(site):
-		site.trip_ended()
+	var drop := _drop
+	_drop = null
 	if _carrying:
-		_drop.global_position = worker.global_position
-		_drop.show()
+		drop.global_position = worker.global_position
+		drop.show()
 		worker.carry()
 		_carrying = false
-	Inventory.set_claimed(_drop, false)
-	_drop = null
+	Inventory.set_claimed(drop, false)
+	if is_instance_valid(site):
+		site.trip_dropped(drop)
