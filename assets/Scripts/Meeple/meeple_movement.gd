@@ -37,6 +37,8 @@ var _stretch := 1.0
 var _bounce := 0.0
 var _target : Vector2
 var _stop_cells : Array[Cell] = []
+## How close to its target a meeple must be before it can stand on one of `_stop_cells`.
+var _stop_reach := -1.0
 var _wandering := false
 var _wander_home : Vector2
 var _wander_pause := 0.0
@@ -69,15 +71,25 @@ func free_item() -> void:
 func move_to(world_pos : Vector2, stop_cells : Array[Cell] = []) -> void:
 	_target = grid.to_local(world_pos) + SORT_BIAS
 	_stop_cells = stop_cells
+	_stop_reach = -1.0
+	for cell in stop_cells:
+		_stop_reach = maxf(_stop_reach, _target.distance_to(cell.position) + grid.cell_reach())
 
 func stop() -> void:
 	_target = position
 	_stop_cells = []
+	_stop_reach = -1.0
 
+## True at the target, or on one of the cells `move_to` gave. It looks up the cell only when the meeple
+## is near enough to be on one, because that lookup is the cost of thousands of walking meeples.
 func has_arrived() -> bool:
-	if not _stop_cells.is_empty() and grid.cell_at(global_position) in _stop_cells:
+	var distance := _target.distance_to(position)
+	if distance <= 1:
+		return true
+	if distance <= _stop_reach and grid.cell_at(global_position) in _stop_cells:
 		stop()
-	return _target.distance_to(position) <= 1
+		return true
+	return false
 
 func abandon_job() -> void:
 	JobSystem.requeue(job, self)
@@ -198,7 +210,8 @@ func _ask_for_work(delta : float) -> Job:
 	_idle_check -= delta
 	if _idle_check > 0.0:
 		return null
-	_idle_check = IDLE_CHECK_INTERVAL
+	# A little more or less each time, so workers who started together do not all ask in the same frame.
+	_idle_check = IDLE_CHECK_INTERVAL * randf_range(0.5, 1.5)
 	return workplace.find_work(self)
 
 func _wander(delta : float) -> void:

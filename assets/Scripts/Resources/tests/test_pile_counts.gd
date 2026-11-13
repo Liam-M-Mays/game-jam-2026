@@ -1,6 +1,7 @@
 extends GameTest
 ## Piles keep a count per kind instead of drop nodes, from part 5a of #14. A haul that takes from a
-## pile keeps the stock count the same until it delivers, and `Inventory.changed` fires once a frame.
+## pile keeps the stock count the same until it delivers, and `Inventory.changed` fires once for many
+## changes, at most every `CHANGED_EVERY_MS` (part 5c).
 ## A removed pile drops what it held, from part 15a of #6.
 
 const PILE_SCENE := preload("res://assets/Scenes/Buildings/wood_pile.tscn")
@@ -59,9 +60,9 @@ func test_a_haul_from_a_pile_keeps_the_count_until_delivery() -> void:
 	check_eq(Inventory.count("wood"), 1, "the delivered drop is gone")
 
 
-func test_changed_fires_once_a_frame() -> void:
+func test_changed_fires_once_for_many_changes() -> void:
 	await _set_up()
-	await tree.process_frame
+	await tree.create_timer(Inventory.CHANGED_EVERY_MS * 2 / 1000.0).timeout
 	var fired := [0]
 	var count_it := func() -> void: fired[0] += 1
 	Inventory.changed.connect(count_it)
@@ -71,8 +72,14 @@ func test_changed_fires_once_a_frame() -> void:
 	check_eq(fired[0], 0, "nothing fires before the frame ends")
 	await tree.process_frame
 	await tree.process_frame
+	check_eq(fired[0], 1, "three changes in one frame fire once, at the end of the frame")
+	Inventory.add("food", 1)
+	await tree.process_frame
+	await tree.process_frame
+	check_eq(fired[0], 1, "a change right after waits")
+	await tree.create_timer(Inventory.CHANGED_EVERY_MS * 2 / 1000.0).timeout
 	Inventory.changed.disconnect(count_it)
-	check_eq(fired[0], 1, "three changes in one frame fire once")
+	check_eq(fired[0], 2, "and fires a moment later")
 
 
 func test_a_removed_pile_drops_what_it_held_and_a_haul_keeps_its_claim() -> void:

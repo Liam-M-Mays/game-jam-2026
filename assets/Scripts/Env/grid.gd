@@ -41,6 +41,8 @@ const CELL_AREA := 35.0
 const JAM_CELLS := 2091
 ## How many points along the edge of a round world get their own distance from the middle.
 const EDGE_POINTS := 360
+## The side of a bucket of trees, rocks and bushes, in cells. See AreaIndex.
+const STANDING_AREA_CELLS := 4
 
 class Spawnable:
 	var scene : PackedScene
@@ -55,6 +57,8 @@ class Spawnable:
 	## The click box around a tree or rock's position, read from the scene's Area2D.
 	var hit_box : Rect2
 	var count := 0
+	## Where the trees, rocks or bushes of this kind stand, so the nearest is found without checking them all.
+	var area : AreaIndex
 
 var _cells : Array[Array] = []
 var _cell_scale : Vector2
@@ -120,6 +124,30 @@ func spawn_meeple(at : Vector2) -> Meeple:
 	_meeples.append(meeple)
 	JobSystem.add_worker(meeple)
 	return meeple
+
+## How far from a cell's position a point in that cell can be, in this grid's space, with room to spare.
+func cell_reach() -> float:
+	return (_cell_offset.length() + 10.0) * maxf(_cell_scale.x, _cell_scale.y)
+
+## The side of a square `cells` cells wide, in this grid's space.
+func area_size(cells : int) -> float:
+	return 7.0 * cells * _cell_scale.x
+
+## The free tree, rock or bush nearest `at`, in this grid's space, of a kind whose look `accept` takes.
+## Null when there is none.
+func nearest_standing(at : Vector2, accept : Callable) -> Standing:
+	var best : Standing = null
+	var best_distance := INF
+	for kind in _spawnables:
+		if kind.area == null or not accept.call(kind.template):
+			continue
+		var found : Standing = kind.area.best(at, func(item : Standing) -> float:
+			return at.distance_squared_to(item.position) if item.is_free() else INF,
+			func(away : float) -> float: return away * away, best_distance)
+		if found != null:
+			best = found
+			best_distance = at.distance_squared_to(found.position)
+	return best
 
 ## Adds a drop of `scene` at `at`, in this grid's space, and gives it to Inventory.
 func add_drop(scene : PackedScene, at : Vector2) -> ResourceDrop:
@@ -515,6 +543,9 @@ func _add_standing(kind : Spawnable, cells : Array[Cell]) -> Standing:
 		cell.occupant = item
 	standing.append(item)
 	kind.count += 1
+	if kind.area == null:
+		kind.area = AreaIndex.new(area_size(STANDING_AREA_CELLS))
+	kind.area.add(item, item.position)
 	if not _under_building(item):
 		_row(item).add(item)
 	else:
@@ -522,6 +553,7 @@ func _add_standing(kind : Spawnable, cells : Array[Cell]) -> Standing:
 	return item
 
 func _forget(item : Standing) -> void:
+	item.kind.area.remove(item, item.position)
 	standing.erase(item)
 	_awake.erase(item)
 	_hovered.erase(item)
