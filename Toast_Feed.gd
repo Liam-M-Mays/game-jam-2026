@@ -43,7 +43,7 @@ func push(text: String, kind: int = 0) -> void:
 			label.add_theme_color_override("font_color", info_color)
 	if font:
 		label.add_theme_font_override("font", font)
-	label.add_theme_font_size_override("font_size", font_size)
+	label.add_theme_font_size_override("font_size", _font_size())
 	add_child(label)
 	if backplate:
 		label.add_theme_stylebox_override("normal", backplate)
@@ -62,7 +62,11 @@ func push(text: String, kind: int = 0) -> void:
 
 
 func _shrink_to_text(label: Label) -> void:
-	var text_width := label.get_theme_font("font").get_string_size(label.text, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+	var text_width := label.get_theme_font("font").get_string_size(label.text, HORIZONTAL_ALIGNMENT_LEFT, -1, _font_size()).x
 	var plate_width := ceilf(text_width) + 1.0 + backplate.get_margin(SIDE_LEFT) + backplate.get_margin(SIDE_RIGHT)
 	label.custom_minimum_size.x = minf(plate_width, size.x)
 	label.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+
+
+func _font_size() -> int:
+	return roundi(font_size * Settings.text_scale())

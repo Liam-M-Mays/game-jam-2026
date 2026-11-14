@@ -14,10 +14,10 @@ func _process(delta: float) -> void:
 		_key_axis(KEY_A, KEY_D),
 		_key_axis(KEY_W, KEY_S)
 	)
-	position += move.normalized() * move_speed * delta / zoom.x
+	position += move.normalized() * move_speed * Settings.multiplier(&"camera_sensitivity") * delta / zoom.x
 	var zoom_input := _key_axis(KEY_Q, KEY_E)
 	if zoom_input != 0.0:
-		zoom_by(pow(key_zoom_speed, zoom_input * delta))
+		zoom_by(pow(key_zoom_speed, zoom_input * delta * Settings.multiplier(&"zoom_sensitivity")))
 
 func _key_axis(negative: Key, positive: Key) -> float:
 	return float(Input.is_physical_key_pressed(positive)) - float(Input.is_physical_key_pressed(negative))
@@ -25,17 +25,20 @@ func _key_axis(negative: Key, positive: Key) -> float:
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_RIGHT:
-			_panning = event.pressed
+			if not Settings.toggle_actions():
+				_panning = event.pressed
+			elif event.pressed:
+				_panning = not _panning
 		elif event.button_index == MOUSE_BUTTON_WHEEL_UP and event.pressed:
-			zoom_to_mouse(1.0 + zoom_speed)
+			zoom_to_mouse(1.0 + _zoom_step())
 		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN and event.pressed:
-			zoom_to_mouse(1.0 / (1.0 + zoom_speed))
+			zoom_to_mouse(1.0 / (1.0 + _zoom_step()))
 	elif event is InputEventMouseMotion and _panning:
-		position -= event.relative / zoom
+		position -= _drag_direction(event.relative) * Settings.multiplier(&"mouse_sensitivity") / zoom
 	elif event is InputEventMagnifyGesture:
 		zoom_to_mouse(event.factor)
 	elif event is InputEventPanGesture:
-		zoom_to_mouse(pow(1.0 + zoom_speed, -event.delta.y))
+		zoom_to_mouse(pow(1.0 + _zoom_step(), -event.delta.y))
 
 func is_zoomed_out() -> bool:
 	return is_equal_approx(zoom.x, min_zoom)
@@ -48,3 +51,13 @@ func zoom_to_mouse(factor: float) -> void:
 	var mouse_pos = get_global_mouse_position()
 	zoom_by(factor)
 	position += mouse_pos - get_global_mouse_position()
+
+func _zoom_step() -> float:
+	return zoom_speed * Settings.multiplier(&"zoom_sensitivity")
+
+func _drag_direction(relative: Vector2) -> Vector2:
+	if Settings.get_value(&"invert_x"):
+		relative.x = -relative.x
+	if Settings.get_value(&"invert_y"):
+		relative.y = -relative.y
+	return relative

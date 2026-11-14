@@ -12,9 +12,11 @@ var _warning := AudioStreamPlayer.new()
 func _ready() -> void:
 	_click.stream = CLICK
 	_click.volume_db = CLICK_DB
+	_click.bus = Settings.SFX_BUS
 	add_child(_click)
 	_warning.stream = WARNING
 	_warning.volume_db = WARNING_DB
+	_warning.bus = Settings.SFX_BUS
 	add_child(_warning)
 	GameState.toast_requested.connect(_on_toast_requested)
 	get_tree().node_added.connect(_on_node_added)

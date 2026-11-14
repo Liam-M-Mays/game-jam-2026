@@ -32,6 +32,7 @@ func _ready() -> void:
 	add_child(_player)
 	_riff.stream = SUCCESS_RIFF
 	_riff.volume_db = SUCCESS_RIFF_DB
+	_riff.bus = MUSIC_BUS
 	add_child(_riff)
 	add_child(UI_SOUNDS.new())
 
