@@ -60,6 +60,20 @@ func mark_for_clearing() -> void:
 		_clearing = true
 	super()
 
+func restore_mark(clearing : bool) -> void:
+	if _job != null:
+		return
+	_clearing = clearing
+	if not can_harvest():
+		_clearing = false
+		return
+	var job := HarvestJob.new(self)
+	JobSystem.add(job)
+	_set_job(job)
+
+func is_clearing() -> bool:
+	return _clearing
+
 func can_harvest() -> bool:
 	if _clearing:
 		return super()

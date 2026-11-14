@@ -88,6 +88,9 @@ var _round_radius := 0.0
 
 func _ready() -> void:
 	var started := Time.get_ticks_usec()
+	var loading := SaveGame.has_pending()
+	if loading:
+		generation_seed = SaveGame.pending_seed()
 	_meeple_look = MEEPLE.instantiate()
 	var template : Sprite2D = CELL.instantiate()
 	_cell_scale = template.scale
@@ -102,12 +105,19 @@ func _ready() -> void:
 		_build_cells()
 		_compute_edge_distance()
 		_seed_world()
-	_place_start_building()
-	_generate_resources()
+	if loading:
+		_spawnables = _load_spawnables()
+		_spots = _edge_distance.keys()
+		SaveGame.restore_world(self)
+	else:
+		_place_start_building()
+		_generate_resources()
+	SaveGame.world_opened(self)
 	if OS.is_debug_build():
 		print("World built in %d ms, %d cells" % [(Time.get_ticks_usec() - started) / 1000, _coords_of.size()])
 
 func _exit_tree() -> void:
+	SaveGame.world_closed(self)
 	_clear_drops()
 	for meeple in _meeples:
 		meeple.free_item()
@@ -121,6 +131,43 @@ func _exit_tree() -> void:
 		s.area = null
 	for cell : Cell in _coords_of:
 		cell.occupant = null
+
+## The seed this world was made from. The same seed makes the same cells and ground again.
+func world_seed() -> int:
+	return _rng.seed
+
+## The grid numbers of `cell`, for saving.
+func coords_of(cell : Cell) -> Vector2i:
+	return _coords_of.get(cell, Vector2i(-1, -1))
+
+## The cell at grid numbers `coords`, or null.
+func cell_at_coords(coords : Vector2i) -> Cell:
+	return _cell_or_null(coords)
+
+## Every tree, rock and bush on the grid, once each.
+func all_standing() -> Array[Standing]:
+	var found : Array[Standing] = []
+	var seen := {}
+	for cell : Cell in _coords_of:
+		var item := cell.occupant as Standing
+		if item != null and not seen.has(item):
+			seen[item] = true
+			found.append(item)
+	return found
+
+## Puts a tree, rock or bush of `scene` back on the cells at `coords`, when loading a save.
+## Null when that kind is not on this grid or its cells are taken.
+func restore_standing(scene : PackedScene, coords : Vector2i) -> Standing:
+	for kind in _spawnables:
+		if kind.scene.resource_path != scene.resource_path:
+			continue
+		var cells := _free_cells(coords, kind.footprint)
+		return _add_standing(kind, cells) if not cells.is_empty() else null
+	return null
+
+## Keeps the cells around the Town Hall free of new trees and rocks, as a new game does.
+func keep_clear_around(building : Building) -> void:
+	_keep_clear = cells_around(building)
 
 ## Adds a meeple at `at`, in this grid's space, and gives it to the jobs.
 func spawn_meeple(at : Vector2) -> Meeple:

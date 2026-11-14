@@ -46,6 +46,12 @@ func put_down(at_grid : Grid, at_cells : Array[Cell]) -> void:
 	mark_land(at_grid, area)
 	super(at_grid, at_cells)
 
+## Keeps its plot area again for a finished barn put back from a save, so its farms and silos can join it.
+func restore_plot_area() -> void:
+	add_to_group(GROUP)
+	for cell in area_at(grid, cells[0]):
+		cell.kept_for = self
+
 func area_at(at_grid : Grid, anchor : Cell) -> Array[Cell]:
 	return at_grid.cells_at_offsets(anchor, plot_offsets)
 

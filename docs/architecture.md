@@ -27,7 +27,7 @@ This file is the source of truth. Older copies of the diagrams exist as Figma bo
 | Layer | What is in it | Where |
 | --- | --- | --- |
 | World scene | The grid, everything on it, meeples, drops, `BuildSystem`. On the giant all of it hangs under the giant's torso node. On the ground it sits on a round world | `assets/Scenes/Levels/game.tscn`, `assets/Scenes/Levels/ground.tscn`, `assets/Scripts/` |
-| Global singletons | `JobSystem`, `Inventory`, `Population` hold the simulation. `GameState` holds hunger, toasts and speed. `Settings` holds the player's options, `SceneFader` fades between screens and `InputMode` lets the menus work with a controller. `Music` and `VillageAudio` are support. Their food and growth numbers are a `VillageRules` resource tuned in the editor | The `[autoload]` section of `project.godot`; `assets/Res/village_rules.tres` |
+| Global singletons | `JobSystem`, `Inventory`, `Population` hold the simulation. `GameState` holds hunger, toasts and speed. `Settings` holds the player's options, `SaveGame` saves and loads the village, `SceneFader` fades between screens and `InputMode` lets the menus work with a controller. `Music` and `VillageAudio` are support. Their food and growth numbers are a `VillageRules` resource tuned in the editor | The `[autoload]` section of `project.godot`; `assets/Res/village_rules.tres` |
 | UI scenes | Main menu and HUD | `Main_Menu.tscn`, `assets/hud.tscn`, scripts at the project root |
 
 The world registers with the singletons, and the singletons tell the UI what changed through signals. Four spots break that direction, and the system map shows them as thick arrows.
@@ -61,6 +61,7 @@ flowchart LR
         gameState["GameState: hunger, toasts, speed"]
         audio["Music and UI sounds"]
         settings["Settings: saved player options"]
+        saveGame["SaveGame: one saved village"]
     end
 
     subgraph uiOut ["UI: display side"]
@@ -313,9 +314,10 @@ stateDiagram-v2
     [*] --> MainMenu
     MainMenu --> Playing: Start calls new_game
     MainMenu --> Ground: Ground world button calls new_game
+    MainMenu --> Playing: Continue loads the save
     Playing --> Paused: Esc
     Paused --> Playing: Resume
-    Paused --> MainMenu: Menu button
+    Paused --> MainMenu: Menu button saves first
     MainMenu --> SettingsScreen: Settings button
     Paused --> SettingsScreen: Settings button
     SettingsScreen --> MainMenu: Back from the main menu
@@ -761,6 +763,17 @@ classDiagram
         +LIBRARY: axe, pickaxe, grass, hammer, log, hurt
         +VOICE_COUNT = 6
         +play(sound_name, at)
+    }
+    class SaveGame {
+        <<autoload>>
+        +signal saved
+        +has_save(): bool
+        +continue_game(): bool
+        +save_now(): bool
+        +save_and_quit()
+        +delete_save()
+        +restore_world(grid)
+        +is_continued(): bool
     }
     class Settings {
         <<autoload>>

@@ -57,6 +57,17 @@ func new_game() -> void:
 	_update_hunger()
 
 
+func speed_index() -> int:
+	return _speed_index
+
+## The one-time tips already shown, so a saved game does not show them again.
+func tips_shown() -> Array:
+	return _tips_shown.keys()
+
+func restore_tips_shown(ids: Array) -> void:
+	for id in ids:
+		_tips_shown[id] = true
+
 func set_speed_index(index: int) -> void:
 	_speed_index = clampi(index, 0, SPEEDS.size() - 1)
 	Engine.time_scale = speed

@@ -78,6 +78,14 @@ func mark_for_clearing() -> void:
 		JobSystem.add(job)
 		_set_job(job)
 
+## Puts back the player's job or clearing mark a save had on it.
+func restore_mark(_clearing : bool) -> void:
+	mark_for_clearing()
+
+## True when a bush is being cut down rather than picked. Only bushes are ever picked.
+func is_clearing() -> bool:
+	return true
+
 func can_harvest() -> bool:
 	return standing.wobbles < wobbles_to_break
 

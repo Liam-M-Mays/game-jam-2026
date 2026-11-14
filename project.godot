@@ -27,6 +27,7 @@ GameState="*uid://cthjkibwb0p7g"
 Population="*res://assets/Scripts/Meeple/population.gd"
 VillageAudio="*res://assets/Scripts/Audio/village_audio.gd"
 Music="*res://assets/Scripts/Audio/music.gd"
+SaveGame="*res://assets/Scripts/Save/save_game.gd"
 
 [display]
 

@@ -54,7 +54,7 @@ region = Rect2(44, 375, 40, 21)
 atlas = ExtResource("12_newart")
 region = Rect2(86, 375, 40, 21)
 
-[node name="MainMenu" type="Control" unique_id=952734818 node_paths=PackedStringArray("start_button", "ground_button", "credits_button", "quit_button", "settings_menu", "version_label")]
+[node name="MainMenu" type="Control" unique_id=952734818 node_paths=PackedStringArray("start_button", "continue_button", "ground_button", "credits_button", "quit_button", "settings_menu", "version_label")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -63,6 +63,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_wugcc")
 start_button = NodePath("StartButton")
+continue_button = NodePath("ContinueButton")
 ground_button = NodePath("GroundButton")
 credits_button = NodePath("CreditsButton")
 quit_button = NodePath("QuitButton")
@@ -116,9 +117,9 @@ texture = SubResource("AtlasTexture_spy7q")
 [node name="StartButton" type="TextureButton" parent="." unique_id=701129200]
 layout_mode = 0
 offset_left = 853.0
-offset_top = 660.0
+offset_top = 694.0
 offset_right = 898.0
-offset_bottom = 681.0
+offset_bottom = 715.0
 scale = Vector2(4, 4)
 size_flags_horizontal = 0
 size_flags_stretch_ratio = 0.0
@@ -130,9 +131,9 @@ texture_focused = SubResource("AtlasTexture_start_gray_hover")
 [node name="CreditsButton" type="TextureButton" parent="." unique_id=657891541]
 layout_mode = 0
 offset_left = 823.0
-offset_top = 760.0
+offset_top = 788.0
 offset_right = 883.0
-offset_bottom = 781.0
+offset_bottom = 809.0
 scale = Vector2(4, 4)
 size_flags_horizontal = 0
 texture_normal = SubResource("AtlasTexture_credits_gray_normal")
@@ -143,9 +144,9 @@ texture_focused = SubResource("AtlasTexture_credits_gray_hover")
 [node name="QuitButton" type="TextureButton" parent="." unique_id=2017726884]
 layout_mode = 0
 offset_left = 863.0
-offset_top = 960.0
+offset_top = 976.0
 offset_right = 903.0
-offset_bottom = 981.0
+offset_bottom = 997.0
 scale = Vector2(4, 4)
 size_flags_horizontal = 0
 texture_normal = SubResource("AtlasTexture_quit_gray_normal")
@@ -153,12 +154,19 @@ texture_pressed = SubResource("AtlasTexture_quit_gray_pressed")
 texture_hover = SubResource("AtlasTexture_quit_gray_hover")
 texture_focused = SubResource("AtlasTexture_quit_gray_hover")
 
+[node name="ContinueButton" type="TextureButton" parent="." unique_id=1902648118]
+layout_mode = 0
+offset_left = 803.0
+offset_top = 600.0
+offset_right = 1083.0
+offset_bottom = 684.0
+
 [node name="SettingsButton" type="TextureButton" parent="." unique_id=1902648113 node_paths=PackedStringArray("menu")]
 layout_mode = 0
 offset_left = 805.0
-offset_top = 860.0
+offset_top = 882.0
 offset_right = 1081.0
-offset_bottom = 944.0
+offset_bottom = 966.0
 script = ExtResource("10_setbtn")
 menu = NodePath("../SettingsMenu")
 gray = true
