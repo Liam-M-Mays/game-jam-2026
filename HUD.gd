@@ -99,7 +99,12 @@ func _ready() -> void:
 		clear_jobs_button.focus_mode = Control.FOCUS_NONE
 		clear_jobs_button.pressed.connect(JobSystem.clear_waiting_player_jobs)
 	_watch_existing_town_halls.call_deferred()
-	_wait(FIRST_TIP_DELAY).connect(_show_opening_tip.bind(0))
+	if Settings.get_value(&"tutorials"):
+		_wait(FIRST_TIP_DELAY).connect(_show_opening_tip.bind(0))
+	else:
+		_wait(randf_range(ROTATION_DELAY_MIN, ROTATION_DELAY_MAX)).connect(_show_next_in_rotation)
+	Settings.changed.connect(_on_setting_changed)
+	_apply_hud_size.call_deferred()
 
 
 func _process(_delta: float) -> void:
@@ -107,6 +112,18 @@ func _process(_delta: float) -> void:
 		visible = not camera.is_zoomed_out() or get_tree().paused
 	if speed_button:
 		speed_button.disabled = get_tree().paused
+
+
+## Opens the pause menu when the player clicks away from or alt-tabs out of the game window,
+## so the village doesn't starve while they're gone. Turned off in Settings > Gameplay.
+func _notification(what: int) -> void:
+	if what != NOTIFICATION_APPLICATION_FOCUS_OUT or not Settings.get_value(&"auto_pause"):
+		return
+	if _game_over or pause_menu == null or pause_menu.visible or SceneFader.is_busy():
+		return
+	if build_menu and build_menu.visible:
+		build_menu.close()
+	pause_menu.open()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -120,7 +137,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			JobSystem.clear_waiting_player_jobs()
 			get_viewport().set_input_as_handled()
 		return
-	if not event.is_action_pressed("ui_cancel") or _game_over:
+	var start_pressed: bool = event is InputEventJoypadButton and event.pressed and event.button_index == JOY_BUTTON_START
+	if not (event.is_action_pressed("ui_cancel") or start_pressed) or _game_over:
 		return
 	if build_menu and build_menu.visible:
 		build_menu.close()
@@ -354,6 +372,35 @@ func _refill_deck() -> void:
 
 func _wait(seconds: float) -> Signal:
 	return get_tree().create_timer(seconds, false, false, true).timeout
+
+
+func _on_setting_changed(key: StringName) -> void:
+	if key == &"hud_size":
+		_apply_hud_size()
+
+
+## Scales the corner widgets (counters, hunger, buttons, toasts), not the full-screen menus.
+## Each one grows from the edge it is anchored to, so it stays on screen.
+func _apply_hud_size() -> void:
+	var hud_scale := Settings.hud_scale()
+	for child in get_children():
+		var widget := child as Control
+		if widget == null or _is_full_screen(widget):
+			continue
+		_pin_pivot(widget)
+		if not widget.has_meta(&"hud_size_pivot"):
+			widget.set_meta(&"hud_size_pivot", true)
+			widget.resized.connect(_pin_pivot.bind(widget))
+		widget.scale = Vector2(hud_scale, hud_scale)
+
+
+func _pin_pivot(widget: Control) -> void:
+	var anchor := Vector2(widget.anchor_left + widget.anchor_right, widget.anchor_top + widget.anchor_bottom) * 0.5
+	widget.pivot_offset = anchor * widget.size
+
+
+func _is_full_screen(widget: Control) -> bool:
+	return widget.anchor_right - widget.anchor_left >= 1.0 and widget.anchor_bottom - widget.anchor_top >= 1.0
 
 
 func _ignore_mouse(node: Node) -> void:

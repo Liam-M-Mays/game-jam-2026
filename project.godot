@@ -11,12 +11,16 @@ config_version=5
 [application]
 
 config/name="Mighty Meeple"
+config/version="0.1.0"
 run/main_scene="uid://uwb5mechyg7r"
 config/features=PackedStringArray("4.7", "GL Compatibility")
 config/icon="res://assets/Res/icon.svg"
 
 [autoload]
 
+Settings="*res://assets/Scripts/Settings/settings.gd"
+SceneFader="*res://assets/Scripts/UI/scene_fader.gd"
+InputMode="*res://assets/Scripts/UI/input_mode.gd"
 JobSystem="*uid://dhxeaalsqdoin"
 Inventory="*res://assets/Scripts/Resources/inventory.gd"
 GameState="*uid://cthjkibwb0p7g"

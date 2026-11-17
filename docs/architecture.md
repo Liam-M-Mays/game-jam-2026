@@ -27,7 +27,7 @@ This file is the source of truth. Older copies of the diagrams exist as Figma bo
 | Layer | What is in it | Where |
 | --- | --- | --- |
 | World scene | The grid, everything on it, meeples, drops, `BuildSystem`. On the giant all of it hangs under the giant's torso node. On the ground it sits on a round world | `assets/Scenes/Levels/game.tscn`, `assets/Scenes/Levels/ground.tscn`, `assets/Scripts/` |
-| Global singletons | `JobSystem`, `Inventory`, `Population` hold the simulation. `GameState` holds hunger, toasts and speed. `Music` and `VillageAudio` are support. Their food and growth numbers are a `VillageRules` resource tuned in the editor | The `[autoload]` section of `project.godot`; `assets/Res/village_rules.tres` |
+| Global singletons | `JobSystem`, `Inventory`, `Population` hold the simulation. `GameState` holds hunger, toasts and speed. `Settings` holds the player's options, `SceneFader` fades between screens and `InputMode` lets the menus work with a controller. `Music` and `VillageAudio` are support. Their food and growth numbers are a `VillageRules` resource tuned in the editor | The `[autoload]` section of `project.godot`; `assets/Res/village_rules.tres` |
 | UI scenes | Main menu and HUD | `Main_Menu.tscn`, `assets/hud.tscn`, scripts at the project root |
 
 The world registers with the singletons, and the singletons tell the UI what changed through signals. Four spots break that direction, and the system map shows them as thick arrows.
@@ -60,6 +60,7 @@ flowchart LR
         population["Population: growth, starvation"]
         gameState["GameState: hunger, toasts, speed"]
         audio["Music and UI sounds"]
+        settings["Settings: saved player options"]
     end
 
     subgraph uiOut ["UI: display side"]
@@ -307,6 +308,7 @@ stateDiagram-v2
     Ground: Playing on the ground - Levels/ground.tscn
     Paused: Paused - tree paused
     GameOver: Game over - death screen
+    SettingsScreen: Settings - UI/settings_menu.tscn
 
     [*] --> MainMenu
     MainMenu --> Playing: Start calls new_game
@@ -314,6 +316,10 @@ stateDiagram-v2
     Playing --> Paused: Esc
     Paused --> Playing: Resume
     Paused --> MainMenu: Menu button
+    MainMenu --> SettingsScreen: Settings button
+    Paused --> SettingsScreen: Settings button
+    SettingsScreen --> MainMenu: Back from the main menu
+    SettingsScreen --> Paused: Back from the pause menu
     Playing --> GameOver: all meeples died
     GameOver --> Playing: Retry reloads the scene
     GameOver --> MainMenu: Menu button
@@ -756,10 +762,18 @@ classDiagram
         +VOICE_COUNT = 6
         +play(sound_name, at)
     }
+    class Settings {
+        <<autoload>>
+        +changed(key) signal
+        +get_value(key)
+        +set_value(key, value)
+        +reset(keys)
+        +multiplier(key) float
+    }
     class MainMenu {
         <<unnamed>>
         +start_button, ground_button, credits_button, quit_button
-        +credits_panel, credits_back_button
+        +settings_menu: SettingsMenu
     }
     class HUD {
         <<unnamed>>

@@ -76,7 +76,8 @@ func toast(text: String, kind: int = ToastKind.INFO) -> void:
 
 
 func tip(text: String) -> void:
-	toast(text, ToastKind.TIP)
+	if Settings.get_value(&"tips"):
+		toast(text, ToastKind.TIP)
 
 
 func tip_once(id: String, text: String) -> void:
@@ -87,8 +88,10 @@ func tip_once(id: String, text: String) -> void:
 
 
 func fact(text: String) -> void:
-	toast(text, ToastKind.FACT)
+	if Settings.get_value(&"fun_facts"):
+		toast(text, ToastKind.FACT)
 
 
 func warn(text: String) -> void:
-	toast(text, ToastKind.WARNING)
+	if Settings.get_value(&"tips"):
+		toast(text, ToastKind.WARNING)

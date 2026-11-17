@@ -1,4 +1,7 @@
 extends TextureProgressBar
+## The food bar. It grows one art pixel taller for every silo (every time the food cap goes up),
+## until it would reach the `ceiling` control (the speed button). The rounded ends never stretch,
+## and there is a marker line every MARKER_SPACING pixels counted up from the bottom.
 
 const GREEN := Color("4fc24a")
 const YELLOW := Color("ffd91a")
@@ -12,14 +15,30 @@ const GOOD_COLOR := "7be36f"
 const OK_COLOR := "ffd91a"
 const BAD_COLOR := "ff6b5b"
 
+const ART := preload("res://assets/Art/UI/hunger_bar.png")
+const FRAME_REGION := Rect2i(0, 0, 7, 65)
+const FILL_REGION := Rect2i(8, 0, 7, 65)
+const BASE_LENGTH := 65
+const CAP_ROWS := 3
+const PLAIN_ROW := 8
+const MARKER_ROW := 16
+const MARKER_SPACING := 16
+## Same scale as the rest of the HUD art.
+const SCALE := 4
+## Screen pixels kept free between the top of the bar and the ceiling.
+const CEILING_GAP := 16.0
+
 @export var tooltip_style: StyleBox
 @export var food_plate: Control
 @export var food_label: Label
+## The bar stops growing before it reaches this control.
+@export var ceiling: Control
 
 var _fill_material: ShaderMaterial
 var _tooltip: PanelContainer
 var _tooltip_label: RichTextLabel
 var _label_color: Color
+var _length := 0
 
 
 func _ready() -> void:
@@ -37,6 +56,7 @@ func _process(_delta: float) -> void:
 
 
 func _refresh() -> void:
+	_update_length()
 	max_value = Inventory.food_cap()
 	value = Inventory.count("food")
 	var color := _fill_color()
@@ -123,3 +143,42 @@ func _make_tooltip() -> void:
 	_tooltip.add_child(_tooltip_label)
 	add_child(_tooltip)
 	_tooltip.hide()
+
+
+func _update_length() -> void:
+	var wanted := mini(BASE_LENGTH + get_tree().get_nodes_in_group(Silo.GROUP).size(), _max_length())
+	if wanted == _length:
+		return
+	_length = wanted
+	nine_patch_stretch = false
+	texture_under = _build(FRAME_REGION, _length)
+	texture_progress = _build(FILL_REGION, _length)
+	custom_minimum_size = Vector2(FRAME_REGION.size.x, _length) * SCALE
+
+
+## The longest the bar can be (in art pixels) without reaching the ceiling, at the current HUD size.
+func _max_length() -> int:
+	if not ceiling or not ceiling.is_visible_in_tree():
+		return BASE_LENGTH + 1000
+	var bottom := (get_global_transform() * Vector2(0.0, size.y)).y
+	var ceiling_bottom := (ceiling.get_global_transform() * Vector2(0.0, ceiling.size.y)).y
+	var screen_scale := get_global_transform().get_scale().y
+	return maxi(BASE_LENGTH, floori((bottom - ceiling_bottom - CEILING_GAP) / (SCALE * screen_scale)))
+
+
+## Builds one bar piece at the given length: the art's top and bottom ends, a plain middle,
+## and the art's marker line repeated every MARKER_SPACING pixels up from the bottom.
+func _build(region: Rect2i, length: int) -> Texture2D:
+	var piece := ART.get_image().get_region(region)
+	var width := region.size.x
+	var image := Image.create_empty(width, length, false, Image.FORMAT_RGBA8)
+	image.blit_rect(piece, Rect2i(0, 0, width, CAP_ROWS), Vector2i.ZERO)
+	for y in range(CAP_ROWS, length - CAP_ROWS):
+		image.blit_rect(piece, Rect2i(0, PLAIN_ROW, width, 1), Vector2i(0, y))
+	image.blit_rect(piece, Rect2i(0, BASE_LENGTH - CAP_ROWS, width, CAP_ROWS), Vector2i(0, length - CAP_ROWS))
+	var y := length - 1 - MARKER_SPACING
+	while y > CAP_ROWS:
+		image.blit_rect(piece, Rect2i(0, MARKER_ROW, width, 1), Vector2i(0, y))
+		y -= MARKER_SPACING
+	image.resize(width * SCALE, length * SCALE, Image.INTERPOLATE_NEAREST)
+	return ImageTexture.create_from_image(image)

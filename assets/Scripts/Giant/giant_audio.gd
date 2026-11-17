@@ -60,6 +60,7 @@ func _ready() -> void:
 		var voice := Voice.new()
 		voice.max_distance = 1000000.0
 		voice.attenuation = 0.0
+		voice.bus = Settings.SFX_BUS
 		add_child(voice)
 		_voices.append(voice)
 	for foot in feet:
