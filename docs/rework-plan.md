@@ -1,5 +1,7 @@
 # The rework plan
 
+**Done.** The rework was merged into `master` on 2026-11-17, with parts 1 to 16 and the playtest parts 18 to 26. The jam build is kept on the branch `jam-v1`. This page stays as the record of how it was done.
+
 **The short version:** we keep the jam game and fix it in place. We do not rewrite it. Meeples, cells, trees and drops stop being one node each, so the game can hold thousands of meeples. Then the village moves to a generated ground world, and the open fixes and playtest points go in. Every pull request is small enough to review in about 20 minutes.
 
 Issue #57 tracks the parts. This page says how we work.

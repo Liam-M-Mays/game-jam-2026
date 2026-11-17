@@ -2,16 +2,15 @@
 
 Mighty Meeple is a Godot 4.7.2 game (GDScript, GL Compatibility renderer). Three people work on it, and humans review every change.
 
-**You are on the branch `rework`.** The jam game is being fixed in place so it can hold thousands of meeples. The plan is `docs/rework-plan.md`, and the parts are the sub-issues of #57. Read both before you start. Keep it small: the last attempt (branch `core-rewrite`) was rejected for being too big.
+**`master` is the reworked game.** The jam game was fixed in place so it can hold thousands of meeples (the rework, `docs/rework-plan.md` and #57), and it became `master` on 2026-11-17. The jam build as it was is kept on the branch `jam-v1`. Keep changes small: the earlier attempt (branch `core-rewrite`) was rejected for being too big.
 
 ## Workflow rules
 
-- All work goes into `rework` through pull requests. Never commit to `rework` or `master` directly.
-- Cut your work from `origin/rework`, on a branch named `feature/...`, `fix/...`, `art/...` or `chore/...`. Open the pull request with `--base rework`.
+- All work goes into `master` through pull requests. Never commit to `master` directly.
+- Cut your work from `origin/master`, on a branch named `feature/...`, `fix/...`, `art/...` or `chore/...`.
 - In your own worktree, name the local branch `wt/<short-name>` and push with `git push origin HEAD:<type>/<short-name>`. Liam tests a pull request by switching his own folder to its branch, and git refuses that while a worktree holds the same name.
-- `master` is frozen until the rework is done. The one exception is art that only touches `ART/`.
-- `core-rewrite` is an archive. Do not build on it and do not merge from it.
-- A pull request says "Part of #N". Do not write a closing keyword: GitHub ignores them on this branch. The issue is closed by hand after the merge.
+- `jam-v1`, `rework` and `core-rewrite` are archives. Do not build on them and do not merge from them.
+- A pull request names its issue: "Closes #N" when it finishes it, "Part of #N" when it does one piece.
 - Do not merge pull requests and do not approve them. Liam reviews every one.
 - One pull request does one part. Aim for under 300 lines of game code. Over 500, split it.
 - Another agent or person may be using the same checkout. Use your own worktree or clone for branch work, and never stash, reset or switch branches in a checkout you did not create.
@@ -46,7 +45,7 @@ Mighty Meeple is a Godot 4.7.2 game (GDScript, GL Compatibility renderer). Three
 ## Project facts
 
 - Main scene: `Main_Menu.tscn`. Game scenes: `assets/Scenes/Levels/game.tscn` (on the giant) and `assets/Scenes/Levels/ground.tscn` (the round ground world). The main menu opens either one. Play every change in both.
-- Autoloads: `JobSystem`, `Inventory`, `GameState`, `Population`, `VillageAudio`, `Music`.
+- Autoloads: `Settings`, `SceneFader`, `InputMode`, `JobSystem`, `Inventory`, `GameState`, `Population`, `VillageAudio`, `Music`. Settings are saved to `user://settings.cfg`.
 - Running Godot with `--script` does not load the autoloads, so most scripts fail to compile that way. Use a scene, like `.github/ci/load_check.tscn` does.
 - The first import of a fresh clone prints script errors. Import twice.
 - Architecture diagrams: `docs/architecture.md`. Update them in the same pull request when you change the structure.

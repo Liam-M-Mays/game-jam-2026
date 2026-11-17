@@ -1,6 +1,6 @@
 ## What changed
 
-<!-- One or two lines. Name the part: "Part of #12". On `rework`, no closing keyword. -->
+<!-- One or two lines. Name the issue: "Closes #12", or "Part of #12" for one piece of it. -->
 
 ## How to test it
 

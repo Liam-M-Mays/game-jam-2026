@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Counts what a pull request holds, as Markdown for its description. Standard library only.
 
-  python3 .github/ci/pr_inventory.py                    compare this branch with origin/rework
-  python3 .github/ci/pr_inventory.py --base origin/master
+  python3 .github/ci/pr_inventory.py                    compare this branch with origin/master
+  python3 .github/ci/pr_inventory.py --base origin/<branch>
 
 The point is the line count of CODE. Git's own count also includes scenes, docs and the
 sidecar files Godot writes, which say little about how much there is to review.
@@ -67,7 +67,7 @@ def code_lines(base, path, marker):
 
 
 def main(argv):
-    base = "origin/rework"
+    base = "origin/master"
     if "--base" in argv:
         base = argv[argv.index("--base") + 1]
     counts = {k: {"new": 0, "changed": 0, "removed": 0, "added": 0, "deleted": 0} for k in ORDER}

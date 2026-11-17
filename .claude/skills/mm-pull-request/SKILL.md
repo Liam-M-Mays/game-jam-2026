@@ -11,11 +11,11 @@ The rules behind these steps are in `CONTRIBUTING.md` and `CLAUDE.md`.
 
 ## Steps
 
-1. Work in your own worktree or clone, cut from the latest `origin/rework` (while the rework runs, see `docs/rework-plan.md`). Never stash, reset or switch branches in a checkout that someone else is using. Name the local branch `wt/<short-name>`, so Liam can check out the pull request branch in his own folder.
+1. Work in your own worktree or clone, cut from the latest `origin/master`. Never stash, reset or switch branches in a checkout that someone else is using. Name the local branch `wt/<short-name>`, so Liam can check out the pull request branch in his own folder.
 
    ```bash
    git fetch origin
-   git worktree add <path> -b wt/<short-name> origin/rework
+   git worktree add <path> -b wt/<short-name> origin/master
    ```
 
 2. Push to a branch named `feature/...`, `fix/...`, `art/...` or `chore/...`: `git push origin HEAD:<type>/<short-name>`.
@@ -24,7 +24,7 @@ The rules behind these steps are in `CONTRIBUTING.md` and `CLAUDE.md`.
 5. Read the diff of every `.tscn` and `.tres`. Revert any scene you did not mean to change.
 6. Commit the `.uid` and `.import` files that Godot made next to new files.
 7. Write a commit message that says what changed and why, in one line.
-8. Push the branch and open the pull request with `--base rework`. Fill in the template: what changed, how a person tests it in the game, the inventory (`python3 .github/ci/pr_inventory.py`) and the checklist. Write "Part of #N", not `Closes #N`.
+8. Push the branch and open the pull request into `master`. Fill in the template: what changed, how a person tests it in the game, the inventory (`python3 .github/ci/pr_inventory.py`) and the checklist. Write `Closes #N` when it finishes the issue, "Part of #N" when it does one piece.
 9. Stop there. A person reviews and merges. Never approve or merge a pull request yourself.
 
 ## Leave people to the person you work for
