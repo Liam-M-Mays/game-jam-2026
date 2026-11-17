@@ -1,4 +1,4 @@
-extends IdleJob
+extends Job
 class_name ChopJob
 
 var target : Harvestable
@@ -8,11 +8,14 @@ func _init(target_tree : Harvestable) -> void:
 	target = target_tree
 	target.claim(self)
 
+func place() -> Vector2:
+	return target.global_position
+
 func start(worker : Meeple) -> void:
 	worker.move_to(target.global_position, target.cells)
 
 func update(worker : Meeple, delta : float) -> bool:
-	if not is_instance_valid(site) or not is_instance_valid(target):
+	if not is_instance_valid(target):
 		abort(worker)
 		return true
 	if not worker.has_arrived():
@@ -21,7 +24,9 @@ func update(worker : Meeple, delta : float) -> bool:
 	if _timer < target.wobble_interval:
 		return false
 	_timer -= target.wobble_interval
-	if not target.harvest():
+	var done := target.harvest()
+	worker.did_work()
+	if not done:
 		return false
 	Inventory.spend("food", target.food_cost)
 	target = null

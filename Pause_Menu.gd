@@ -13,6 +13,7 @@ const MAIN_MENU_SCENE := "res://Main_Menu.tscn"
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	hide()
+	resume_button.add_to_group(InputMode.DEFAULT_FOCUS)
 	resume_button.pressed.connect(_on_retry_pressed if restart_on_resume else close)
 	quit_button.pressed.connect(get_tree().quit)
 	if menu_button:
@@ -22,6 +23,7 @@ func _ready() -> void:
 func open() -> void:
 	show()
 	get_tree().paused = true
+	InputMode.focus_default.call_deferred()
 
 
 func fade_in(seconds: float, black_seconds: float) -> void:
@@ -39,11 +41,9 @@ func close() -> void:
 
 
 func _on_retry_pressed() -> void:
-	get_tree().paused = false
 	GameState.new_game()
-	get_tree().reload_current_scene()
+	SceneFader.change_scene()
 
 
 func _on_menu_pressed() -> void:
-	get_tree().paused = false
-	get_tree().change_scene_to_file(MAIN_MENU_SCENE)
+	SceneFader.change_scene(MAIN_MENU_SCENE)

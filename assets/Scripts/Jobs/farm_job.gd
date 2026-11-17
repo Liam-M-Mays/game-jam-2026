@@ -1,16 +1,20 @@
-extends IdleJob
+extends Job
 class_name FarmJob
+## The barn's worker harvests one of the barn's ripe farms.
 
+var farm : Farm
 var _timer := 0.0
 
+func _init(target_farm : Farm) -> void:
+	farm = target_farm
+
+func goes_to(building : Building) -> bool:
+	return farm == building
+
 func start(worker : Meeple) -> void:
-	worker.move_to(site.global_position, site.cells)
+	worker.move_to(farm.global_position, farm.cells)
 
 func update(worker : Meeple, delta : float) -> bool:
-	if cancelled:
-		worker.stop()
-		return true
-	var farm := site as Farm
 	if not is_instance_valid(farm) or not farm.can_harvest_now():
 		return true
 	if not worker.has_arrived():
@@ -19,6 +23,7 @@ func update(worker : Meeple, delta : float) -> bool:
 	if _timer < farm.harvest_time:
 		return false
 	farm.harvest_crop()
+	worker.did_work()
 	return true
 
 func abort(_worker : Meeple) -> void:

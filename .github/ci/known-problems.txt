@@ -4,8 +4,6 @@
 # Do not add lines by hand to get a pull request through. Fix the problem instead,
 # or agree with the team that it can wait and say so in the pull request.
 
-art-boundary Main_Menu.tscn -> res://ART/Mighty_meeple_logo_andbutons.png
-art-boundary Main_Menu.tscn -> res://ART/shi.png
 art-boundary Main_Menu.tscn -> res://ART/sky_sprites_mountains1.tres
 art-boundary Main_Menu.tscn -> res://ART/sky_sprites_mountains2.tres
 art-boundary Main_Menu.tscn -> res://ART/sky_sprites_sky.tres
@@ -35,8 +33,6 @@ art-boundary assets/Scenes/Levels/game.tscn -> res://ART/sky_sprites_mountains2.
 art-boundary assets/Scenes/Levels/game.tscn -> res://ART/sky_sprites_sky.tres
 art-boundary assets/Scenes/Levels/game.tscn -> res://ART/sky_sprites_trees1.tres
 art-boundary assets/Scenes/Levels/game.tscn -> res://ART/sky_sprites_trees2.tres
-art-boundary assets/Scenes/Meeple/meeple.tscn -> res://ART/Meeple_holding_moreshizz.png
-art-boundary assets/Scenes/Meeple/meeple.tscn -> res://ART/Meeple_holding_shizz.png
 art-boundary assets/Scenes/Resources/george_bush.tscn -> res://ART/George_Bush.png
 art-boundary assets/Scenes/Test/Brady_Scene.tscn -> res://ART/green.tres
 art-boundary assets/Scenes/Test/Brady_Scene.tscn -> res://ART/sky_sprites_mountains1.tres
@@ -57,8 +53,6 @@ art-boundary assets/Scenes/game.tscn -> res://ART/sky_sprites_sky.tres
 art-boundary assets/Scenes/game.tscn -> res://ART/sky_sprites_trees1.tres
 art-boundary assets/Scenes/game.tscn -> res://ART/sky_sprites_trees2.tres
 art-boundary assets/hud.tscn -> res://ART/GAMEOVER_text.png
-art-boundary assets/hud.tscn -> res://ART/build_button_thesequal.png
-art-boundary assets/hud.tscn -> res://ART/retry_button_thesequal.png
 art-boundary assets/hud.tscn -> res://ART/shi.png
 broken-ref assets/Scenes/game.tscn -> res://assets/Scenes/grid.tscn
 broken-ref assets/Scenes/main.tscn -> res://assets/Scenes/grid.tscn

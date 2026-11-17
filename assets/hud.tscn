@@ -4,11 +4,14 @@
 [ext_resource type="Script" uid="uid://dfon0pqexq34a" path="res://HUD.gd" id="1_uj4j1"]
 [ext_resource type="Texture2D" uid="uid://b30hablfkuedq" path="res://ART/shi.png" id="2_gudfk"]
 [ext_resource type="Script" uid="uid://bs3wgvy4ufnu8" path="res://Build_Menu.gd" id="3_gudfk"]
-[ext_resource type="Texture2D" uid="uid://bpbs7o2vmrwxi" path="res://ART/build_button_thesequal.png" id="3_quk1y"]
 [ext_resource type="Script" uid="uid://co4meqn1plgk2" path="res://Pause_Menu.gd" id="5_1m68m"]
 [ext_resource type="Script" uid="uid://dlp8jhgi8mfut" path="res://assets/Scripts/UI/hunger_bar.gd" id="6_hungerbar"]
-[ext_resource type="Texture2D" uid="uid://7l08pat0qs54" path="res://ART/retry_button_thesequal.png" id="7_ghiih"]
 [ext_resource type="Texture2D" uid="uid://compi3rxl56bi" path="res://ART/GAMEOVER_text.png" id="8_mv3me"]
+[ext_resource type="PackedScene" uid="uid://c4wkpanel7b2xq" path="res://assets/worker_panel.tscn" id="9_workers"]
+[ext_resource type="Texture2D" uid="uid://c5jjd6navvb07" path="res://assets/Art/UI/settings_ui.png" id="22_newart"]
+[ext_resource type="Texture2D" uid="uid://cct725err0u43" path="res://assets/Art/UI/hunger_bar.png" id="23_hungerart"]
+[ext_resource type="Script" path="res://assets/Scripts/UI/settings_button.gd" id="20_setbtn"]
+[ext_resource type="PackedScene" path="res://assets/Scenes/UI/settings_menu.tscn" id="21_setmenu"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_backplate"]
 content_margin_left = 12.0
@@ -38,12 +41,12 @@ atlas = ExtResource("2_gudfk")
 region = Rect2(2163, 3, 8, 63)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_gilah"]
-atlas = ExtResource("2_gudfk")
-region = Rect2(2041, 1, 7, 65)
+atlas = ExtResource("23_hungerart")
+region = Rect2(0, 0, 7, 65)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_36vlq"]
-atlas = ExtResource("2_gudfk")
-region = Rect2(1928, 2, 7, 65)
+atlas = ExtResource("23_hungerart")
+region = Rect2(8, 0, 7, 65)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tooltip"]
 content_margin_left = 12.0
@@ -56,18 +59,6 @@ corner_radius_top_right = 3
 corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_ghiih"]
-atlas = ExtResource("3_quk1y")
-region = Rect2(34, 0, 47, 24)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_mv3me"]
-atlas = ExtResource("3_quk1y")
-region = Rect2(34, 47, 47, 24)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_brm57"]
-atlas = ExtResource("3_quk1y")
-region = Rect2(34, 24, 47, 23)
-
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_menu"]
 content_margin_left = 12.0
 content_margin_top = 12.0
@@ -78,30 +69,6 @@ corner_radius_top_left = 6
 corner_radius_top_right = 6
 corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_ymf4s"]
-atlas = ExtResource("2_gudfk")
-region = Rect2(265, 26, 54, 22)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_g8g67"]
-atlas = ExtResource("2_gudfk")
-region = Rect2(381, 25, 54, 22)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_0ped1"]
-atlas = ExtResource("2_gudfk")
-region = Rect2(1214, 29, 41, 22)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_4anfs"]
-atlas = ExtResource("2_gudfk")
-region = Rect2(1322, 29, 41, 22)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_p6bmp"]
-atlas = ExtResource("2_gudfk")
-region = Rect2(506, 25, 40, 22)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_3ongb"]
-atlas = ExtResource("2_gudfk")
-region = Rect2(628, 23, 40, 22)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_toast"]
 content_margin_left = 16.0
@@ -114,15 +81,67 @@ corner_radius_top_right = 3
 corner_radius_bottom_right = 3
 corner_radius_bottom_left = 3
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_xs3tv"]
-atlas = ExtResource("7_ghiih")
-region = Rect2(79, 1, 45, 22)
+[sub_resource type="AtlasTexture" id="AtlasTexture_resume_normal"]
+atlas = ExtResource("22_newart")
+region = Rect2(2, 127, 56, 23)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_6ew2f"]
-atlas = ExtResource("7_ghiih")
-region = Rect2(128, 1, 45, 22)
+[sub_resource type="AtlasTexture" id="AtlasTexture_resume_hover"]
+atlas = ExtResource("22_newart")
+region = Rect2(60, 127, 56, 23)
 
-[node name="HUD" type="CanvasLayer" unique_id=1588467611 node_paths=PackedStringArray("counters", "stone_label", "wood_label", "food_label", "meeple_label", "build_button", "build_menu", "pause_menu", "death_screen", "speed_button")]
+[sub_resource type="AtlasTexture" id="AtlasTexture_resume_pressed"]
+atlas = ExtResource("22_newart")
+region = Rect2(118, 127, 56, 23)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_menu_normal"]
+atlas = ExtResource("22_newart")
+region = Rect2(2, 327, 43, 23)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_menu_hover"]
+atlas = ExtResource("22_newart")
+region = Rect2(47, 327, 43, 23)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_menu_pressed"]
+atlas = ExtResource("22_newart")
+region = Rect2(92, 327, 43, 23)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_quit_normal"]
+atlas = ExtResource("22_newart")
+region = Rect2(2, 52, 42, 23)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_quit_hover"]
+atlas = ExtResource("22_newart")
+region = Rect2(46, 52, 42, 23)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_quit_pressed"]
+atlas = ExtResource("22_newart")
+region = Rect2(90, 52, 42, 23)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_retry_normal"]
+atlas = ExtResource("22_newart")
+region = Rect2(2, 277, 47, 23)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_retry_hover"]
+atlas = ExtResource("22_newart")
+region = Rect2(51, 277, 47, 23)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_retry_pressed"]
+atlas = ExtResource("22_newart")
+region = Rect2(100, 277, 47, 23)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_build_normal"]
+atlas = ExtResource("22_newart")
+region = Rect2(2, 302, 47, 23)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_build_hover"]
+atlas = ExtResource("22_newart")
+region = Rect2(51, 302, 47, 23)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_build_pressed"]
+atlas = ExtResource("22_newart")
+region = Rect2(100, 302, 47, 23)
+
+[node name="HUD" type="CanvasLayer" unique_id=1588467611 node_paths=PackedStringArray("counters", "stone_label", "wood_label", "food_label", "meeple_label", "build_button", "build_menu", "pause_menu", "death_screen", "speed_button", "jobs_label", "clear_jobs_button", "workers_label", "builders_label")]
 script = ExtResource("1_uj4j1")
 counters = NodePath("CountersPanel")
 stone_label = NodePath("CountersPanel/Counters/Stone/StoneLabel")
@@ -134,6 +153,10 @@ build_menu = NodePath("BuildMenu")
 pause_menu = NodePath("PauseMenu")
 death_screen = NodePath("DeathScreen")
 speed_button = NodePath("SpeedButton")
+jobs_label = NodePath("JobsPlate/Jobs/JobsLabel")
+clear_jobs_button = NodePath("JobsPlate/Jobs/ClearJobsButton")
+workers_label = NodePath("RolesPlate/Roles/WorkersLabel")
+builders_label = NodePath("RolesPlate/Roles/BuildersLabel")
 
 [node name="CountersPanel" type="PanelContainer" parent="." unique_id=279582240]
 anchors_preset = 5
@@ -200,6 +223,56 @@ theme_override_font_sizes/font_size = 32
 text = "Meeggas"
 vertical_alignment = 1
 
+[node name="JobsPlate" type="PanelContainer" parent="." unique_id=1847302551]
+offset_left = 24.0
+offset_top = 24.0
+offset_right = 64.0
+offset_bottom = 64.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_backplate")
+
+[node name="Jobs" type="HBoxContainer" parent="JobsPlate" unique_id=1847302552]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="JobsLabel" type="Label" parent="JobsPlate/Jobs" unique_id=1847302553]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "0 jobs waiting"
+vertical_alignment = 1
+
+[node name="ClearJobsButton" type="Button" parent="JobsPlate/Jobs" unique_id=1847302554]
+layout_mode = 2
+tooltip_text = "Cancel every job no meeple has started"
+theme_override_font_sizes/font_size = 24
+text = "Clear all (C)"
+
+[node name="RolesPlate" type="PanelContainer" parent="." unique_id=1847302557]
+offset_left = 24.0
+offset_top = 80.0
+offset_right = 64.0
+offset_bottom = 120.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_backplate")
+
+[node name="Roles" type="HBoxContainer" parent="RolesPlate" unique_id=1847302558]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="WorkersLabel" type="Label" parent="RolesPlate/Roles" unique_id=1847302555]
+layout_mode = 2
+mouse_filter = 1
+tooltip_text = "Meeples working in a building"
+theme_override_font_sizes/font_size = 32
+text = "0 workers"
+vertical_alignment = 1
+
+[node name="BuildersLabel" type="Label" parent="RolesPlate/Roles" unique_id=1847302556]
+layout_mode = 2
+mouse_filter = 1
+tooltip_text = "Meeples free for your jobs"
+theme_override_font_sizes/font_size = 32
+text = "0 builders"
+vertical_alignment = 1
+
 [node name="Hunger" type="HBoxContainer" parent="." unique_id=644346435]
 custom_minimum_size = Vector2(100, 100)
 anchors_preset = 3
@@ -236,7 +309,7 @@ theme_override_font_sizes/font_size = 32
 text = "0/0 food"
 vertical_alignment = 1
 
-[node name="HungerBar" type="TextureProgressBar" parent="Hunger" unique_id=18425119 node_paths=PackedStringArray("food_plate", "food_label")]
+[node name="HungerBar" type="TextureProgressBar" parent="Hunger" unique_id=18425119 node_paths=PackedStringArray("food_plate", "food_label", "ceiling")]
 custom_minimum_size = Vector2(28, 260)
 layout_mode = 2
 size_flags_vertical = 4
@@ -248,25 +321,29 @@ script = ExtResource("6_hungerbar")
 tooltip_style = SubResource("StyleBoxFlat_tooltip")
 food_plate = NodePath("../FoodPlate")
 food_label = NodePath("../FoodPlate/FoodLabel")
+ceiling = NodePath("../../SpeedButton")
 
 [node name="BuildButton" type="TextureButton" parent="." unique_id=1803173659]
-custom_minimum_size = Vector2(148, 148)
+custom_minimum_size = Vector2(188, 92)
 anchors_preset = 7
 anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -74.0
-offset_top = -131.0
-offset_right = 74.0
-offset_bottom = 17.0
+offset_left = -94.0
+offset_top = -116.0
+offset_right = 94.0
+offset_bottom = -24.0
 grow_horizontal = 2
 grow_vertical = 0
-texture_normal = SubResource("AtlasTexture_ghiih")
-texture_pressed = SubResource("AtlasTexture_mv3me")
-texture_hover = SubResource("AtlasTexture_brm57")
+texture_normal = SubResource("AtlasTexture_build_normal")
+texture_pressed = SubResource("AtlasTexture_build_pressed")
+texture_hover = SubResource("AtlasTexture_build_hover")
+texture_focused = SubResource("AtlasTexture_build_hover")
 ignore_texture_size = true
 stretch_mode = 5
+
+[node name="WorkerPanel" parent="." instance=ExtResource("9_workers")]
 
 [node name="BuildMenu" type="Control" parent="." unique_id=1423812792 node_paths=PackedStringArray("building_list")]
 layout_mode = 3
@@ -345,26 +422,38 @@ grow_vertical = 2
 theme_override_constants/separation = 16
 
 [node name="ResumeButton" type="TextureButton" parent="PauseMenu/Buttons" unique_id=1698750817]
-custom_minimum_size = Vector2(216, 88)
+custom_minimum_size = Vector2(224, 92)
 layout_mode = 2
-texture_normal = SubResource("AtlasTexture_ymf4s")
-texture_pressed = SubResource("AtlasTexture_g8g67")
+texture_normal = SubResource("AtlasTexture_resume_normal")
+texture_pressed = SubResource("AtlasTexture_resume_pressed")
+texture_hover = SubResource("AtlasTexture_resume_hover")
+texture_focused = SubResource("AtlasTexture_resume_hover")
 ignore_texture_size = true
 stretch_mode = 5
 
-[node name="MenuButton" type="TextureButton" parent="PauseMenu/Buttons" unique_id=1249841101]
-custom_minimum_size = Vector2(164, 88)
+[node name="SettingsButton" type="TextureButton" parent="PauseMenu/Buttons" unique_id=1902648115 node_paths=PackedStringArray("menu")]
 layout_mode = 2
-texture_normal = SubResource("AtlasTexture_0ped1")
-texture_pressed = SubResource("AtlasTexture_4anfs")
+size_flags_horizontal = 4
+script = ExtResource("20_setbtn")
+menu = NodePath("../../../SettingsMenu")
+
+[node name="MenuButton" type="TextureButton" parent="PauseMenu/Buttons" unique_id=1249841101]
+custom_minimum_size = Vector2(172, 92)
+layout_mode = 2
+texture_normal = SubResource("AtlasTexture_menu_normal")
+texture_pressed = SubResource("AtlasTexture_menu_pressed")
+texture_hover = SubResource("AtlasTexture_menu_hover")
+texture_focused = SubResource("AtlasTexture_menu_hover")
 ignore_texture_size = true
 stretch_mode = 5
 
 [node name="QuitButton" type="TextureButton" parent="PauseMenu/Buttons" unique_id=1438633594]
-custom_minimum_size = Vector2(160, 88)
+custom_minimum_size = Vector2(168, 92)
 layout_mode = 2
-texture_normal = SubResource("AtlasTexture_p6bmp")
-texture_pressed = SubResource("AtlasTexture_3ongb")
+texture_normal = SubResource("AtlasTexture_quit_normal")
+texture_pressed = SubResource("AtlasTexture_quit_pressed")
+texture_hover = SubResource("AtlasTexture_quit_hover")
+texture_focused = SubResource("AtlasTexture_quit_hover")
 ignore_texture_size = true
 stretch_mode = 5
 
@@ -434,26 +523,32 @@ grow_vertical = 2
 theme_override_constants/separation = 16
 
 [node name="RetryButton" type="TextureButton" parent="DeathScreen/Buttons" unique_id=761934418]
-custom_minimum_size = Vector2(216, 88)
+custom_minimum_size = Vector2(188, 92)
 layout_mode = 2
-texture_normal = SubResource("AtlasTexture_xs3tv")
-texture_pressed = SubResource("AtlasTexture_6ew2f")
+texture_normal = SubResource("AtlasTexture_retry_normal")
+texture_pressed = SubResource("AtlasTexture_retry_pressed")
+texture_hover = SubResource("AtlasTexture_retry_hover")
+texture_focused = SubResource("AtlasTexture_retry_hover")
 ignore_texture_size = true
 stretch_mode = 5
 
 [node name="MenuButtonDeath" type="TextureButton" parent="DeathScreen/Buttons" unique_id=1376316655]
-custom_minimum_size = Vector2(164, 88)
+custom_minimum_size = Vector2(172, 92)
 layout_mode = 2
-texture_normal = SubResource("AtlasTexture_0ped1")
-texture_pressed = SubResource("AtlasTexture_4anfs")
+texture_normal = SubResource("AtlasTexture_menu_normal")
+texture_pressed = SubResource("AtlasTexture_menu_pressed")
+texture_hover = SubResource("AtlasTexture_menu_hover")
+texture_focused = SubResource("AtlasTexture_menu_hover")
 ignore_texture_size = true
 stretch_mode = 5
 
 [node name="QuitButtonDeath" type="TextureButton" parent="DeathScreen/Buttons" unique_id=1001256494]
-custom_minimum_size = Vector2(160, 88)
+custom_minimum_size = Vector2(168, 92)
 layout_mode = 2
-texture_normal = SubResource("AtlasTexture_p6bmp")
-texture_pressed = SubResource("AtlasTexture_3ongb")
+texture_normal = SubResource("AtlasTexture_quit_normal")
+texture_pressed = SubResource("AtlasTexture_quit_pressed")
+texture_hover = SubResource("AtlasTexture_quit_hover")
+texture_focused = SubResource("AtlasTexture_quit_hover")
 ignore_texture_size = true
 stretch_mode = 5
 
@@ -465,3 +560,6 @@ offset_right = 545.0
 offset_bottom = 172.0
 scale = Vector2(4, 4)
 texture = ExtResource("8_mv3me")
+
+[node name="SettingsMenu" parent="." unique_id=1902648116 instance=ExtResource("21_setmenu")]
+in_game = true

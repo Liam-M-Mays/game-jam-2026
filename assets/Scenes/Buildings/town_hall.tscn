@@ -20,6 +20,7 @@ texture = ExtResource("1_hh3au")
 offset = Vector2(3, -13)
 hframes = 5
 script = ExtResource("2_4xtmb")
+meeples_required = Array[int]([4, 8, 12, 16])
 build_frames = 1
 frames = Array[ExtResource("3_phase")]([SubResource("Frame_0")])
 effect_offset = Vector2(0, 10)

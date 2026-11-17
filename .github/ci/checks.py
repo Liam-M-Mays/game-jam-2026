@@ -5,6 +5,7 @@
   python3 .github/ci/checks.py repo --update        rewrite the repo part of known-problems.txt
   python3 .github/ci/checks.py logs DIR             read the Godot logs written by run_godot_checks.sh
   python3 .github/ci/checks.py logs DIR --update    rewrite the Godot part of known-problems.txt
+  python3 .github/ci/checks.py tests DIR            read only the test log written by run_tests.sh
 
 A problem listed in known-problems.txt is tolerated. A new problem fails the run.
 A listed problem that no longer happens also fails the run, so the list can only shrink.
@@ -22,7 +23,8 @@ REF_EXT = (".tscn", ".tres", ".gd", ".gdshader", ".godot")
 MARKER_EXT = (".tscn", ".tres", ".gd", ".gdshader", ".godot", ".cfg", ".import")
 WARN_MB, FAIL_MB = 5, 20
 REPO_RULES = ("missing-sidecar", "orphan-sidecar", "sidecar-in-ignored-folder", "broken-ref", "cache-ref", "art-boundary", "conflict-marker", "large-file", "codeowners")
-LOG_RULES = ("import-error", "load-error", "boot-error")
+TEST_RULES = ("test-failed",)
+LOG_RULES = ("import-error", "load-error", "boot-error") + TEST_RULES
 NOISE = ("leaked at exit", "still in use at exit", "RID allocations of type", "ObjectDB instances were leaked")
 
 RULE_HELP = {
@@ -38,6 +40,7 @@ RULE_HELP = {
     "import-error": "Godot reported an error while importing the project.",
     "load-error": "Godot reported an error while loading this file.",
     "boot-error": "A script error happened while this scene was running.",
+    "test-failed": "A test failed. Run it yourself with: bash .github/ci/run_tests.sh",
 }
 
 
@@ -158,19 +161,49 @@ def repo_checks(report):
         report.add("codeowners", owners, owners)
 
 
+def lines_of(log_dir, name):
+    path = os.path.join(log_dir, name)
+    if not os.path.exists(path):
+        return None
+    return [re.sub(r"\x1b\[[0-9;]*m", "", l).rstrip() for l in read(path).splitlines()]
+
+
+def is_error(line):
+    if any(n in line for n in NOISE):
+        return False
+    return line.startswith(("ERROR:", "SCRIPT ERROR:")) or "Parse Error" in line
+
+
+def test_checks(report, log_dir):
+    lines = lines_of(log_dir, "tests.log")
+    if lines is None:
+        report.add("test-failed", "tests.log is missing")
+        return
+    current, done = "(startup)", False
+    for line in lines:
+        if line.startswith("TEST RUN "):
+            current = line[len("TEST RUN "):]
+        elif line.startswith("TEST FAIL "):
+            what = line[len("TEST FAIL "):].replace("res://", "")
+            file = what.split("::")[0].split(" | ")[0]
+            report.add("test-failed", what[:240], file if os.path.exists(file) else None)
+        elif line.startswith("TESTS DONE"):
+            done = True
+        elif line.startswith("SCRIPT ERROR:") and not done:
+            name = current.replace("res://", "")
+            file = name.split("::")[0]
+            report.add("test-failed", "%s | script error: %s" % (name, line[len("SCRIPT ERROR:"):].strip()[:160]), file if os.path.exists(file) else None)
+        elif is_error(line) and not done:
+            report.warn("While running the tests, the engine logged: %s" % line[:200])
+    if not done:
+        report.add("test-failed", "the test run did not finish")
+
+
 def log_checks(report, log_dir):
-    def lines_of(name):
-        path = os.path.join(log_dir, name)
-        if not os.path.exists(path):
-            return None
-        return [re.sub(r"\x1b\[[0-9;]*m", "", l).rstrip() for l in read(path).splitlines()]
+    def lines_of_log(name):
+        return lines_of(log_dir, name)
 
-    def is_error(line):
-        if any(n in line for n in NOISE):
-            return False
-        return line.startswith(("ERROR:", "SCRIPT ERROR:")) or "Parse Error" in line
-
-    lines = lines_of("import.log")
+    lines = lines_of_log("import.log")
     if lines is None:
         report.add("import-error", "import.log is missing")
     else:
@@ -178,7 +211,7 @@ def log_checks(report, log_dir):
             if is_error(line):
                 report.add("import-error", line[:200])
 
-    lines = lines_of("load.log")
+    lines = lines_of_log("load.log")
     if lines is None:
         report.add("load-error", "load.log is missing")
     else:
@@ -202,11 +235,13 @@ def log_checks(report, log_dir):
         status_path = os.path.join(log_dir, name[:-4] + ".exit")
         if os.path.exists(status_path) and read(status_path).strip() not in ("0", ""):
             report.add("boot-error", "%s | Godot exited with code %s" % (scene, read(status_path).strip()))
-        for line in lines_of(name):
+        for line in lines_of_log(name):
             if line.startswith("SCRIPT ERROR:"):
                 report.add("boot-error", "%s | %s" % (scene, line[len("SCRIPT ERROR:"):].strip()[:160]))
             elif is_error(line):
                 report.warn("While running %s, the engine logged: %s" % (scene, line[:200]))
+
+    test_checks(report, log_dir)
 
 
 def load_known():
@@ -288,7 +323,7 @@ def finish(report, rules, update):
 
 
 def main(argv):
-    if len(argv) < 2 or argv[1] not in ("repo", "logs"):
+    if len(argv) < 2 or argv[1] not in ("repo", "logs", "tests"):
         print(__doc__)
         return 2
     update = "--update" in argv
@@ -298,8 +333,11 @@ def main(argv):
         repo_checks(report)
         return finish(report, REPO_RULES, update)
     if not args:
-        print("logs needs the folder that holds the Godot logs")
+        print("%s needs the folder that holds the Godot logs" % argv[1])
         return 2
+    if argv[1] == "tests":
+        test_checks(report, args[0])
+        return finish(report, TEST_RULES, update)
     log_checks(report, args[0])
     return finish(report, LOG_RULES, update)
 

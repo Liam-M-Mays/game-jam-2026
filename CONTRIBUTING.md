@@ -4,6 +4,12 @@
 
 This applies to everyone: the three of us, and any AI agent working for one of us.
 
+## Branches
+
+- `master` is the game. Everything lands there through a pull request.
+- The rework ([docs/rework-plan.md](docs/rework-plan.md)) was merged into `master` on 2026-11-17.
+- `jam-v1` keeps the jam build as it was. `rework` and `core-rewrite` are kept as archives. Do not build on them.
+
 ## The workflow in five steps
 
 1. Get the latest master.
@@ -49,7 +55,7 @@ Say what changed and why, in one line. The history is how we find out later why 
 
 Godot rewrites parts of a `.tscn` file every time it saves, so scenes are where merges go wrong.
 
-- **Tell the team before you work in a shared scene**: `assets/hud.tscn`, `Main_Menu.tscn`, `assets/Scenes/Levels/game.tscn`.
+- **Tell the team before you work in a shared scene**: `assets/hud.tscn`, `assets/worker_panel.tscn`, `Main_Menu.tscn`, `assets/Scenes/Levels/game.tscn`, `assets/Scenes/Levels/ground.tscn`.
 - **Read the diff of every scene before you commit.** If a scene changed and you did not mean to touch it, throw the change away:
 
   ```bash

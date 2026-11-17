@@ -3,6 +3,7 @@ extends CanvasLayer
 enum HungerBand { STARVING, FED, THRIVING }
 
 const SPEED_KEY := KEY_F
+const CLEAR_JOBS_KEY := KEY_C
 const FIRST_TIP_DELAY := 2.0
 const ROTATION_DELAY_MIN := 60.0
 const ROTATION_DELAY_MAX := 90.0
@@ -10,10 +11,13 @@ const DEATH_SCREEN_DELAY := 1.0
 const DEATH_SCREEN_FADE := 2.0
 const DEATH_SCREEN_BLACK := 2.0
 const OPENING_TIP_GAP := 15.0
+## The builders number turns this red, the toast warning colour, when every meeple works in a building.
+const NO_BUILDERS_COLOR := Color("ff6b5b")
+const ZOOM_OUT_FACT := "Have you zoomed out all the way yet?"
 const PAUSE_BUILDING_TIP := "Right-click a building under construction to pause it, and right-click again to resume"
 const OPENING_TIPS := [
 	"Tap on trees and stones to begin harvesting resources",
-	"Use WASD or the mouse wheel to pan the camera around",
+	"Use WASD to move the camera and the mouse wheel to zoom",
 	"Picking berries will feed your meeple",
 	"Click the build button to start expanding your meeple village",
 	PAUSE_BUILDING_TIP,
@@ -21,7 +25,7 @@ const OPENING_TIPS := [
 
 const TIPS := [
 	"Press 'F' to toggle game speed",
-	"Berry bushes dissapear after collecting from them 3 times",
+	"Berry bushes disappear after collecting from them 3 times",
 	"Keep your hunger bar up to keep your meeples happy (and alive)",
 	"You can upgrade your Town Hall level by increasing your Meeple population",
 	"Hover over build sites to see what materials it still needs",
@@ -34,7 +38,7 @@ const FUN_FACTS := [
 	"Each Meeple has a real human soul trapped inside of them",
 	"Bananas are berries, but strawberries aren't",
 	"Oxford University is older than the Aztec Empire",
-	"Have you zoomed out all the way yet?",
+	ZOOM_OUT_FACT,
 	"Antarctica is technically a desert",
 	"Sharks are older than trees",
 	"Did you know that cashews came from a fruit?",
@@ -55,10 +59,16 @@ const FUN_FACTS := [
 @export var pause_menu: PauseMenu
 @export var death_screen: PauseMenu
 @export var speed_button: Button
+@export var jobs_label: Label
+@export var clear_jobs_button: Button
+@export var workers_label: Label
+@export var builders_label: Label
+## The giant's camera. The HUD hides when it is zoomed all the way out. Empty on the ground, where the HUD always stays.
 @export var camera: CameraControls
 
 var _building_scene: PackedScene
 var _last_meeple_count := 0
+var _last_builders := 0
 var _last_food := 0
 var _last_hunger_band := HungerBand.THRIVING
 var _upgrade_was_ready := false
@@ -75,22 +85,45 @@ func _ready() -> void:
 	GameState.hunger_changed.connect(_check_hunger_band)
 	JobSystem.changed.connect(_refresh_counters)
 	JobSystem.changed.connect(_check_meeples)
-	JobSystem.job_rejected.connect(func(_job): GameState.warn("Job queue is full"))
+	JobSystem.changed.connect(_refresh_roles)
 	Population.all_meeples_died.connect(_on_all_meeples_died)
 	_last_meeple_count = JobSystem.workers.size()
 	_last_food = Inventory.count("food")
 	_last_hunger_band = _hunger_band(GameState.hunger)
 	_refresh_counters()
+	_refresh_roles()
 	_setup_hunger_bar()
 	_setup_building()
 	_setup_speed_button()
+	if clear_jobs_button:
+		clear_jobs_button.focus_mode = Control.FOCUS_NONE
+		clear_jobs_button.pressed.connect(JobSystem.clear_waiting_player_jobs)
 	_watch_existing_town_halls.call_deferred()
-	_wait(FIRST_TIP_DELAY).connect(_show_opening_tip.bind(0))
+	if Settings.get_value(&"tutorials"):
+		_wait(FIRST_TIP_DELAY).connect(_show_opening_tip.bind(0))
+	else:
+		_wait(randf_range(ROTATION_DELAY_MIN, ROTATION_DELAY_MAX)).connect(_show_next_in_rotation)
+	Settings.changed.connect(_on_setting_changed)
+	_apply_hud_size.call_deferred()
 
 
 func _process(_delta: float) -> void:
 	if camera:
 		visible = not camera.is_zoomed_out() or get_tree().paused
+	if speed_button:
+		speed_button.disabled = get_tree().paused
+
+
+## Opens the pause menu when the player clicks away from or alt-tabs out of the game window,
+## so the village doesn't starve while they're gone. Turned off in Settings > Gameplay.
+func _notification(what: int) -> void:
+	if what != NOTIFICATION_APPLICATION_FOCUS_OUT or not Settings.get_value(&"auto_pause"):
+		return
+	if _game_over or pause_menu == null or pause_menu.visible or SceneFader.is_busy():
+		return
+	if build_menu and build_menu.visible:
+		build_menu.close()
+	pause_menu.open()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -99,7 +132,13 @@ func _unhandled_input(event: InputEvent) -> void:
 			GameState.cycle_speed()
 			get_viewport().set_input_as_handled()
 		return
-	if not event.is_action_pressed("ui_cancel") or _game_over:
+	if event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == CLEAR_JOBS_KEY:
+		if not get_tree().paused:
+			JobSystem.clear_waiting_player_jobs()
+			get_viewport().set_input_as_handled()
+		return
+	var start_pressed: bool = event is InputEventJoypadButton and event.pressed and event.button_index == JOY_BUTTON_START
+	if not (event.is_action_pressed("ui_cancel") or start_pressed) or _game_over:
 		return
 	if build_menu and build_menu.visible:
 		build_menu.close()
@@ -114,13 +153,37 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _refresh_counters() -> void:
 	if stone_label:
-		stone_label.text = str(Inventory.count("stone"))
+		stone_label.text = "%d/%d" % [Inventory.available("stone"), Inventory.room("stone")]
 	if wood_label:
-		wood_label.text = str(Inventory.count("wood"))
+		wood_label.text = "%d/%d" % [Inventory.available("wood"), Inventory.room("wood")]
 	if food_label:
-		food_label.text = "%d/%d food" % [Inventory.count("food"), Inventory.food_cap()]
+		food_label.text = "%d/%d food" % [Inventory.available("food"), Inventory.food_cap()]
 	if meeple_label:
 		meeple_label.text = "%d / %d" % [JobSystem.workers.size(), Population.capacity()]
+	var waiting := JobSystem.waiting_player_jobs()
+	if jobs_label:
+		jobs_label.text = "%d jobs waiting" % waiting
+	if clear_jobs_button:
+		clear_jobs_button.disabled = waiting == 0
+
+
+## Workers are meeples in a building's slot, builders are the rest. When the last builder goes into
+## a slot, the builders number turns red and one warning says so. It warns again only after a builder came back.
+func _refresh_roles() -> void:
+	var meeples := JobSystem.workers.size()
+	var in_slots := JobSystem.count_in_slots()
+	var builders := meeples - in_slots
+	if workers_label:
+		workers_label.text = "%d %s" % [in_slots, "worker" if in_slots == 1 else "workers"]
+	if builders_label:
+		builders_label.text = "%d %s" % [builders, "builder" if builders == 1 else "builders"]
+		if builders == 0 and meeples > 0:
+			builders_label.add_theme_color_override("font_color", NO_BUILDERS_COLOR)
+		else:
+			builders_label.remove_theme_color_override("font_color")
+	if builders == 0 and _last_builders > 0 and meeples > 0:
+		GameState.warn("No builders left! Every meeple works in a building. Click one and use its arrows to free a meeple")
+	_last_builders = builders
 
 
 func _setup_hunger_bar() -> void:
@@ -184,15 +247,15 @@ func _on_building_completed(building: Building) -> void:
 		GameState.toast("%s finished!" % building.display_name())
 
 
-func _on_placement_failed(reason: BuildSystem.PlacementError) -> void:
+func _on_placement_failed(reason: BuildSystem.PlacementError, hint: String) -> void:
 	match reason:
 		BuildSystem.PlacementError.CANT_AFFORD:
 			var building_name := BuildMenu.display_name(_building_scene) if _building_scene else "that"
 			GameState.warn("You need more materials to build %s" % building_name)
-		BuildSystem.PlacementError.QUEUE_FULL:
-			GameState.warn("Job queue is full")
 		BuildSystem.PlacementError.BLOCKED:
 			GameState.warn("Can't build there")
+		BuildSystem.PlacementError.OUT_OF_AREA:
+			GameState.warn(hint)
 
 
 func _watch_existing_town_halls() -> void:
@@ -255,9 +318,9 @@ func _check_food_empty() -> void:
 
 
 func _hunger_band(value: float) -> HungerBand:
-	if value < Population.STARVE_BELOW:
+	if value < Population.rules.starve_below:
 		return HungerBand.STARVING
-	if value <= Population.GROW_ABOVE:
+	if value <= Population.rules.grow_above:
 		return HungerBand.FED
 	return HungerBand.THRIVING
 
@@ -301,12 +364,43 @@ func _refill_deck() -> void:
 	for text in TIPS:
 		_deck.append({"text": text, "fact": false})
 	for text in FUN_FACTS:
+		if text == ZOOM_OUT_FACT and camera == null:
+			continue
 		_deck.append({"text": text, "fact": true})
 	_deck.shuffle()
 
 
 func _wait(seconds: float) -> Signal:
 	return get_tree().create_timer(seconds, false, false, true).timeout
+
+
+func _on_setting_changed(key: StringName) -> void:
+	if key == &"hud_size":
+		_apply_hud_size()
+
+
+## Scales the corner widgets (counters, hunger, buttons, toasts), not the full-screen menus.
+## Each one grows from the edge it is anchored to, so it stays on screen.
+func _apply_hud_size() -> void:
+	var hud_scale := Settings.hud_scale()
+	for child in get_children():
+		var widget := child as Control
+		if widget == null or _is_full_screen(widget):
+			continue
+		_pin_pivot(widget)
+		if not widget.has_meta(&"hud_size_pivot"):
+			widget.set_meta(&"hud_size_pivot", true)
+			widget.resized.connect(_pin_pivot.bind(widget))
+		widget.scale = Vector2(hud_scale, hud_scale)
+
+
+func _pin_pivot(widget: Control) -> void:
+	var anchor := Vector2(widget.anchor_left + widget.anchor_right, widget.anchor_top + widget.anchor_bottom) * 0.5
+	widget.pivot_offset = anchor * widget.size
+
+
+func _is_full_screen(widget: Control) -> bool:
+	return widget.anchor_right - widget.anchor_left >= 1.0 and widget.anchor_bottom - widget.anchor_top >= 1.0
 
 
 func _ignore_mouse(node: Node) -> void:

@@ -8,7 +8,7 @@ const SILENT_ZOOM := 2.2
 const ZOOM_FADE_DB := -30.0
 const OFFSCREEN_DB := -20.0
 const PANNING := 3.0
-const AMBIENCE_DB := -55.0
+const AMBIENCE_DB := -30.0
 const AMBIENCE_ON_SECONDS := Vector2(8.0, 14.0)
 const AMBIENCE_OFF_SECONDS := Vector2(18.0, 25.0)
 const AMBIENCE_FADE_SECONDS := 3.0
@@ -59,14 +59,15 @@ var _ambience_timer := 4.0
 var _ambience_level := 0.0
 
 func _ready() -> void:
-	AudioServer.set_bus_volume_linear(0, MASTER_VOLUME)
 	_ambience.stream = AMBIENCE
+	_ambience.bus = Settings.AMBIENT_BUS
 	add_child(_ambience)
 	for i in VOICE_COUNT:
 		var voice := Voice.new()
 		voice.max_distance = 1000000.0
 		voice.attenuation = 0.0
 		voice.panning_strength = PANNING
+		voice.bus = Settings.SFX_BUS
 		add_child(voice)
 		_voices.append(voice)
 

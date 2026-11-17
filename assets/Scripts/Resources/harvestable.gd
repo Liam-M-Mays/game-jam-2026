@@ -2,7 +2,6 @@ extends GridObject
 class_name Harvestable
 
 const BREAK_EFFECT := preload("res://assets/Scenes/Effects/break.tscn")
-const GROUP := &"harvestables"
 const BREAK_HOLD := 0.06
 const WOBBLE_DURATION := 0.25
 const SQUASH_DURATION := 0.2
@@ -22,12 +21,22 @@ const GROW_DURATION := 0.5
 @export var edge_distance_curve : Curve
 @export var cluster_bonus := 0.0
 
-var _wobbles := 0
+## Its data on the grid. The wobble count lives there, so it stays while the tree is drawn by its row.
+var standing : Standing
 var _job : Job = null
 
 func _ready() -> void:
 	super()
-	add_to_group(GROUP)
+	# The grid finds trees and rocks under the mouse through its cells, and hovers and clicks them.
+	area.input_pickable = false
+
+## True when nothing is happening to it, so the grid can draw it with its row again.
+func is_still() -> bool:
+	return _job == null and _tweens.values().all(func(tween : Tween) -> bool: return not tween.is_running())
+
+## The picture its row draws for `item` while it has no node.
+func texture_for(_item : Standing) -> Texture2D:
+	return texture
 
 func grow_in() -> void:
 	scale = _base_scale * Vector2(0.4, 0.05)
@@ -36,19 +45,41 @@ func grow_in() -> void:
 
 func _on_clicked() -> void:
 	if _job is HarvestJob:
-		JobSystem.cancel(_job)
-		_set_job(null)
+		cancel_job()
 	elif _job != null:
 		reject()
+		GameState.warn("A lumberjack or miner is already working on this")
 	elif can_harvest():
 		var job := HarvestJob.new(self)
-		if JobSystem.add(job):
-			_set_job(job)
-		else:
-			reject()
+		JobSystem.add(job)
+		_set_job(job)
+
+## Cancels the job the player gave it and takes the mark off. A building waiting for this land
+## to be cleared is told, so it can give up.
+func cancel_job() -> void:
+	# Clear all can reach a job that a cancelled building already took off.
+	if _job == null:
+		return
+	JobSystem.cancel(_job)
+	_set_job(null)
+	for cell in cells:
+		if cell.kept_for is Building:
+			(cell.kept_for as Building).land_not_cleared(cell)
+
+## True while a player's job or a clearing mark is on it.
+func is_marked() -> bool:
+	return _job is HarvestJob
+
+## Marks it to be cut down so a building can stand here, the same as a player's click.
+## Nothing changes when a job has it already.
+func mark_for_clearing() -> void:
+	if _job == null and can_harvest():
+		var job := HarvestJob.new(self)
+		JobSystem.add(job)
+		_set_job(job)
 
 func can_harvest() -> bool:
-	return _wobbles < wobbles_to_break
+	return standing.wobbles < wobbles_to_break
 
 func is_free() -> bool:
 	return _job == null and can_harvest()
@@ -67,15 +98,15 @@ func harvest() -> bool:
 	return done
 
 func _hit() -> bool:
-	_wobbles += 1
-	if _wobbles < wobbles_to_break:
+	standing.wobbles += 1
+	if standing.wobbles < wobbles_to_break:
 		_react()
 		return false
 	_shatter()
 	return true
 
 func _shatter() -> void:
-	_wobbles = wobbles_to_break
+	standing.wobbles = wobbles_to_break
 	VillageAudio.play(hit_sound, global_position)
 	_squash()
 	var tween := _start_flash(Color.WHITE)
@@ -106,7 +137,4 @@ func _break() -> void:
 	grid.remove(self)
 	for scene in drops:
 		for i in range(drops[scene]):
-			var drop : ResourceDrop = scene.instantiate()
-			drop.position = position + Vector2(_base_offset.x * _base_scale.x, 0)
-			get_parent().add_child(drop)
-			drop.launch(grid)
+			grid.add_drop(scene, position + Vector2(_base_offset.x * _base_scale.x, 0)).launch()

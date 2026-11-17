@@ -1,17 +1,8 @@
 [gd_scene format=3 uid="uid://nio2jfwnktds"]
 
 [ext_resource type="Texture2D" uid="uid://vlhj52cfknay" path="res://assets/Art/Environment/Grid_outline.png" id="1_7104g"]
-[ext_resource type="Script" uid="uid://c1c1xomxee3d" path="res://assets/Scripts/Env/cell.gd" id="2_qpajr"]
 
 [node name="Cell" type="Sprite2D" unique_id=1533628368]
-modulate = Color(0.5176471, 0.5176471, 0.5176471, 0)
 scale = Vector2(10, 10)
 texture = ExtResource("1_7104g")
 offset = Vector2(-0.5, 0)
-script = ExtResource("2_qpajr")
-
-[node name="Area2D" type="Area2D" parent="." unique_id=2094971988]
-
-[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Area2D" unique_id=1528631332]
-position = Vector2(-0.5, 0)
-polygon = PackedVector2Array(4.4999995, 1.9999999, 4.4999995, 0.99999994, 1.4999999, -1.9999999, -4.4999995, -1.9999999, -4.4999995, -0.99999994, -1.4999999, 1.9999999)

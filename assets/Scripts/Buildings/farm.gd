@@ -8,7 +8,6 @@ class_name Farm
 var _growing := false
 var _growth := 0
 var _grow_timer := 0.0
-var _collect_job : CollectCropJob = null
 
 func grow_stages() -> int:
 	return hframes - (last_stage() + 1)
@@ -19,38 +18,17 @@ func is_ripe() -> bool:
 func can_harvest_now() -> bool:
 	return is_ripe() and not Inventory.food_full()
 
+## A farm finished before its barn stays bare until the barn is finished too.
 func complete() -> void:
 	super()
+	if barn == null or barn.is_in_group(COMPLETED_GROUP):
+		start_growing()
+
+func start_growing() -> void:
+	if _growing:
+		return
 	_growing = true
 	_set_growth(0)
-	Inventory.changed.connect(_cancel_collect_if_full)
-
-func _on_clicked() -> void:
-	if _collect_job != null:
-		_cancel_collect()
-	elif is_ripe():
-		_queue_collect()
-
-func _queue_collect() -> void:
-	var job := CollectCropJob.new(self)
-	if not can_harvest_now() or not JobSystem.add(job):
-		reject()
-		return
-	_set_collect_job(job)
-	if _idle_job != null:
-		_idle_job.cancelled = true
-
-func _cancel_collect() -> void:
-	JobSystem.cancel(_collect_job)
-	_set_collect_job(null)
-
-func _cancel_collect_if_full() -> void:
-	if _collect_job != null and Inventory.food_full():
-		_cancel_collect()
-
-func _set_collect_job(job : CollectCropJob) -> void:
-	_collect_job = job
-	set_selected(job != null)
 
 func _process(delta : float) -> void:
 	if not _growing or is_ripe():
@@ -61,19 +39,12 @@ func _process(delta : float) -> void:
 		_set_growth(_growth + 1)
 
 func harvest_crop() -> void:
-	_set_collect_job(null)
 	if not can_harvest_now():
 		return
 	Inventory.add("food", food_per_harvest)
 	VillageAudio.play(&"grass", global_position)
 	flash()
 	_set_growth(0)
-
-func has_idle_work(_worker : Meeple) -> bool:
-	return can_harvest_now() and _collect_job == null
-
-func _make_idle_job(worker : Meeple) -> IdleJob:
-	return FarmJob.new() if has_idle_work(worker) else null
 
 func _set_growth(stage : int) -> void:
 	_growth = clampi(stage, 0, grow_stages())

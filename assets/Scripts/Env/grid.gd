@@ -2,6 +2,9 @@ extends Node2D
 class_name Grid
 
 const CELL := preload("res://assets/Scenes/Env/cell.tscn")
+const MEEPLE := preload("res://assets/Scenes/Meeple/meeple.tscn")
+const DEV_SPAWN_KEY := KEY_M
+const DEV_SPAWN_COUNT := 500
 const NEIGHBOURS : Array[Vector2i] = [
 	Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, -1), Vector2i(-1, 1),
 ]
@@ -19,7 +22,27 @@ const CELL_OUTLINE : Array[Vector2] = [
 
 @export var building_clearance := 4
 
+@export_group("Round world")
+## About how many cells a round world on the ground has. A dev setting. 0 keeps the cells on the
+## ground sprites, as on the giant.
+@export var world_cells := 0
+## How far the edge of a round world goes in and out, as a share of its radius.
+@export_range(0.0, 0.5) var edge_wobble := 0.08
+## The ground of a round world. It moves to the middle of the world and takes its shape.
+@export var round_ground : YardGround
+@export_group("")
+
 const SPAWN_ATTEMPTS := 100
+## How many cells left of a building a tree or rock can be and still reach under its art.
+const PIN_REACH := 4
+## A cell covers 7 by 5 art pixels.
+const CELL_AREA := 35.0
+## The cells of the jam map on the giant. A round world gets more of each kind by its size compared to this.
+const JAM_CELLS := 2091
+## How many points along the edge of a round world get their own distance from the middle.
+const EDGE_POINTS := 360
+## The side of a bucket of trees, rocks and bushes, in cells. See AreaIndex.
+const STANDING_AREA_CELLS := 4
 
 class Spawnable:
 	var scene : PackedScene
@@ -29,6 +52,13 @@ class Spawnable:
 	var curve : Curve
 	var cluster_bonus : float
 	var max_weight : float
+	## A copy of the scene, out of the tree. Rows draw from its look and lumberjacks read its drops.
+	var template : Harvestable
+	## The click box around a tree or rock's position, read from the scene's Area2D.
+	var hit_box : Rect2
+	var count := 0
+	## Where the trees, rocks or bushes of this kind stand, so the nearest is found without checking them all.
+	var area : AreaIndex
 
 var _cells : Array[Array] = []
 var _cell_scale : Vector2
@@ -40,23 +70,167 @@ var _spots : Array = []
 var _respawn_timer := 0.0
 var _coords_of := {}
 var _keep_clear : Array[Cell] = []
+var _building_cells : Array[Vector2i] = []
+var _cell_layer : CellLayer
+var _meeple_look : MeepleLook
+var _meeples : Array[Meeple] = []
+## One copy of each drop scene, out of the tree. Every drop draws from the copy of its scene.
+var _drop_looks : Dictionary[PackedScene, DropLook] = {}
+var _awake : Array[Standing] = []
+var _hovered : Array[Standing] = []
+var _rows : Dictionary[float, StandingRow] = {}
+var _reach_rows := 0
+## Bushes that grow back while their row draws them.
+var _regrowing : Array[Standing] = []
+var _amount_scale := 1.0
+var _round_middle := Vector2.ZERO
+var _round_radius := 0.0
 
 func _ready() -> void:
-	var template := CELL.instantiate()
+	var started := Time.get_ticks_usec()
+	_meeple_look = MEEPLE.instantiate()
+	var template : Sprite2D = CELL.instantiate()
 	_cell_scale = template.scale
 	_cell_offset = template.offset
+	_cell_layer = CellLayer.new(template)
 	template.free()
-	_build_cells()
-	_compute_edge_distance()
-	_seed_world()
+	add_child(_cell_layer)
+	if world_cells > 0:
+		_seed_world()
+		_build_round_world()
+	else:
+		_build_cells()
+		_compute_edge_distance()
+		_seed_world()
 	_place_start_building()
 	_generate_resources()
+	if OS.is_debug_build():
+		print("World built in %d ms, %d cells" % [(Time.get_ticks_usec() - started) / 1000, _coords_of.size()])
+
+func _exit_tree() -> void:
+	_clear_drops()
+	for meeple in _meeples:
+		meeple.free_item()
+	_meeples.clear()
+	JobSystem.workers.clear()
+	_meeple_look.free()
+	# Trees, rocks and bushes are RefCounted data in two reference loops: kind -> area -> item -> kind,
+	# and item -> cell -> occupant -> item. Break both, or every item and its cells leak when the level closes.
+	for s in _spawnables:
+		s.template.free()
+		s.area = null
+	for cell : Cell in _coords_of:
+		cell.occupant = null
+
+## Adds a meeple at `at`, in this grid's space, and gives it to the jobs.
+func spawn_meeple(at : Vector2) -> Meeple:
+	var meeple := Meeple.new(self, _meeple_look, at)
+	_meeples.append(meeple)
+	JobSystem.add_worker(meeple)
+	return meeple
+
+## How far from a cell's position a point in that cell can be, in this grid's space, with room to spare.
+func cell_reach() -> float:
+	return (_cell_offset.length() + 10.0) * maxf(_cell_scale.x, _cell_scale.y)
+
+## The side of a square `cells` cells wide, in this grid's space.
+func area_size(cells : int) -> float:
+	return 7.0 * cells * _cell_scale.x
+
+## The free tree, rock or bush nearest `at`, in this grid's space, of a kind whose look `accept` takes.
+## Null when there is none.
+func nearest_standing(at : Vector2, accept : Callable) -> Standing:
+	var best : Standing = null
+	var best_distance := INF
+	for kind in _spawnables:
+		if kind.area == null or not accept.call(kind.template):
+			continue
+		var found : Standing = kind.area.best(at, func(item : Standing) -> float:
+			return at.distance_squared_to(item.position) if item.is_free() else INF,
+			func(away : float) -> float: return away * away, best_distance)
+		if found != null:
+			best = found
+			best_distance = at.distance_squared_to(found.position)
+	return best
+
+## Adds a drop of `scene` at `at`, in this grid's space, and gives it to Inventory.
+func add_drop(scene : PackedScene, at : Vector2) -> ResourceDrop:
+	if not _drop_looks.has(scene):
+		_drop_looks[scene] = scene.instantiate()
+	var drop := ResourceDrop.new(self, _drop_looks[scene], at)
+	Inventory.register(drop)
+	return drop
+
+func _clear_drops() -> void:
+	Inventory.clear_drops()
+	for look in _drop_looks.values():
+		look.free()
+	_drop_looks.clear()
+
+func _unhandled_input(event : InputEvent) -> void:
+	var click := event as InputEventMouseButton
+	if click != null and click.pressed and click.button_index == MOUSE_BUTTON_LEFT:
+		for s in _hovered:
+			s.node._on_clicked()
+	var key := event as InputEventKey
+	if not OS.is_debug_build() or key == null or key.physical_keycode != DEV_SPAWN_KEY or not key.pressed or key.echo:
+		return
+	var hall := TownHall.find_town_hall()
+	if hall != null:
+		for i in range(DEV_SPAWN_COUNT):
+			hall.spawn_meeple()
 
 func cell_at(world_pos : Vector2) -> Cell:
 	return _cell_or_null(_coords_at(world_pos))
 
+## The cells whose outline touches a circle of `radius` around `world_pos`, in this grid's space.
+func cells_near(world_pos : Vector2, radius : float) -> Array[Cell]:
+	var found : Array[Cell] = []
+	var center := _coords_at(world_pos)
+	var local := to_local(world_pos)
+	var rows := ceili(radius / (_cell_scale.y * 5)) + 1
+	var columns := ceili(radius / (_cell_scale.x * 7)) + rows
+	for dy in range(-rows, rows + 1):
+		for dx in range(-columns, columns + 1):
+			var cell := _cell_or_null(center + Vector2i(dx, dy))
+			if cell != null and _touches(cell, local, radius):
+				found.append(cell)
+	return found
+
+func _touches(cell : Cell, local : Vector2, radius : float) -> bool:
+	var point := (local - cell.position) / _cell_scale
+	var outline := PackedVector2Array(CELL_OUTLINE)
+	if Geometry2D.is_point_in_polygon(point, outline):
+		return true
+	for i in range(outline.size()):
+		var closest := Geometry2D.get_closest_point_to_segment(point, outline[i - 1], outline[i])
+		if (closest - point).length() * _cell_scale.x <= radius:
+			return true
+	return false
+
 func free_cells_at(world_pos : Vector2, width := 1, depth := 1) -> Array[Cell]:
 	return _free_cells(_coords_at(world_pos), width, depth)
+
+## Every cell a `width` by `depth` footprint at `world_pos` would stand on, taken or not.
+func cells_under(world_pos : Vector2, width := 1, depth := 1) -> Array[Cell]:
+	var found : Array[Cell] = []
+	var coords := _coords_at(world_pos)
+	for row in range(depth):
+		for i in range(width):
+			var cell := _cell_or_null(coords + Vector2i(i, row))
+			if cell != null:
+				found.append(cell)
+	return found
+
+## The cells that touch `group` on any side, not counting the cells of `group` itself.
+func cells_next_to(group : Array[Cell]) -> Array[Cell]:
+	var found : Array[Cell] = []
+	for cell in group:
+		for offset in NEIGHBOURS:
+			var near := _cell_or_null(_coords_of[cell] + offset)
+			if near != null and not group.has(near) and not found.has(near):
+				found.append(near)
+	return found
 
 func cells_around(obj : GridObject, radius := 1) -> Array[Cell]:
 	var found : Array[Cell] = []
@@ -86,20 +260,43 @@ func place(obj : GridObject, cells : Array[Cell]) -> void:
 	obj.cells = cells
 	for cell in cells:
 		cell.occupant = obj
-	add_child(obj)
+	if obj.get_parent() == self:
+		move_child(obj, -1)
+	else:
+		add_child(obj)
+	if obj is Building:
+		for cell in cells:
+			_building_cells.append(_coords_of[cell])
 	_sort_into_row(obj)
+	if obj is Building:
+		_wake_left_of(obj as Building)
 
+## Puts `obj` before the objects on its row that stand left of it, so the ones on the right draw behind.
 func _sort_into_row(obj : GridObject) -> void:
-	for child in get_children():
-		if child != obj and child is GridObject and child.position.y == obj.position.y and child.position.x < obj.position.x:
-			move_child(obj, child.get_index())
+	var coords : Vector2i = _coords_of[obj.cells[0]]
+	for x in range(coords.x - 1, -1, -1):
+		var cell := _cell_or_null(Vector2i(x, coords.y))
+		var other : Object = cell.occupant if cell != null else null
+		if other is Standing:
+			other = (other as Standing).node
+		var node := other as GridObject
+		if node != null and node != obj and node.position.y == obj.position.y:
+			move_child(obj, node.get_index())
 			return
 
 func remove(obj : GridObject) -> void:
+	lift(obj)
+	if obj is Harvestable:
+		_forget((obj as Harvestable).standing)
+	obj.queue_free()
+
+## Takes `obj` off its cells but keeps the node. `place` puts it down again, on the same cells or new ones.
+func lift(obj : GridObject) -> void:
 	for cell in obj.cells:
 		cell.occupant = null
 		cell.highlight(0.0)
-	obj.queue_free()
+		if obj is Building:
+			_building_cells.erase(_coords_of[cell])
 
 func _build_cells() -> void:
 	for x in range(grid_size):
@@ -109,11 +306,51 @@ func _build_cells() -> void:
 		for y in range(grid_size):
 			var pos := _cell_position(x, y)
 			if _fits_ground(pos):
-				var cell := CELL.instantiate()
-				cell.position = pos
-				column[y] = cell
-				_coords_of[cell] = Vector2i(x, y)
-				add_child(cell)
+				_add_cell(x, y)
+
+func _add_cell(x : int, y : int) -> void:
+	var cell := Cell.new(_cell_position(x, y), _cell_layer)
+	_cells[x][y] = cell
+	_coords_of[cell] = Vector2i(x, y)
+
+## Makes a round world of about `world_cells` cells, with an uneven edge. The test is on the cell numbers
+## only, so it stays fast at any size. Each cell gets the shade of the ground in place of its distance to
+## the edge, so the spawn curves put the big trees and rocks in the dark areas and the small ones in the light.
+func _build_round_world() -> void:
+	var radius := sqrt(world_cells * CELL_AREA / PI)
+	var noise := FastNoiseLite.new()
+	noise.seed = _rng.seed
+	var edge := PackedFloat32Array()
+	for i in range(EDGE_POINTS):
+		var direction := Vector2.from_angle(TAU * i / EDGE_POINTS)
+		edge.append(radius * (1.0 + edge_wobble * noise.get_noise_2dv(direction * 150.0)))
+	# In art pixels a cell sits at (7x + 5y, 5y). The middle is placed so every cell number is 0 or more.
+	var reach := radius * (1.0 + edge_wobble)
+	var inner := radius * (1.0 - edge_wobble)
+	var rows := ceili(reach * 2.0 / 5.0) + 1
+	var middle := Vector2(reach + 5.0 * rows, reach)
+	grid_size = maxi(rows, ceili((middle.x + reach) / 7.0) + 1)
+	for x in range(grid_size):
+		var column : Array = []
+		column.resize(grid_size)
+		_cells.append(column)
+	for y in range(rows):
+		for x in range(maxi(floori((middle.x - reach - 5 * y) / 7.0), 0), mini(ceili((middle.x + reach - 5 * y) / 7.0), grid_size)):
+			var offset := Vector2(7 * x + 5 * y, 5 * y) - middle
+			var distance := offset.length()
+			if distance < inner or distance < edge[posmod(roundi(offset.angle() / TAU * EDGE_POINTS), EDGE_POINTS)]:
+				_add_cell(x, y)
+	_round_middle = middle * _cell_scale
+	_round_radius = radius * _cell_scale.x
+	round_ground.global_position = to_global(_round_middle).round()
+	var outline := PackedVector2Array()
+	for i in range(EDGE_POINTS):
+		var point := middle + Vector2.from_angle(TAU * i / EDGE_POINTS) * edge[i]
+		outline.append(to_global(point * _cell_scale) - round_ground.global_position)
+	round_ground.generate_round(_rng.seed, outline)
+	for cell : Cell in _coords_of:
+		_edge_distance[_coords_of[cell]] = round_ground.shade_at(to_global(cell.position))
+	_amount_scale = _coords_of.size() / float(JAM_CELLS)
 
 func _cell_position(x : int, y : int) -> Vector2:
 	return Vector2((x * 7 + y * 5) * _cell_scale.x, y * 5 * _cell_scale.y)
@@ -188,7 +425,10 @@ func _place_start_building() -> void:
 		return
 	var building : Building = start_building.instantiate()
 	var spots := _edge_distance.keys()
-	spots.sort_custom(func(a, b): return _edge_distance[a] > _edge_distance[b])
+	if world_cells > 0:
+		spots = [_middle_of_light_area()]
+	else:
+		spots.sort_custom(func(a : Vector2i, b : Vector2i) -> bool: return _edge_distance[a] > _edge_distance[b])
 	for coords in spots:
 		var cells := _free_cells(coords, building.footprint, building.footprint_depth)
 		if not cells.is_empty():
@@ -197,6 +437,17 @@ func _place_start_building() -> void:
 			_keep_clear = cells_around(building)
 			return
 	building.free()
+
+## The lightest cell in the inner half of a round world, which is the middle of a light area.
+func _middle_of_light_area() -> Vector2i:
+	var best := Vector2i.ZERO
+	var best_shade := -INF
+	for coords : Vector2i in _edge_distance:
+		var shade : float = _edge_distance[coords]
+		if shade > best_shade and _cell_position(coords.x, coords.y).distance_to(_round_middle) < _round_radius * 0.5:
+			best = coords
+			best_shade = shade
+	return best
 
 func _seed_world() -> void:
 	if generation_seed != 0:
@@ -229,7 +480,7 @@ func _load_spawnables() -> Array[Spawnable]:
 		if template is Harvestable and template.target_count > 0:
 			var s := Spawnable.new()
 			s.scene = scene
-			s.target = template.target_count
+			s.target = roundi(template.target_count * _amount_scale)
 			s.respawn_chance = template.respawn_chance
 			s.footprint = template.footprint
 			s.curve = template.edge_distance_curve
@@ -237,11 +488,25 @@ func _load_spawnables() -> Array[Spawnable]:
 			s.max_weight = template.edge_distance_curve.max_value if template.edge_distance_curve != null else 1.0
 			if s.cluster_bonus > 0.0:
 				s.max_weight *= 1.0 + s.cluster_bonus * NEIGHBOURS.size() * s.footprint
+			s.template = template
+			var shape : CollisionShape2D = template.area.get_child(0)
+			s.hit_box = template.transform * template.area.transform * shape.transform * shape.shape.get_rect()
+			_reach_rows = maxi(_reach_rows, ceili(-s.hit_box.position.y / (_cell_scale.y * 5)))
 			list.append(s)
-		template.free()
+		else:
+			template.free()
 	return list
 
 func _process(delta : float) -> void:
+	var i := 0
+	while i < _meeples.size():
+		if _meeples[i].tick(delta):
+			i += 1
+		else:
+			_meeples.remove_at(i)
+	_update_hover()
+	_sleep_still()
+	_regrow_asleep(delta)
 	if _spawnables.is_empty():
 		return
 	_respawn_timer += delta
@@ -251,14 +516,10 @@ func _process(delta : float) -> void:
 	_respawn()
 
 func _respawn() -> void:
-	var counts := {}
-	for node in get_tree().get_nodes_in_group(Harvestable.GROUP):
-		if not node.is_queued_for_deletion():
-			counts[node.scene_file_path] = counts.get(node.scene_file_path, 0) + 1
 	var blocked := {}
 	var blocked_ready := false
 	for s in _spawnables:
-		var missing : int = s.target - counts.get(s.scene.resource_path, 0)
+		var missing := s.target - s.count
 		if missing <= 0:
 			continue
 		if _rng.randf() >= s.respawn_chance * missing / float(s.target):
@@ -266,39 +527,163 @@ func _respawn() -> void:
 		if not blocked_ready:
 			blocked = _cells_with_movers()
 			blocked_ready = true
-		var obj := _spawn(s, blocked)
-		if obj != null:
-			obj.grow_in()
+		var item := _spawn(s, blocked)
+		if item != null:
+			wake(item).grow_in()
 
 func _cells_with_movers() -> Dictionary:
 	var blocked := {}
-	var movers : Array[Node2D] = []
-	movers.append_array(JobSystem.workers)
-	for child in get_children():
-		if child is ResourceDrop:
-			movers.append(child)
-	for mover in movers:
-		var cell := cell_at(mover.global_position)
+	var spots : Array[Vector2] = []
+	for worker in JobSystem.workers:
+		spots.append(worker.global_position)
+	for drop in Inventory.all_drops():
+		spots.append(drop.global_position)
+	for spot in spots:
+		var cell := cell_at(spot)
 		if cell != null:
 			blocked[cell] = true
 	return blocked
 
-func _spawn(s : Spawnable, blocked := {}) -> Harvestable:
+func _spawn(s : Spawnable, blocked := {}) -> Standing:
 	if _spots.is_empty():
 		return null
-	var building_coords := _building_coords()
+	var building_coords := _building_cells
 	for i in range(SPAWN_ATTEMPTS):
 		var coords : Vector2i = _spots[_rng.randi_range(0, _spots.size() - 1)]
 		var cells := _free_cells(coords, s.footprint)
-		if cells.is_empty() or cells.any(func(c): return blocked.has(c) or _keep_clear.has(c)):
+		if cells.is_empty() or cells.any(func(c : Cell) -> bool: return blocked.has(c) or _keep_clear.has(c) or c.kept_for != null):
 			continue
 		var weight := _spawn_weight(s, coords) * _building_factor(s, coords, building_coords)
 		if _rng.randf() * s.max_weight >= weight:
 			continue
-		var obj : Harvestable = s.scene.instantiate()
-		place(obj, cells)
-		return obj
+		return _add_standing(s, cells)
 	return null
+
+func _add_standing(kind : Spawnable, cells : Array[Cell]) -> Standing:
+	var item := Standing.new()
+	item.kind = kind
+	item.cells = cells
+	item.position = cells[0].position
+	for cell in cells:
+		cell.occupant = item
+	kind.count += 1
+	if kind.area == null:
+		kind.area = AreaIndex.new(area_size(STANDING_AREA_CELLS))
+	kind.area.add(item, item.position)
+	if not _under_building(item):
+		_row(item).add(item)
+	else:
+		wake(item)
+	return item
+
+func _forget(item : Standing) -> void:
+	item.kind.area.remove(item, item.position)
+	_awake.erase(item)
+	_hovered.erase(item)
+	item.kind.count -= 1
+
+## Gives `item` its real scene, for as long as something happens to it. Returns the scene's node.
+func wake(item : Standing) -> Harvestable:
+	if item.node != null:
+		return item.node
+	_row(item).remove(item)
+	var node : Harvestable = item.kind.scene.instantiate()
+	node.standing = item
+	node.grid = self
+	node.position = item.position
+	node.cells = item.cells
+	add_child(node)
+	_sort_into_row(node)
+	item.node = node
+	_awake.append(item)
+	return node
+
+## Hands the trees, rocks and bushes that are still again back to their rows.
+func _sleep_still() -> void:
+	for item in _awake.duplicate():
+		if not _hovered.has(item) and item.node.is_still() and not _under_building(item):
+			_awake.erase(item)
+			item.node.queue_free()
+			item.node = null
+			_row(item).add(item)
+			if item.stage > 0 and not _regrowing.has(item):
+				_regrowing.append(item)
+
+## Counts down the regrow timers of picked bushes that have no node, and redraws a row when one grows back.
+func _regrow_asleep(delta : float) -> void:
+	var i := 0
+	while i < _regrowing.size():
+		var item := _regrowing[i]
+		if item.node != null or item.stage == 0:
+			_regrowing.remove_at(i)
+			continue
+		if (item.kind.template as Bush).regrow(item, delta):
+			_row(item).queue_redraw()
+		i += 1
+
+## The node that draws the still trees, rocks and bushes of `item`'s row. It goes first among the grid's
+## children, so on a tie in y it draws behind buildings.
+func _row(item : Standing) -> StandingRow:
+	if not _rows.has(item.position.y):
+		var row := StandingRow.new()
+		row.position.y = item.position.y
+		row.z_index = item.kind.template.z_index
+		add_child(row)
+		move_child(row, 0)
+		_rows[item.position.y] = row
+	return _rows[item.position.y]
+
+## True when a building on the same row starts just right of `item` and its art reaches over it.
+## Such a tree or rock keeps its node, so it still draws in front of the building as before.
+func _under_building(item : Standing) -> bool:
+	var coords : Vector2i = _coords_of[item.cells[-1]]
+	for x in range(coords.x + 1, coords.x + 1 + PIN_REACH):
+		var cell := _cell_or_null(Vector2i(x, coords.y))
+		var building := cell.occupant as Building if cell != null else null
+		if building != null and building.position.y == item.position.y:
+			var item_right := item.position.x + item.kind.template.get_rect().end.x * item.kind.template.scale.x
+			return building.position.x + building.get_rect().position.x * building.scale.x < item_right
+	return false
+
+func _wake_left_of(building : Building) -> void:
+	var coords : Vector2i = _coords_of[building.cells[0]]
+	for x in range(coords.x - PIN_REACH, coords.x):
+		var cell := _cell_or_null(Vector2i(x, coords.y))
+		var item := cell.occupant as Standing if cell != null else null
+		if item != null and _under_building(item):
+			wake(item)
+
+## While a building is being placed, trees, rocks and bushes do not light up under the mouse,
+## so only the building's own cells show.
+func _update_hover() -> void:
+	var placing := get_tree().get_first_node_in_group(BuildSystem.GROUP) as BuildSystem
+	var under : Array[Standing] = []
+	if placing == null or not placing.is_building():
+		under = _standing_under_mouse()
+	for item in _hovered:
+		if not under.has(item) and item.node != null:
+			item.node._set_hovered(false)
+	for item in under:
+		if not _hovered.has(item):
+			wake(item)._set_hovered(true)
+	_hovered = under
+
+## The trees, rocks and bushes whose click box holds the mouse, found through the cells under it.
+## Tall ones reach up over the rows behind them, so this also looks a few rows further down.
+func _standing_under_mouse() -> Array[Standing]:
+	var found : Array[Standing] = []
+	if get_viewport().gui_get_hovered_control() != null:
+		return found
+	var mouse := get_local_mouse_position()
+	var center := _coords_at(get_global_mouse_position())
+	for dy in range(-1, _reach_rows + 1):
+		# Each row further down starts 5/7 of a cell further right.
+		for dx in range(-3 - dy, 3):
+			var cell := _cell_or_null(center + Vector2i(dx, dy))
+			var item := cell.occupant as Standing if cell != null else null
+			if item != null and not found.has(item) and item.kind.hit_box.has_point(mouse - item.position):
+				found.append(item)
+	return found
 
 func _spawn_weight(s : Spawnable, coords : Vector2i) -> float:
 	var weight := 1.0
@@ -307,14 +692,6 @@ func _spawn_weight(s : Spawnable, coords : Vector2i) -> float:
 	if s.cluster_bonus != 0.0:
 		weight *= maxf(1.0 + s.cluster_bonus * _matching_neighbours(s, coords), 0.0)
 	return weight
-
-func _building_coords() -> Array[Vector2i]:
-	var list : Array[Vector2i] = []
-	for child in get_children():
-		if child is Building:
-			for cell in child.cells:
-				list.append(_coords_of[cell])
-	return list
 
 func _building_factor(s : Spawnable, coords : Vector2i, building_coords : Array[Vector2i]) -> float:
 	if building_clearance <= 0 or building_coords.is_empty():
@@ -334,7 +711,7 @@ func _matching_neighbours(s : Spawnable, coords : Vector2i) -> int:
 	for i in range(s.footprint):
 		for n in NEIGHBOURS:
 			var cell := _cell_or_null(coords + Vector2i(i, 0) + n)
-			if cell != null and cell.occupant != null and cell.occupant.scene_file_path == s.scene.resource_path:
+			if cell != null and cell.occupant is Standing and (cell.occupant as Standing).kind == s:
 				found += 1
 	return found
 

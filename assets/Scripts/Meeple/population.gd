@@ -2,17 +2,16 @@ extends Node
 
 signal all_meeples_died
 
-const TICK := 4.0
-const DEATH_CHANCE := 0.25
-const STARVE_BELOW := 25.0
-const GROW_ABOVE := 50.0
-const GROW_MIN_DELAY := 8.0
-const GROW_MAX_DELAY := 16.0
+## The food and growth numbers, shared with Inventory and the food bar. A variable, not a constant:
+## GDScript would copy a constant resource's numbers into the code when it compiles.
+var rules : VillageRules = preload("res://assets/Res/village_rules.tres")
 
 var huts : Array[Hut] = []
 
-var _timer := 0.0
-var _grow_wait := randf_range(GROW_MIN_DELAY, GROW_MAX_DELAY)
+var _grow_wait := 0.0
+
+func _ready() -> void:
+	_grow_wait = randf_range(rules.grow_min_delay, rules.grow_max_delay)
 
 func capacity() -> int:
 	var total := 0
@@ -28,15 +27,17 @@ func remove_hut(hut : Hut) -> void:
 
 func _process(delta : float) -> void:
 	_update_growth(delta)
-	_timer += delta
-	if _timer < TICK:
+
+## A meeple just did some work. With no food in the village, it may die of it.
+func after_work(meeple : Meeple) -> void:
+	if Inventory.count("food") > 0 or randf() >= rules.death_chance_per_action:
 		return
-	_timer -= TICK
-	if GameState.hunger < STARVE_BELOW:
-		_starve()
+	meeple.die()
+	if JobSystem.workers.is_empty():
+		all_meeples_died.emit()
 
 func _can_grow() -> bool:
-	return GameState.hunger > GROW_ABOVE and Inventory.count("food") > 0 and JobSystem.workers.size() < capacity()
+	return GameState.hunger > rules.grow_above and Inventory.count("food") > 0 and JobSystem.workers.size() < capacity()
 
 func _update_growth(delta : float) -> void:
 	if not _can_grow():
@@ -44,15 +45,5 @@ func _update_growth(delta : float) -> void:
 	_grow_wait -= delta
 	if _grow_wait > 0.0:
 		return
-	_grow_wait = randf_range(GROW_MIN_DELAY, GROW_MAX_DELAY)
+	_grow_wait = randf_range(rules.grow_min_delay, rules.grow_max_delay)
 	huts.pick_random().spawn_meeple()
-
-func _starve() -> void:
-	if JobSystem.workers.is_empty() or randf() >= DEATH_CHANCE:
-		return
-	var victim : Meeple = JobSystem.workers.pick_random()
-	victim.die()
-	print("A meeple starved")
-	if JobSystem.workers.is_empty():
-		print("you ded")
-		all_meeples_died.emit()

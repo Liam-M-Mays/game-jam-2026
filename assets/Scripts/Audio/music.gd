@@ -2,6 +2,7 @@ extends Node
 
 const MENU_SCENE := "res://Main_Menu.tscn"
 const GAME_SCENE := "res://assets/Scenes/Levels/game.tscn"
+const GROUND_SCENE := "res://assets/Scenes/Levels/ground.tscn"
 const MENU_MUSIC := preload("uid://ccekgjd0hy55i")
 const GAMEPLAY_MUSIC := preload("res://assets/Audio/Music/gameplay.wav")
 const SUCCESS_RIFF := preload("uid://bnv37hep82f8")
@@ -31,6 +32,7 @@ func _ready() -> void:
 	add_child(_player)
 	_riff.stream = SUCCESS_RIFF
 	_riff.volume_db = SUCCESS_RIFF_DB
+	_riff.bus = MUSIC_BUS
 	add_child(_riff)
 	add_child(UI_SOUNDS.new())
 
@@ -75,7 +77,7 @@ func _start_for_scene(path : String) -> void:
 	match path:
 		MENU_SCENE:
 			_start_track(MENU_MUSIC, MENU_DB)
-		GAME_SCENE:
+		GAME_SCENE, GROUND_SCENE:
 			_start_track(GAMEPLAY_MUSIC, GAMEPLAY_DB)
 		_:
 			_player.stop()
@@ -85,8 +87,9 @@ func _start_track(stream : AudioStream, level_db : float) -> void:
 	_level_db = level_db
 	_player.play()
 
+## The music fades as the giant's camera zooms out. On the ground it stays at full level.
 func _zoom_db() -> float:
-	var camera := get_viewport().get_camera_2d() as CameraControls
+	var camera := get_viewport().get_camera_2d() as GiantCamera
 	if camera == null or _player.stream != GAMEPLAY_MUSIC:
 		return 0.0
 	var amount := inverse_lerp(log(camera.min_zoom), log(VillageAudio.VILLAGE_ZOOM), log(camera.zoom.x))

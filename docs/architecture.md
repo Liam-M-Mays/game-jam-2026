@@ -1,6 +1,6 @@
 # Architecture (as built)
 
-**What this is:** diagrams of the code as it stands, not a plan. They were drawn from `master` at commit `3c9e6c8` on Nov 9, 2026.
+**What this is:** diagrams of the code as it stands, not a plan. They are kept up to date on `rework`. They were first drawn from `master` at commit `3c9e6c8` on Nov 9, 2026.
 
 **Keep it true:** when a pull request changes the structure, update the matching diagram in the same pull request. The diagrams are plain text, so the change shows up in the diff.
 
@@ -15,6 +15,7 @@ This file is the source of truth. Older copies of the diagrams exist as Figma bo
 - [System map](#system-map)
 - [Economy loop](#economy-loop)
 - [Scene tree of the game scene](#scene-tree-of-the-game-scene)
+- [Scene tree of the ground scene](#scene-tree-of-the-ground-scene)
 - [From click to finished building](#from-click-to-finished-building)
 - [Meeple job lifecycle](#meeple-job-lifecycle)
 - [Building construction lifecycle](#building-construction-lifecycle)
@@ -25,11 +26,11 @@ This file is the source of truth. Older copies of the diagrams exist as Figma bo
 
 | Layer | What is in it | Where |
 | --- | --- | --- |
-| World scene | The grid, everything on it, meeples, drops, `BuildSystem`. All of it hangs under the giant's torso node | `assets/Scenes/Levels/game.tscn`, `assets/Scripts/` |
-| Global singletons | `JobSystem`, `Inventory`, `Population` hold the simulation. `GameState` holds hunger, toasts and speed. `Music`, `VillageAudio`, `DevSpeed` are support | The `[autoload]` section of `project.godot` |
+| World scene | The grid, everything on it, meeples, drops, `BuildSystem`. On the giant all of it hangs under the giant's torso node. On the ground it sits on a round world | `assets/Scenes/Levels/game.tscn`, `assets/Scenes/Levels/ground.tscn`, `assets/Scripts/` |
+| Global singletons | `JobSystem`, `Inventory`, `Population` hold the simulation. `GameState` holds hunger, toasts and speed. `Settings` holds the player's options, `SceneFader` fades between screens and `InputMode` lets the menus work with a controller. `Music` and `VillageAudio` are support. Their food and growth numbers are a `VillageRules` resource tuned in the editor | The `[autoload]` section of `project.godot`; `assets/Res/village_rules.tres` |
 | UI scenes | Main menu and HUD | `Main_Menu.tscn`, `assets/hud.tscn`, scripts at the project root |
 
-The world registers with the singletons, and the singletons tell the UI what changed through signals. Three spots break that direction, and the system map shows them as thick arrows.
+The world registers with the singletons, and the singletons tell the UI what changed through signals. Four spots break that direction, and the system map shows them as thick arrows.
 
 ## System map
 
@@ -54,11 +55,12 @@ flowchart LR
     end
 
     subgraph globals ["Global singletons (autoloads)"]
-        jobSystem["JobSystem: job queue, workers"]
-        inventory["Inventory: stock, drops, reservations"]
+        jobSystem["JobSystem: waiting jobs, workers, nearest-first matching"]
+        inventory["Inventory: stock, drops, pile counts, reservations"]
         population["Population: growth, starvation"]
         gameState["GameState: hunger, toasts, speed"]
         audio["Music and UI sounds"]
+        settings["Settings: saved player options"]
     end
 
     subgraph uiOut ["UI: display side"]
@@ -77,16 +79,17 @@ flowchart LR
     building -->|"Posts haul jobs"| jobSystem
     building -->|"Reserves"| inventory
     drop -->|"Registers"| inventory
-    meeple -->|"Takes jobs"| jobSystem
+    jobSystem -->|"Gives jobs once a frame"| meeple
     meeple -->|"Delivers to"| building
     building -->|"Huts spawn"| meeple
     population -->|"Starves or grows"| meeple
     gameState -->|"Reads food"| inventory
     population ==>|"Reads hunger"| gameState
     building ==>|"Calls warn"| gameState
+    harvestable ==>|"Calls warn"| gameState
     audio ==>|"Resets speed"| gameState
-    inventory -.->|"changed"| hud
-    jobSystem -.->|"changed"| hud
+    inventory -.->|"changed, at most every 150 ms"| hud
+    jobSystem -.->|"changed, at most every 150 ms"| hud
     gameState -.->|"hunger_changed"| hud
     gameState -.->|"toast_requested"| toastFeed
 ```
@@ -107,24 +110,22 @@ flowchart LR
     food[("Food stock, cap 20 plus 20 per silo")]
     hunger{"Hunger: food per meeple"}
     meeples["Meeples"]
-    jobs["Job capacity: meeples plus 3"]
     hall["Town Hall level"]
     unlocks["New buildings unlock"]
 
-    tree -->|"Harvest costs 1 food"| drops
+    tree -->|"Harvest costs 1 food, a big one 2"| drops
     drops -->|"Hauled one by one"| site
-    drops -->|"Stored by idle meeples"| piles
+    drops -->|"Carried by free builders"| piles
     piles -->|"Hauled up to two at a time"| site
     site -->|"Completes"| huts
     bush -->|"Pick: plus 2"| food
-    farm -->|"Harvest: plus 1"| food
+    farm -->|"Harvest: plus 3"| food
     food --> hunger
     meeples --> hunger
     hunger -->|"Above 50: grow"| meeples
-    hunger -->|"Below 25: starve"| meeples
+    food -->|"None: a working meeple may die, 2% per action"| meeples
     huts -->|"Housing capacity"| meeples
-    meeples --> jobs
-    meeples -->|"3, 6, 10, 15 meeples"| hall
+    meeples -->|"4, 8, 12, 16 meeples"| hall
     hall --> unlocks
     unlocks --> site
 ```
@@ -145,14 +146,17 @@ flowchart TD
     camera["Camera2D (giant_camera.gd)"]
     back["Back: y-sorted container"]
     grid["Grid (grid.gd)"]
-    cells["2,091 Cell nodes, each with a physics area"]
-    objects["Harvestables, buildings, meeples, drops"]
-    cursor["Mouse: cell cursor (mouse.gd)"]
+    cells["2,091 cells: plain data, no node"]
+    cellLayer["CellLayer: draws the lit cells in one node (cell_layer.gd)"]
+    rows["StandingRow per grid row: draws the still trees, rocks and bushes of that row (standing_row.gd)"]
+    objects["Buildings, and the trees, rocks and bushes that are hovered, hit, chosen or growing"]
+    meeples["Meeples: plain data, one canvas item each, no node"]
+    drops["Drops on the ground: plain data, one canvas item each, no node"]
     buildSystem["BuildSystem (build_system.gd)"]
     tooltip["ConstructionTooltip, created in code"]
     parallax["5 parallax background layers"]
     hud["HUD: instance of hud.tscn"]
-    hudKids["Counters, hunger bar, build menu, pause menu, death screen, toast feed"]
+    hudKids["Counters, jobs plate with Clear all, workers and builders plate, hunger bar, worker panel, build menu, pause menu, death screen, toast feed"]
     giantAudio["GiantAudio (giant_audio.gd)"]
 
     game --> walk
@@ -164,15 +168,42 @@ flowchart TD
     torso --> camera
     torso --> back
     back --> grid
-    back --> cursor
     back --> buildSystem
     grid --> cells
+    grid --> cellLayer
+    grid --> rows
     grid --> objects
+    grid --> meeples
+    grid --> drops
     buildSystem --> tooltip
     game --> parallax
     game --> hud
     hud --> hudKids
     game --> giantAudio
+```
+
+## Scene tree of the ground scene
+
+How `assets/Scenes/Levels/ground.tscn` is nested. The same Grid, BuildSystem and HUD, with no giant. The Grid's `world_cells` sets the size of the round world, and the Grid moves the Yard to the world's middle and gives its polygon the world's edge.
+
+```mermaid
+flowchart TD
+    ground["Ground: root of Levels/ground.tscn (ground_level.gd)"]
+    world["World: y-sorted container, scale 0.1"]
+    grid["Grid (grid.gd), world_cells = 100,000"]
+    buildSystem["BuildSystem (build_system.gd)"]
+    yard["Yard: noise for the round world (yard_ground.gd)"]
+    shape["Yard: Polygon2D in the world's shape, drawn with yard_ground.gdshader"]
+    camera["Camera2D (ground_camera.gd): view held inside the world"]
+    hud["HUD: instance of hud.tscn"]
+
+    ground --> world
+    world --> grid
+    world --> buildSystem
+    ground --> yard
+    yard --> shape
+    ground --> camera
+    ground --> hud
 ```
 
 ## From click to finished building
@@ -195,13 +226,11 @@ sequenceDiagram
     Player->>BuildMenu: Click Small Hut
     BuildMenu->>BuildSystem: start_build(scene)
     Player->>BuildSystem: Left click on free cells
-    BuildSystem->>Building: grid.place, start_construction
+    BuildSystem->>Building: put_down: grid.place, start_construction
     Building->>Inventory: reserve(wood)
+    Building->>Inventory: claim_closest(wood), in HaulJob.new
     Building->>JobSystem: add(HaulJob)
-    Meeple->>JobSystem: take()
-    JobSystem-->>Meeple: HaulJob
-    Meeple->>Inventory: claim_closest(wood)
-    Inventory-->>Meeple: ResourceDrop
+    JobSystem->>Meeple: take_job(HaulJob), nearest free meeple, next frame
     Meeple->>Building: deliver(wood)
     Building-->>BuildSystem: completed
     BuildSystem-->>HUD: building_completed
@@ -211,25 +240,35 @@ sequenceDiagram
 
 ## Meeple job lifecycle
 
-From `meeple_movement.gd` and `job_system.gd`. A meeple drops idle work the moment any queued job exists.
+From `meeple_movement.gd` and `job_system.gd`. A meeple is either a builder or a worker of one building. Once a frame, `JobSystem.match_jobs` gives each new job to the nearest free builder, and each builder that became free the nearest waiting job. There is no job limit. A worker asks its building for work with `find_work` at most every half second, and never takes the player's jobs. A builder with no job looks as often for a loose drop to carry to a pile (`Storage.find_trip`): the drop nearest to it, to the nearest pile of its kind with room. The piles have no worker slots. A builder on such a store trip still counts as free, so a player's job takes it and it puts the drop down. A click on a finished building opens the `WorkerPanel`. Its arrows set the workers of the building's `worker_building()`: a farm or silo gives its barn, and a building with no slots, like a hut, hides them. The add arrow opens a slot, which the nearest free builder takes. The remove arrow drops a slot nobody took yet, or sends a worker back to being a builder. A finished building fills all its slots by itself, so the nearest free builders become its workers (`Building.STARTS_FULL`). A dead worker's slot opens again. While the panel is open, the building's workers are outlined like a selected building: only those meeples get two extra canvas items with the outline shader (`Meeple.set_highlighted`), and the panel follows `Building.workers_changed`.
+
+The panel's Remove button asks first, then calls `Building.remove_building()`. What the building cost pops out as drops, the way a tree's drops do (a site pops out only what was delivered). Its workers go back to being builders, its hauls are recalled, and it leaves every group at once. A pile also drops what it held, and a haul that claimed a drop in it takes one of the dropped drops instead (`JobSystem.hauls_from`, `HaulJob.take_spilled`). A barn removes its farms and silos first. A removed hut leaves its meeples, so the village can be over its room. The Town Hall answers false to `can_remove()`, and its button is dimmed.
+
+The panel's Move button calls `BuildSystem.start_move(building)`. The building lifts off its cells (`Building.lift`, `Grid.lift`), and its old cells stay kept for it. The player places it with the same rules as a new building, for free. A click lands it on the new cells (`Building.land`), and Escape or a right click lands it back on the old ones. Its workers stay, and a meeple on its way to it turns towards the new spot. A barn lifts and lands its farms and silos with it. A farm or silo answers false to `can_move()`, so it only moves with its barn.
+
+The HUD's wood, stone and food counters show `Inventory.available(kind)`, the same number placing and the Build menu check (`Building.can_afford`). It leaves out drops a site has claimed. It keeps drops a builder is carrying to a pile, because a site can claim them from that pile (`Storage.unclaimed`); a haul that claimed one waits at the pile for it, and takes it from the ground if the store trip is dropped (`Storage.trip_dropped`).
+
+The HUD's jobs plate shows how many of the player's jobs wait for a meeple (`JobSystem.waiting_player_jobs`). Its Clear all button, or the C key, cancels them (`JobSystem.clear_waiting_player_jobs`). A meeple already on its way to a job keeps it. Under it, a second plate shows how many meeples are workers in a building's slot (`JobSystem.count_in_slots`) and how many are builders. It refreshes on `JobSystem.changed`, at most every 150 ms. When the last builder goes into a slot, the builders number turns red and one warning toast says so.
 
 ```mermaid
 stateDiagram-v2
     direction LR
-    Wandering: Wandering near buildings
-    QueuedJob: Queued job - harvest, haul, collect crop
-    IdleWork: Idle work - chop, farm, store
+    Wandering: Builder, wandering near buildings
+    QueuedJob: Queued job - harvest, haul
+    WorkerWandering: Worker, wandering
+    Work: Work for its building - chop, farm, store
     Dead: Dead - topples and fades out
 
     [*] --> Wandering: spawned by a hut
-    Wandering --> QueuedJob: JobSystem.take
-    Wandering --> IdleWork: a building offers idle work
-    IdleWork --> QueuedJob: a queued job appears
-    IdleWork --> Wandering: idle job ends
+    Wandering --> QueuedJob: nearest to a new job, or takes the nearest waiting job
     QueuedJob --> Wandering: job done or cancelled
+    Wandering --> WorkerWandering: nearest builder to an open slot
+    WorkerWandering --> Work: its building has work
+    Work --> WorkerWandering: task done
     Wandering --> Dead: starved
     QueuedJob --> Dead: starved, job requeued
-    IdleWork --> Dead: starved
+    WorkerWandering --> Dead: starved, slot opens
+    Work --> Dead: starved, slot opens
     Dead --> [*]
 ```
 
@@ -266,14 +305,21 @@ stateDiagram-v2
     direction LR
     MainMenu: Main menu - Main_Menu.tscn
     Playing: Playing - Levels/game.tscn
+    Ground: Playing on the ground - Levels/ground.tscn
     Paused: Paused - tree paused
     GameOver: Game over - death screen
+    SettingsScreen: Settings - UI/settings_menu.tscn
 
     [*] --> MainMenu
     MainMenu --> Playing: Start calls new_game
+    MainMenu --> Ground: Ground world button calls new_game
     Playing --> Paused: Esc
     Paused --> Playing: Resume
     Paused --> MainMenu: Menu button
+    MainMenu --> SettingsScreen: Settings button
+    Paused --> SettingsScreen: Settings button
+    SettingsScreen --> MainMenu: Back from the main menu
+    SettingsScreen --> Paused: Back from the pause menu
     Playing --> GameOver: all meeples died
     GameOver --> Playing: Retry reloads the scene
     GameOver --> MainMenu: Menu button
@@ -282,7 +328,7 @@ stateDiagram-v2
 
 ## Class diagrams
 
-Three diagrams cover 52 of the 56 scripts. The four left out are tiny: `walk.gd`, `Blink.gd`, `menu_meeple.gd` and `resource_ui.gd`.
+Three diagrams cover 58 of the 62 game scripts. The four left out are tiny: `walk.gd`, `Blink.gd`, `menu_meeple.gd` and `resource_ui.gd`. The test runner (`assets/Scripts/Dev/test_runner/`) and the tests are left out too.
 
 How to read them:
 
@@ -290,6 +336,7 @@ How to read them:
 - A dotted arrow means "holds or uses".
 - `+` is public, `#` is meant to be overridden. Private members are left out.
 - `<<autoload>>` is a global singleton, `<<resource>>` is a data resource, `<<unnamed>>` is a script without a `class_name`.
+- `<<scene>>` is the root script of a scene that the game reads once as a template (`MeepleLook` is `meeple.tscn`, `DropLook` is a drop scene in `Scenes/Resources/Drops`).
 
 ### Class diagram 1: world objects
 
@@ -300,20 +347,52 @@ classDiagram
     direction TB
     class Grid {
         +grid_size: int = 50
+        +world_cells: int, 0 on the giant
+        +edge_wobble: float
+        +round_ground: YardGround
         +start_building: PackedScene
         +spawnables: Array[PackedScene]
         +generation_seed: int
         +respawn_interval: float
         +cell_at(world_pos): Cell
+        +cells_near(world_pos, radius)
         +free_cells_at(pos, width, depth)
+        +cells_under(pos, width, depth)
+        +cells_next_to(cells)
         +cells_around(obj, radius)
         +cells_at_offsets(origin, offsets)
         +place(obj, cells)
         +remove(obj)
+        +lift(obj)
+        +spawn_meeple(at): Meeple
+        +add_drop(scene, at): ResourceDrop
+        +wake(item): Harvestable
+        +nearest_standing(at, accept): Standing
+    }
+    class AreaIndex {
+        +add(item, at) / remove(item, at) / move(item, from, to)
+        +best(from, score, bound): the lowest score, looking near first
+    }
+    class Standing {
+        +kind: Spawnable
+        +cells: Array[Cell]
+        +position: Vector2
+        +wobbles: int
+        +stage / regrow_timer / emptied: bushes only
+        +node: Harvestable
+        +is_free(): bool
+    }
+    class StandingRow {
+        +add(item) / remove(item)
     }
     class Cell {
-        +occupant: GridObject
+        +position: Vector2
+        +occupant: GridObject or Standing
+        +kept_for: Barn or null
         +highlight(alpha, color)
+    }
+    class CellLayer {
+        +set_lit(cell, color)
     }
     class GridObject {
         +area: Area2D
@@ -332,24 +411,30 @@ classDiagram
         +signal build_ended
         +signal building_placed(building)
         +signal building_completed(building)
-        +signal placement_failed(reason)
+        +signal placement_failed(reason, hint)
         +grid: Grid
-        +cursor: CellCursor
         +start_build(scene)
         +end_build()
+        +start_move(building)
         +is_building(): bool
-    }
-    class CellCursor {
-        +enabled: bool
-        +highlight_alpha: float
     }
     class ResourceDrop {
         +kind: String
         +claimed: bool
-        +storage: Storage
-        +surplus_time: float
-        +launch(grid)
-        +expire()
+        +position: Vector2
+        +global_position: Vector2
+        +scene_of(kind)$: PackedScene
+        +launch()
+        +show() / hide()
+        +consume()
+        +is_in_world(): bool
+    }
+    class DropLook {
+        <<scene>>
+        +kind: String
+        +launch_distance_min / max: float
+        +launch_duration: float
+        +draw(item)
     }
     class Harvestable {
         +wobbles_to_break: int
@@ -361,27 +446,52 @@ classDiagram
         +can_harvest(): bool
         +is_free(): bool
         +claim(job) / release(job)
+        +standing: Standing
         +harvest(): bool
         +grow_in()
+        +texture_for(item): Texture2D
+        +is_still(): bool
+        +cancel_job()
+        +is_marked(): bool
+        +mark_for_clearing()
     }
     class Building {
         +signal completed
         +signal missing_changed
+        +signal workers_changed
         +frames: Array[BuildFrame]
         +min_to_start: Dictionary[String, int]
         +required_town_hall_level: int
         +description: String
+        +worker_slots: int
+        +workers: Array[Meeple]
+        +wanted_workers: int
         +costs: Dictionary (computed)
+        +put_down(grid, cells)
         +start_construction()
         +deliver(kind)
         +complete()
         +toggle_paused()
-        +can_afford() / can_start()
+        +can_afford()
         +missing() / next_stage_needs()
-        +claim_idle_job(worker): IdleJob
+        +find_work(worker): Job
+        +add_worker(meeple) / lose_worker(meeple)
+        +worker_building(): Building
+        +add_worker_slot() / remove_worker_slot()
+        +can_remove(): bool
+        +remove_building()
+        +can_move(): bool
+        +lift() / land(cells)
         +icon(): Texture2D
         +can_place_at() / placement_area()
-        #has_idle_work() / _make_idle_job()
+        +area_at(grid, anchor): Array[Cell]
+        +build_after(scene): PackedScene
+        +note(): String
+        +clears_land(): bool
+        +is_waiting_for_land(): bool
+        +mark_land(grid, cells)
+        +land_not_cleared(cell)
+        +cancel_waiting(say)
     }
     class BuildFrame {
         <<resource>>
@@ -392,11 +502,14 @@ classDiagram
         +food_per_harvest: int
         +regrow_time: float
         +empties_to_destroy: int
+        +regrow(item, delta): bool
+        +texture_for(item): Texture2D
         +can_harvest(): bool
         #_hit(): bool
     }
     class Hut {
         +meeple_capacity: int
+        +meeples_when_finished: int
         +spawn_meeple()
         +complete()
     }
@@ -404,25 +517,32 @@ classDiagram
         +kind: String
         +max_items: int
         +capacity(): int
+        +held(): int
         +has_room(): bool
-        +store(drop) / take(drop)
-        +first_unclaimed(): ResourceDrop
+        +store(drop)
+        +claim() / unclaim()
+        +take(): ResourceDrop
+        +find_trip(builder): StoreJob
         +make_store_job(drop): StoreJob
+        +remove_building()
     }
     class Lumberjack {
         +chops: PackedScene
-        #has_idle_work(worker): bool
-        #_make_idle_job(): ChopJob
+        +find_work(worker): ChopJob
     }
     class Barn {
         +base_slots: int = 3
         +plot_offsets: Array[Vector2i]
         +plots: Array[BarnPlot]
+        +farm_scene: PackedScene
         +slots(): int
         +has_room_for(plot): bool
+        +find_work(worker): FarmJob
         +add_plot(plot)
+        +plot_on(cell): BarnPlot
         +plot_area(): Array[Cell]
         +in_plot_range(cells): bool
+        +remove_building()
     }
     class BarnPlot {
         +barn: Barn
@@ -448,6 +568,7 @@ classDiagram
         +meeples_for_next_level(): int
         +find_town_hall() static
         +current_level() static
+        +can_remove(): false
     }
     class Farm {
         +grow_time: float
@@ -456,6 +577,7 @@ classDiagram
         +is_ripe() / can_harvest_now()
         +harvest_crop()
         +grow_stages(): int
+        +start_growing()
     }
     class Silo {
         +food_capacity: int = 20
@@ -474,18 +596,24 @@ classDiagram
     Hut <|-- TownHall
     BarnPlot <|-- Farm
     BarnPlot <|-- Silo
-    Grid ..> Cell : 2,091 cells
+    Grid ..> Cell : one per spot, 2,091 on the giant, about 100,000 on the ground
     Cell ..> GridObject : occupant
+    Cell ..> Standing : occupant
+    Grid ..> Standing : trees, rocks, bushes
+    Grid ..> AreaIndex : one per kind of tree, rock or bush
+    Standing ..> StandingRow : drawn by, while still
+    Standing ..> Harvestable : node, while awake
+    Cell ..> CellLayer : lit by
     Harvestable ..> ResourceDrop : breaks into
+    ResourceDrop ..> DropLook : reads look and numbers
     Building ..> BuildFrame : cost per stage
     BuildSystem ..> Building : previews and places
-    BuildSystem ..> CellCursor : cursor
     Barn ..> BarnPlot : plots
 ```
 
 ### Class diagram 2: jobs, meeples and the simulation singletons
 
-How work gets done: the job queue, the six job types, the meeple that runs them, and the two singletons that hold the economy and the population.
+How work gets done: the waiting jobs, the five job types, the meeple that runs them, and the two singletons that hold the economy and the population.
 
 ```mermaid
 classDiagram
@@ -493,65 +621,80 @@ classDiagram
     class JobSystem {
         <<autoload>>
         +signal changed
-        +signal job_rejected(job)
-        +signal worker_idle(worker, offers)
         +workers: Array[Meeple]
-        +EXTRA_JOBS = 3
-        +add(job): bool
-        +take(): Job
+        +add(job)
+        +match_jobs()
+        +worker_freed(worker)
         +finish(job)
         +requeue(job, worker)
         +cancel(job)
-        +find_idle_job(worker): IdleJob
+        +open_slot(building) / close_slot(building)
         +take_partner(job): HaulJob
         +recall_hauls(site)
-        +capacity() / has_room(n)
+        +hauls_from(pile): Array[HaulJob]
+        +job_count(): int
+        +waiting_player_jobs(): int
+        +clear_waiting_player_jobs()
+        +count_in_slots(): int
         +reset()
     }
     class Job {
         +cancelled: bool
+        +place(): Vector2
         +start(worker)
         +update(worker, delta): bool
         +abort(worker)
     }
     class Meeple {
         +job: Job
+        +workplace: Building
         +grid: Grid
-        +speed: int
-        +wander_radius: float
+        +position: Vector2
+        +global_position: Vector2
+        +tick(delta): bool
         +move_to(pos, stop_cells)
         +stop()
+        +leave_workplace()
         +has_arrived(): bool
         +carry(kind, amount)
         +abandon_job()
+        +is_free(): bool
+        +take_job(job)
+        +did_work()
+        +set_highlighted(on)
         +die()
+    }
+    class MeepleLook {
+        <<scene>>
+        +speed: int
+        +wander_radius: float
+        +draw(item, body_color, frame, head_offset_y)
+        +draw_outline(items, body_color, frame, head_offset_y)
     }
     class Population {
         <<autoload>>
         +signal all_meeples_died
         +huts: Array[Hut]
-        +TICK = 4.0
-        +STARVE_BELOW = 25
-        +GROW_ABOVE = 50
-        +DEATH_CHANCE = 0.25
+        +rules: VillageRules
+        +after_work(meeple)
         +capacity(): int
         +add_hut(hut) / remove_hut(hut)
     }
     class Inventory {
         <<autoload>>
         +signal changed
-        +START_STOCK = 10 food
-        +BASE_FOOD_CAP = 20
-        +MAX_GROUND_DROPS = 30
         +count(kind): int
         +available(kind): int
         +add(kind, n) / spend(kind, n)
-        +reserve(kind, n) / unreserve(kind, n)
-        +claim_closest(kind, pos): ResourceDrop
-        +claim_reserved(drop) / release(drop)
-        +closest_loose(kind, pos)
+        +reserve(kind, n)
+        +claim_closest(kind, pos): ResourceDrop or Storage
+        +has_loose(): bool
+        +nearest_loose(kind, pos): ResourceDrop
+        +drop_moved(drop, from, to)
         +food_cap() / food_full()
+        +room(kind): int
         +register(drop) / unregister(drop)
+        +clear_drops()
         +reset()
     }
     class HarvestJob {
@@ -561,29 +704,24 @@ classDiagram
         +site: Building
         +kind: String
     }
-    class CollectCropJob {
-        +farm: Farm
-    }
-    class IdleJob {
-        +site: Building
-        +end()
-    }
     class ChopJob {
         +target: Harvestable
     }
     class FarmJob {
+        +farm: Farm
     }
     class StoreJob {
+        +site: Storage
     }
     Job <|-- HarvestJob
     Job <|-- HaulJob
-    Job <|-- CollectCropJob
-    Job <|-- IdleJob
-    IdleJob <|-- ChopJob
-    IdleJob <|-- FarmJob
-    IdleJob <|-- StoreJob
+    Job <|-- ChopJob
+    Job <|-- FarmJob
+    Job <|-- StoreJob
     JobSystem ..> Job : pending and active
+    Inventory ..> AreaIndex : one per kind of drop
     Meeple ..> Job : runs one job
+    Meeple ..> MeepleLook : reads look and numbers
     Population ..> Meeple : starves
 ```
 
@@ -614,7 +752,7 @@ classDiagram
     }
     class Music {
         <<autoload>>
-        +MENU_SCENE, GAME_SCENE: String
+        +MENU_SCENE, GAME_SCENE, GROUND_SCENE: String
         +play_success_riff()
         +fade_out_game_over(seconds)
     }
@@ -624,15 +762,18 @@ classDiagram
         +VOICE_COUNT = 6
         +play(sound_name, at)
     }
-    class DevSpeed {
+    class Settings {
         <<autoload>>
-        +FAST = 3.0
-        +KEY = X
+        +changed(key) signal
+        +get_value(key)
+        +set_value(key, value)
+        +reset(keys)
+        +multiplier(key) float
     }
     class MainMenu {
         <<unnamed>>
-        +start_button, credits_button, quit_button
-        +credits_panel, credits_back_button
+        +start_button, ground_button, credits_button, quit_button
+        +settings_menu: SettingsMenu
     }
     class HUD {
         <<unnamed>>
@@ -641,6 +782,8 @@ classDiagram
         +pause_menu, death_screen: PauseMenu
         +camera: CameraControls
         +labels, hunger_bar, speed_button
+        +jobs_label, clear_jobs_button
+        +workers_label, builders_label
         +OPENING_TIPS, TIPS, FUN_FACTS
     }
     class BuildMenu {
@@ -650,6 +793,10 @@ classDiagram
         +open() / close()
         +unlocked_names(level)
         +display_name(scene) static
+    }
+    class WorkerPanel {
+        +GROUP: worker_panel
+        +open(building) / close()
     }
     class PauseMenu {
         +restart_on_resume: bool
@@ -668,7 +815,9 @@ classDiagram
     }
     class ConstructionTooltip {
         +describe(site) static
+        +describe_pile(pile) static
         +site_under_mouse(tree) static
+        +pile_under_mouse(tree) static
     }
     class CameraControls {
         +move_speed, min_zoom, max_zoom
@@ -693,6 +842,8 @@ classDiagram
     class YardGround {
         +preset, frequency, preview_seed
         +generate(world_seed, is_ground)
+        +generate_round(world_seed, outline)
+        +shade_at(world_pos): float
         +band_at(world_pos)  (unused)
     }
     class MenuMeepleSpawner {
@@ -700,8 +851,15 @@ classDiagram
         +min_delay, max_delay
     }
     class GiantCamera {
-        <<unnamed>>
         +wide_position: Vector2
+    }
+    class GroundCamera {
+        <<unnamed>>
+        +world_edge: Polygon2D
+    }
+    class GroundLevel {
+        <<unnamed>>
+        +camera: Camera2D
     }
     class GiantStep {
         <<unnamed>>
@@ -713,6 +871,7 @@ classDiagram
         +starts_shifted: bool
     }
     CameraControls <|-- GiantCamera
+    CameraControls <|-- GroundCamera
     GiantPart <|-- GiantStep
     GiantPart <|-- GiantArmStep
     UISounds ..> GameState : resets speed

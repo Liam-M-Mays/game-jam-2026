@@ -8,6 +8,8 @@ enum Preset { SOFT, PERLIN, BLOCKY, CELLS, CRACKS, RIDGES, RINGS, SWIRLS, SPOTS 
 const CELLULAR_FREQUENCY_SCALE := 3.0
 const NOISE_SIZE := Vector2i(1024, 512)
 const EDGE_STEP := 4
+## Art pixels per noise texel on a round world, so one texture covers a big world without repeating.
+const ROUND_NOISE_SCALE := 2
 const STREAK_FREQUENCY := 0.035
 const STREAK_WARP := 45.0
 const STREAK_WARP_FREQUENCY := 0.012
@@ -62,6 +64,34 @@ func generate(world_seed : int, is_ground : Callable) -> void:
 	_streak_mask_offset = Vector2i(_map.get_shader_parameter("streak_mask_offset"))
 	_dark_below = _map.get_shader_parameter("dark_below")
 	_light_above = _map.get_shader_parameter("light_above")
+
+## Colours a round world on the ground, which has no edge to bake. `outline` is the world's edge in art
+## pixels around this node, which sits in the middle of the world. The child Yard, a polygon, takes that shape.
+func generate_round(world_seed : int, outline : PackedVector2Array) -> void:
+	var reach := 0.0
+	for point in outline:
+		reach = maxf(reach, point.length())
+	# The noise is sheared by a pixel per row, so it has to cover the world's width plus its height.
+	var size := Vector2i(ceili(reach * 2.9 / ROUND_NOISE_SCALE), ceili(reach * 2.0 / ROUND_NOISE_SCALE)) + Vector2i.ONE
+	var noise := _build_noise(world_seed & 0x7FFFFFFF)
+	noise.frequency *= ROUND_NOISE_SCALE
+	_noise_image = noise.get_image(size.x, size.y, false, false, true)
+	_map = material.duplicate()
+	_map.set_shader_parameter("noise_tex", ImageTexture.create_from_image(_noise_image))
+	_map.set_shader_parameter("noise_scale", float(ROUND_NOISE_SCALE))
+	$Yard.polygon = outline
+	$Yard.material = _map
+	_noise_strength = _map.get_shader_parameter("noise_strength")
+
+## The shade of a round world's ground at `world_pos`, the value the shader turns into a colour.
+## Below the material's `dark_below` it is a dark area, above `light_above` a light one.
+func shade_at(world_pos : Vector2) -> float:
+	var yard : Node2D = $Yard
+	var cell := (world_pos - yard.global_position).floor()
+	var size := _noise_image.get_size()
+	var x := posmod(floori((cell.x - cell.y) / ROUND_NOISE_SCALE + size.x * 0.5), size.x)
+	var y := posmod(floori(cell.y / ROUND_NOISE_SCALE + size.y * 0.5), size.y)
+	return 0.5 + (_noise_image.get_pixel(x, y).r - 0.5) * _noise_strength
 
 func band_at(world_pos : Vector2) -> Band:
 	var cell := Vector2i((to_local(world_pos) * scale + Vector2.ONE * 0.0001).floor())

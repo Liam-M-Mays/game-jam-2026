@@ -19,7 +19,7 @@ flowchart LR
 | **Backlog** | Agreed and clear enough to start. Nobody is on it yet | Someone assigns themselves and makes a branch |
 | **In progress** | Someone is working on a branch | A pull request is opened |
 | **Testing** | A pull request is waiting for review and a play test | It is merged |
-| **Finished** | Merged into `master`, or closed | |
+| **Finished** | Merged into `master`, or closed. | |
 
 - **Every `feature` starts as a suggestion.** It stays in Proposed until the team has talked it through. The text in a Proposed feature is a starting point for that talk, not a decision.
 - **A `fix` skips Proposed and starts in Backlog.** Something broken gets fixed, so there is nothing to agree on. If nobody can repeat the bug yet, the first job is to find the steps.

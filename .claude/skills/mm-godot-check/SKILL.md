@@ -16,21 +16,27 @@ description: Run Mighty Meeple's repo checks and Godot checks the way CI does, a
    python3 .github/ci/checks.py repo
    ```
 
-3. If scripts, scenes or resources changed, run the Godot checks. They take from half a minute to a few minutes.
+3. If scripts, scenes or resources changed, run the Godot checks. They import, load everything, boot the menu, the giant and the ground world, and run the tests. They take from half a minute to a few minutes.
 
    ```bash
    GODOT="<path to Godot>" bash .github/ci/run_godot_checks.sh
    ```
 
-4. To test behaviour, write a temporary scene and its script in a folder whose name starts with a dot, such as `res://.tmp_test/`. Godot's importer skips dot folders, but a scene in one still loads by its path. Run it with no window and send the output to a file:
+4. To check a rule that can break without anyone seeing it, add a test. Write `test_<rule>.gd` in a `tests/` folder next to the code, for example `assets/Scripts/Jobs/tests/`. It extends `GameTest` (`assets/Scripts/Dev/test_runner/game_test.gd`), and every method whose name starts with `test_` is one test. The Godot checks run every test. To run only yours:
+
+   ```bash
+   GODOT="<path to Godot>" bash .github/ci/run_tests.sh --only=<rule>
+   ```
+
+5. To test behaviour that a test cannot cover, write a temporary scene and its script in a folder whose name starts with a dot, such as `res://.tmp_test/`. Godot's importer skips dot folders, but a scene in one still loads by its path. Run it with no window and send the output to a file:
 
    ```bash
    "<path to Godot>" --headless --path . --quit-after 300 res://.tmp_test/test.tscn > out.log 2>&1
    ```
 
-5. To test anything visual, render for real, because a headless run draws nothing. Run the scene without `--headless` and with `--rendering-driver opengl3`. Have the scene save `get_viewport().get_texture().get_image()` as a PNG and then quit. Look at the picture yourself before you show it to anyone.
-6. Delete the temporary folder. Run `git status` and make sure nothing from it is left.
-7. Report what ran, what passed, and what was not checked.
+6. To test anything visual, render for real, because a headless run draws nothing. Run the scene without `--headless` and with `--rendering-driver opengl3`. Have the scene save `get_viewport().get_texture().get_image()` as a PNG and then quit. Look at the picture yourself before you show it to anyone.
+7. Delete the temporary folder. Run `git status` and make sure nothing from it is left.
+8. Report what ran, what passed, and what was not checked.
 
 ## Traps
 
