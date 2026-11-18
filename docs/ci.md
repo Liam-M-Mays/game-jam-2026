@@ -12,10 +12,11 @@ Looks at files and references. It does not need Godot.
 | --- | --- | --- |
 | `missing-sidecar` | A script without its `.uid` file, or an asset without its `.import` file. Files in `ART/` are skipped, so art can be uploaded without opening Godot | Open the project in Godot once and commit the file it creates |
 | `orphan-sidecar` | A `.uid` or `.import` file whose source file is gone | Delete it |
+| `sidecar-in-ignored-folder` | A `.uid` or `.import` file in a folder with a `.gdignore` file, or in a folder below it. Godot does not import those folders | Delete the `.uid` or `.import` file |
 | `broken-ref` | A scene, resource or script that points at a `res://` path that does not exist | Fix the path or remove the reference |
 | `cache-ref` | A file that points into `res://.godot/`, Godot's private cache | Point it at the source file |
 | `art-boundary` | A game file that uses something under `ART/` | Move the file into `assets/`, see [art-folders.md](art-folders.md) |
-| `conflict-marker` | Leftover `<<<<<<<` or `>>>>>>>` lines from a merge | Resolve the conflict properly |
+| `conflict-marker` | Leftover `<<<<<<<`, `=======` or `>>>>>>>` lines from a merge. Only Godot files are checked: `.tscn`, `.tres`, `.gd`, `.gdshader`, `.godot`, `.cfg` and `.import` | Resolve the conflict properly |
 | `large-file` | A file over 20 MB (it warns from 5 MB) | Compress it, or talk to the team about Git LFS |
 | `codeowners` | `.github/CODEOWNERS` is missing or has no `*` line | Restore it |
 
@@ -23,11 +24,15 @@ Looks at files and references. It does not need Godot.
 
 Runs the real engine, with no window, in five steps:
 
-1. **Import twice.** The first pass builds Godot's class cache and is allowed to print errors. The second pass has to be clean.
-2. **Load everything.** Every script, scene, resource and shader is loaded, and every scene is instantiated. A script that does not compile or a scene with a missing piece fails here.
-3. **Boot the entry scenes.** The scenes listed in `.github/ci/entry-scenes.txt` run for a few seconds: the main menu, the giant (`game.tscn`) and the ground world (`ground.tscn`). Any script error fails the check.
-4. **Run the tests.** `assets/Scripts/Dev/test_runner/run_tests.tscn` runs every `test_*.gd` file under `assets/` that extends `GameTest`. A failing test fails the check. See [Tests](#tests) below.
-5. **Read the logs.** `checks.py` turns Godot's log files into a pass or a fail. The logs are attached to the run as `godot-logs`.
+1. **First import.** This pass builds Godot's class cache, so it is allowed to print errors.
+2. **Second import.** This pass has to be clean.
+3. **Load everything.** Every script, scene, resource and shader is loaded, and every scene is instantiated. A script that does not compile or a scene with a missing piece fails here.
+4. **Boot the entry scenes.** The scenes listed in `.github/ci/entry-scenes.txt` run for a few seconds: the main menu, the giant (`game.tscn`) and the ground world (`ground.tscn`). Any script error fails the check.
+5. **Run the tests.** `assets/Scripts/Dev/test_runner/run_tests.tscn` runs every `test_*.gd` file under `assets/`. Each one must extend `GameTest` and have at least one `test_` method, or the check fails. A failing test fails the check too. See [Tests](#tests) below.
+
+The step numbers match the `1/5` to `5/5` lines in the CI log.
+
+After step 5, `checks.py` reads Godot's log files and gives a pass or a fail. The logs are attached to the run as `godot-logs`.
 
 ## The known-problems list
 

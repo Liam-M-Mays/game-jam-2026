@@ -18,13 +18,13 @@ The rules behind these steps are in `CONTRIBUTING.md` and `CLAUDE.md`.
    git worktree add <path> -b wt/<short-name> origin/master
    ```
 
-2. Push to a branch named `feature/...`, `fix/...`, `art/...` or `chore/...`: `git push origin HEAD:<type>/<short-name>`.
-3. Keep it to one thing. Do not mix a refactor with a fix.
-4. Run the checks. The `mm-godot-check` skill has the commands and the traps.
+2. Name the branch you push to `feature/...`, `fix/...`, `art/...` or `chore/...`. You push in step 8, with `git push origin HEAD:<type>/<short-name>`.
+3. Keep it to one thing. Do not mix a refactor with a fix. Aim for under 300 lines of game code, as `pr_inventory.py` counts them. Over 500, split it.
+4. Run the checks. The `mm-godot-check` skill has the commands and the traps. Then play the change yourself in both game scenes: `assets/Scenes/Levels/game.tscn` and `assets/Scenes/Levels/ground.tscn`.
 5. Read the diff of every `.tscn` and `.tres`. Revert any scene you did not mean to change.
 6. Commit the `.uid` and `.import` files that Godot made next to new files.
 7. Write a commit message that says what changed and why, in one line.
-8. Push the branch and open the pull request into `master`. Fill in the template: what changed, how a person tests it in the game, the inventory (`python3 .github/ci/pr_inventory.py`) and the checklist. Write `Closes #N` when it finishes the issue, "Part of #N" when it does one piece.
+8. Push the branch and open the pull request into `master`. Fill in the template: what changed, how a person tests it in the game, the inventory (`python3 .github/ci/pr_inventory.py`) and the checklist. Run the inventory after your last commit, and again after every later push. Write `Closes #N` when it finishes the issue, "Part of #N" when it does one piece.
 9. Stop there. A person reviews and merges. Never approve or merge a pull request yourself.
 
 ## Leave people to the person you work for
