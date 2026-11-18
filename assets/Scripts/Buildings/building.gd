@@ -32,6 +32,10 @@ const STARTS_FULL := true
 @export_multiline var description := ""
 ## How many meeples work here once it is finished. Set in each building's scene.
 @export var worker_slots := 0
+## How many drops may be on their way here at once: hauls waiting for a builder, walked to or carried.
+## A meeple carrying two counts two. The next stage is always asked for in full; after it, the site asks
+## for whole later stages while they fit under this. A big building builds slowly in the background. 0 asks one stage at a time.
+@export_range(0, 50) var max_hauls := 6
 
 var costs : Dictionary[String, int]:
 	get:
@@ -51,8 +55,8 @@ var _blueprint : Sprite2D = null
 ## Checks the land while the building waits for trees, rocks or bushes on its cells to be cleared.
 ## Null when it is not waiting.
 var _land_timer : Timer = null
-## When the player placed it, on JobSystem's clock. Its deliveries count their age from here.
-var ordered_at := 0.0
+## Its place in the build order, from JobSystem.next_build_order. Lower is older, and its hauls are taken first.
+var build_order := 0
 
 func _ready() -> void:
 	super()
@@ -282,7 +286,7 @@ func _unmark_land(at_cells : Array[Cell]) -> void:
 				node.cancel_job()
 
 func start_construction() -> void:
-	ordered_at = JobSystem.now()
+	build_order = JobSystem.next_build_order()
 	_built = EMPTY_STAGE
 	_constructing = true
 	_banked.clear()
@@ -474,17 +478,38 @@ func _finish_construction() -> void:
 	Inventory.changed.disconnect(_request_hauls)
 	complete()
 
+## Asks for drops for its next stage, then for whole later stages while they fit under max_hauls and the stock can pay for all of each.
 func _request_hauls() -> void:
 	if not _constructing or _paused or _requesting:
 		return
 	_requesting = true
-	var next := _frame_cost(_built + 1)
-	for kind in next:
-		var want : int = next[kind] - _banked.get(kind, 0) - _incoming.get(kind, 0)
-		for i in range(mini(want, Inventory.available(kind))):
-			Inventory.reserve(kind, 1)
-			_incoming[kind] = _incoming.get(kind, 0) + 1
-			JobSystem.add(HaulJob.new(self, kind))
+	var out := 0
+	for kind in _incoming:
+		out += _incoming[kind]
+	var ahead : Dictionary[String, int] = {}
+	for stage in range(_built + 1, last_stage() + 1):
+		var cost := _frame_cost(stage)
+		var short : Dictionary[String, int] = {}
+		var count := 0
+		for kind in cost:
+			ahead[kind] = ahead.get(kind, 0) + cost[kind]
+			var want : int = ahead[kind] - _banked.get(kind, 0) - _incoming.get(kind, 0)
+			if want > 0:
+				short[kind] = want
+				count += want
+		if stage > _built + 1 and (out + count > max_hauls or not _has_resources(short)):
+			break
+		var covered := true
+		for kind in short:
+			var posted := mini(short[kind], Inventory.available(kind))
+			for i in range(posted):
+				Inventory.reserve(kind, 1)
+				_incoming[kind] = _incoming.get(kind, 0) + 1
+				JobSystem.add(HaulJob.new(self, kind))
+			out += posted
+			covered = covered and posted == short[kind]
+		if not covered:
+			break
 	_refresh_missing()
 	_requesting = false
 
