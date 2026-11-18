@@ -194,13 +194,13 @@ func store_trip_started(trip : StoreJob) -> void:
 func store_trip_ended(trip : StoreJob) -> void:
 	_store_trips.erase(trip)
 
-## The store trip with a drop of `kind` nearest to `place`, in world space, whose pile can do without
+## The store trip of a free builder with a drop of `kind` nearest to `place`, in world space, whose pile can do without
 ## that drop. Null when there is none.
 func nearest_store_trip(kind : String, place : Vector2) -> StoreJob:
 	var best : StoreJob = null
 	var best_dist := INF
 	for trip in _store_trips:
-		if trip.kind() != kind or trip.site.unclaimed() <= 0:
+		if trip.kind() != kind or trip.site.unclaimed() <= 0 or not trip.meeple.is_free():
 			continue
 		var dist := place.distance_squared_to(trip.spot())
 		if dist < best_dist:
