@@ -7,6 +7,8 @@ var _drop : ResourceDrop
 var _pile : Storage
 var _carrying := false
 var _partner : HaulJob
+## The meeple whose store trip this haul took over, until it starts. JobSystem gives it the haul.
+var carrier : Meeple
 ## Where the meeple was last sent for the drop, in the grid's space. It is sent again only when the
 ## drop or its pile moves.
 var _aimed := Vector2.INF
@@ -14,7 +16,15 @@ var _aimed := Vector2.INF
 func _init(target_site : Building, target_kind : String) -> void:
 	site = target_site
 	kind = target_kind
-	var source := Inventory.claim_closest(kind, site.global_position)
+	var at := site.global_position
+	var trip := JobSystem.nearest_store_trip(kind, at)
+	var beat := INF if trip == null else at.distance_squared_to(trip.spot())
+	var source := Inventory.claim_closest(kind, at, beat)
+	if source == null and trip != null:
+		carrier = trip.meeple
+		_carrying = trip.carrying()
+		_drop = trip.hand_over()
+		return
 	_pile = source as Storage
 	_drop = source as ResourceDrop
 
@@ -27,9 +37,12 @@ func place() -> Vector2:
 func goes_to(building : Building) -> bool:
 	return _carrying and site == building
 
-func start(_worker : Meeple) -> void:
+func start(worker : Meeple) -> void:
+	carrier = null
 	if _pile != null:
 		_partner = JobSystem.take_partner(self)
+	elif _carrying:
+		worker.move_to(site.global_position, site.cells)
 
 ## True when `other` can be carried in the same trip: same site, same kind, from the same pile.
 func pairs_with(other : HaulJob) -> bool:

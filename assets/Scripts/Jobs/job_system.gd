@@ -3,7 +3,8 @@ extends Node
 ## free builder, and each builder that became free a waiting job: the oldest site's nearest haul, or
 ## a nearer job that is not a haul, such as a marked tree.
 ## Meeples with a workplace never take these jobs: their building gives them work.
-## A builder carrying a loose drop to a pile counts as free: these jobs come first.
+## A builder carrying a loose drop to a pile counts as free: these jobs come first. A haul for a site
+## takes over a store trip when that drop is nearer to the site than any other.
 
 signal changed
 
@@ -17,6 +18,8 @@ var _slot_opened := false
 var _changed := false
 var _last_changed := -Inventory.CHANGED_EVERY_MS
 var _last_build_order := 0
+## Store trips under way, so a haul for a site can take one over.
+var _store_trips : Array[StoreJob] = []
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -37,6 +40,7 @@ func reset() -> void:
 	_fresh.clear()
 	_freed.clear()
 	_open_slots.clear()
+	_store_trips.clear()
 	_changed = true
 
 ## Gives a construction site its place in the build order. Older sites get lower numbers, and free builders take their hauls first.
@@ -62,7 +66,13 @@ func clear_waiting_player_jobs() -> void:
 		if job is HarvestJob:
 			job.target.cancel_job()
 
+## Adds a job for the next match. A haul that took over a store trip goes straight to that trip's meeple.
 func add(job : Job) -> void:
+	if job is HaulJob and (job as HaulJob).carrier != null:
+		_active.append(job)
+		_changed = true
+		(job as HaulJob).carrier.take_job(job)
+		return
 	_pending.push_back(job)
 	_fresh.push_back(job)
 	_changed = true
@@ -175,6 +185,28 @@ func _fill_slots() -> void:
 		_open_slots.pop_front()
 		building.add_worker(builder)
 		_changed = true
+
+## A store trip started: a haul may take it over until it ends.
+func store_trip_started(trip : StoreJob) -> void:
+	_store_trips.append(trip)
+
+## A store trip ended: stored, put down, or taken over by a haul.
+func store_trip_ended(trip : StoreJob) -> void:
+	_store_trips.erase(trip)
+
+## The store trip with a drop of `kind` nearest to `place`, in world space, whose pile can do without
+## that drop. Null when there is none.
+func nearest_store_trip(kind : String, place : Vector2) -> StoreJob:
+	var best : StoreJob = null
+	var best_dist := INF
+	for trip in _store_trips:
+		if trip.kind() != kind or trip.site.unclaimed() <= 0:
+			continue
+		var dist := place.distance_squared_to(trip.spot())
+		if dist < best_dist:
+			best_dist = dist
+			best = trip
+	return best
 
 func take_partner(job : HaulJob) -> HaulJob:
 	for other in _pending:
