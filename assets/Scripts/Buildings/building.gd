@@ -478,11 +478,13 @@ func _finish_construction() -> void:
 	Inventory.changed.disconnect(_request_hauls)
 	complete()
 
-## Asks for drops for its next stage, then for whole later stages while they fit under max_hauls and the stock can pay for all of each.
+## Asks for drops for its next stage, then for whole later stages while they fit under max_hauls and the stock
+## can pay for all of each after every other site's next stage.
 func _request_hauls() -> void:
 	if not _constructing or _paused or _requesting:
 		return
 	_requesting = true
+	var held := _others_missing()
 	var out := 0
 	for kind in _incoming:
 		out += _incoming[kind]
@@ -497,7 +499,7 @@ func _request_hauls() -> void:
 			if want > 0:
 				short[kind] = want
 				count += want
-		if stage > _built + 1 and (out + count > max_hauls or not _has_resources(short)):
+		if stage > _built + 1 and (out + count > max_hauls or not _has_resources(short, held)):
 			break
 		var covered := true
 		for kind in short:
@@ -550,11 +552,20 @@ func _covers(have : Dictionary, need : Dictionary[String, int]) -> bool:
 			return false
 	return true
 
-func _has_resources(need : Dictionary[String, int]) -> bool:
+func _has_resources(need : Dictionary[String, int], held : Dictionary[String, int] = {}) -> bool:
 	for kind in need:
-		if Inventory.available(kind) < need[kind]:
+		if Inventory.available(kind) - held.get(kind, 0) < need[kind]:
 			return false
 	return true
+
+## What the other sites still miss for their next stage. A site asks ahead only with stock left over after it.
+func _others_missing() -> Dictionary[String, int]:
+	var held : Dictionary[String, int] = {}
+	for node in get_tree().get_nodes_in_group(CONSTRUCTION_GROUP):
+		if node != self and node is Building:
+			for kind in (node as Building)._missing:
+				held[kind] = held.get(kind, 0) + (node as Building)._missing[kind]
+	return held
 
 func _missing_text(need : Dictionary[String, int]) -> String:
 	var parts := []

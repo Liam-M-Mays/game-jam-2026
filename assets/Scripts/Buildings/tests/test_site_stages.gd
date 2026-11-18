@@ -21,19 +21,6 @@ class SmallGrid extends Grid:
 	func _exit_tree() -> void:
 		_clear_drops()
 
-## A job that is not a haul, standing in for a marked tree.
-class SpotJob extends Job:
-	var at : Vector2
-
-	func _init(spot : Vector2) -> void:
-		at = spot
-
-	func place() -> Vector2:
-		return at
-
-	func update(_worker : Meeple, _delta : float) -> bool:
-		return false
-
 var _world : Node2D
 var _grid : SmallGrid
 var _look : MeepleLook
@@ -87,11 +74,14 @@ func test_a_site_asks_ahead_only_up_to_its_cap() -> void:
 
 
 func test_a_hut_next_to_a_statue_still_gets_wood() -> void:
-	await _set_up(2, 2)
+	await _set_up(1, 20)
 	_start(STATUE_SCENE, Vector2i(3, 3))
 	var hut := _start(HUT_SCENE, Vector2i(10, 10))
-	check_eq(Inventory.available("wood"), 0, "the statue took 1 wood and the hut the other")
-	check(hut.missing().is_empty(), "the hut's next stage is on its way")
+	check(not hut.missing().is_empty(), "the statue took the only wood for its next stage")
+	_grid.add_drop(ResourceDrop.scene_of("wood"), Vector2.ZERO)
+	Inventory.changed.emit()
+	check_eq(Inventory.available("wood"), 0, "the new wood was taken")
+	check(hut.missing().is_empty(), "the hut's next stage got it, not the statue's look-ahead")
 
 
 func test_a_free_builder_takes_the_oldest_sites_haul_first() -> void:
@@ -102,12 +92,11 @@ func test_a_free_builder_takes_the_oldest_sites_haul_first() -> void:
 		_grid.add_drop(ResourceDrop.scene_of("wood"), spot_a)
 		_grid.add_drop(ResourceDrop.scene_of("wood"), spot_b)
 	var older := _start(HUT_SCENE, Vector2i(3, 3))
-	JobSystem.add(SpotJob.new(_grid.to_global(spot_b)))
-	JobSystem.match_jobs()
 	_start(HUT_SCENE, Vector2i(10, 10))
+	JobSystem.match_jobs()
 	_look = MEEPLE_SCENE.instantiate()
 	_meeple = Meeple.new(_grid, _look, spot_b)
 	JobSystem.add_worker(_meeple)
 	JobSystem.match_jobs()
 	check(_meeple.job is HaulJob and (_meeple.job as HaulJob).site == older,
-		"a builder on the newer hut's wood, next to a tree, took the older hut's haul")
+		"a builder on the newer hut's wood took the older hut's haul")

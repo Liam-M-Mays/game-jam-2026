@@ -1,7 +1,7 @@
 extends Node
-## Holds the jobs and the meeples that do them. Once a frame it gives each builder that became free a
-## waiting job (a haul of the oldest site first, the nearest of that site's, and with no haul waiting
-## the nearest job), then each new job left to the nearest free builder.
+## Holds the jobs and the meeples that do them. Once a frame it gives each new job to the nearest
+## free builder, and each builder that became free a waiting job: the oldest site's nearest haul, or
+## a nearer job that is not a haul, such as a marked tree.
 ## Meeples with a workplace never take these jobs: their building gives them work.
 ## A builder carrying a loose drop to a pile counts as free: these jobs come first.
 
@@ -82,9 +82,8 @@ func count_in_slots() -> int:
 			count += 1
 	return count
 
-## Gives each meeple that became free the best waiting job (see _next_waiting_job), then gives the new jobs
-## left to the nearest free meeple. Freed meeples go first, so a site's refill haul does not go straight
-## back to the meeple who just delivered. Runs once a frame. Tests call it directly.
+## Gives new jobs to the nearest free meeple, then gives meeples that became free the best waiting job
+## (see _next_waiting_job). Runs once a frame. Tests call it directly.
 func match_jobs() -> void:
 	if not _open_slots.is_empty() and (_slot_opened or not _freed.is_empty()):
 		_slot_opened = false
@@ -97,11 +96,6 @@ func match_jobs() -> void:
 	var freed := _freed
 	_fresh = []
 	_freed = []
-	for worker in freed:
-		if _pending.is_empty():
-			break
-		if worker.is_free() and workers.has(worker):
-			_give(_next_waiting_job(worker), worker)
 	for job in fresh:
 		if not _pending.has(job):
 			continue
@@ -109,6 +103,11 @@ func match_jobs() -> void:
 		if worker == null:
 			break
 		_give(job, worker)
+	for worker in freed:
+		if _pending.is_empty():
+			break
+		if worker.is_free() and workers.has(worker):
+			_give(_next_waiting_job(worker), worker)
 
 func _give(job : Job, worker : Meeple) -> void:
 	_pending.erase(job)
@@ -133,25 +132,25 @@ func _nearest_free_worker(place : Vector2) -> Meeple:
 			best = worker
 	return best
 
-## The waiting job `worker` takes next: a haul of the oldest site that has one waiting, the nearest of
-## that site's; with no haul waiting, the nearest job.
+## The waiting job `worker` takes next: the nearest haul of the oldest site that has one waiting, unless
+## a job that is not a haul, such as a marked tree, is nearer. Then that job.
 func _next_waiting_job(worker : Meeple) -> Job:
 	var from := worker.global_position
-	var best : Job = null
-	var best_rank := INF
-	var best_dist := INF
+	var haul : HaulJob = null
+	var haul_dist := INF
+	var other : Job = null
+	var other_dist := INF
 	for job in _pending:
-		var rank := _rank(job)
 		var dist := from.distance_squared_to(job.place())
-		if rank < best_rank or (rank == best_rank and dist < best_dist):
-			best_rank = rank
-			best_dist = dist
-			best = job
-	return best
-
-## A haul ranks by its site's build order. Every other job ranks after all hauls.
-static func _rank(job : Job) -> float:
-	return float((job as HaulJob).site.build_order) if job is HaulJob else INF
+		if job is HaulJob:
+			var order := (job as HaulJob).site.build_order
+			if haul == null or order < haul.site.build_order or (order == haul.site.build_order and dist < haul_dist):
+				haul = job as HaulJob
+				haul_dist = dist
+		elif dist < other_dist:
+			other = job
+			other_dist = dist
+	return other if other_dist < haul_dist else haul
 
 ## Tells the jobs that `building` has a worker slot with nobody in it.
 func open_slot(building : Building) -> void:
