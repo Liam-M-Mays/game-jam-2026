@@ -256,7 +256,8 @@ stateDiagram-v2
     Wandering: Builder, wandering near buildings
     QueuedJob: Queued job - harvest, haul
     WorkerWandering: Worker, wandering
-    Work: Work for its building - chop, farm, store
+    StoreTrip: Builder, carrying a loose drop to a pile
+    Work: Work for its building - chop, farm
     Dead: Dead - topples and fades out
 
     [*] --> Wandering: spawned by a hut
@@ -265,10 +266,11 @@ stateDiagram-v2
     Wandering --> WorkerWandering: nearest builder to an open slot
     WorkerWandering --> Work: its building has work
     Work --> WorkerWandering: task done
-    Wandering --> Dead: starved
-    QueuedJob --> Dead: starved, job requeued
-    WorkerWandering --> Dead: starved, slot opens
-    Work --> Dead: starved, slot opens
+    Wandering --> StoreTrip: no job, a loose drop and a pile with room
+    StoreTrip --> Wandering: drop stored, or put down
+    StoreTrip --> QueuedJob: a new job takes it, or a site's haul takes over its drop
+    QueuedJob --> Dead: no food, died after an action, job requeued
+    Work --> Dead: no food, died after an action, slot opens
     Dead --> [*]
 ```
 
@@ -524,9 +526,11 @@ classDiagram
         +store(drop)
         +claim() / unclaim()
         +spare(): int
+        +unclaimed(): int
         +take(): ResourceDrop
-        +find_trip(builder): StoreJob
+        +find_trip(builder)$: StoreJob
         +make_store_job(drop): StoreJob
+        +trip_ended() / trip_dropped(drop)
         +remove_building()
     }
     class Lumberjack {
