@@ -45,7 +45,8 @@ func _set_up() -> void:
 	_farm = FARM_SCENE.instantiate()
 	_grid.place(_farm, [_grid.at(5, 3)])
 	_farm.start_construction()
-	_farm._finish_construction()
+	if _farm.is_under_construction():
+		_farm._finish_construction()
 
 
 func after_each() -> void:

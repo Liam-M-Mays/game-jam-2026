@@ -434,7 +434,7 @@ func carry_over(_old : Building) -> void:
 	pass
 
 ## How much `kind` the new site can still claim from this building as it comes down.
-func spare(kind : String) -> int:
+func left_to_claim(kind : String) -> int:
 	return _left.get(kind, 0) - _promised.get(kind, 0)
 
 ## A haul for the new site claims `amount` of `kind` here, or gives it back with a negative amount.
@@ -596,7 +596,7 @@ func _request_from(old : Building, extra : int) -> int:
 		out += _incoming[kind]
 	var start_out := out
 	for kind in old._left:
-		for i in range(old.spare(kind)):
+		for i in range(old.left_to_claim(kind)):
 			if (out - start_out >= extra) if extra > 0 else (out >= maxi(max_hauls, 1)):
 				break
 			_incoming[kind] = _incoming.get(kind, 0) + 1
