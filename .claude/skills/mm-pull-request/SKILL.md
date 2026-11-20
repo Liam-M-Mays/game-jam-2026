@@ -19,7 +19,7 @@ The rules behind these steps are in `CONTRIBUTING.md` and `CLAUDE.md`.
    ```
 
 2. Name the branch you push to `feature/...`, `fix/...`, `art/...` or `chore/...`. You push in step 8, with `git push origin HEAD:<type>/<short-name>`.
-3. Keep it to one thing. Do not mix a refactor with a fix. Aim for under 300 lines of game code, as `pr_inventory.py` counts them. Over 500, split it.
+3. Keep it to one thing. Do not mix a refactor with a fix. Keep it as simple as the change allows. There is no line limit.
 4. Run the checks. The `mm-godot-check` skill has the commands and the traps. Then play the change yourself in both game scenes: `assets/Scenes/Levels/game.tscn` and `assets/Scenes/Levels/ground.tscn`.
 5. Read the diff of every `.tscn` and `.tres`. Revert any scene you did not mean to change.
 6. Commit the `.uid` and `.import` files that Godot made next to new files.

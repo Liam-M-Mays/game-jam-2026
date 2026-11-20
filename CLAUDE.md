@@ -12,7 +12,7 @@ Mighty Meeple is a Godot 4.7.2 game (GDScript, GL Compatibility renderer). Three
 - `jam-v1`, `rework` and `core-rewrite` are archives. Do not build on them and do not merge from them.
 - A pull request names its issue: "Closes #N" when it finishes it, "Part of #N" when it does one piece.
 - Do not merge pull requests and do not approve them. Liam reviews every one.
-- One pull request does one thing. Aim for under 300 lines of game code. Over 500, split it.
+- One pull request does one thing. Keep it as simple as the change allows. There is no line limit.
 - Another agent or person may be using the same checkout. Use your own worktree or clone for branch work, and never stash, reset or switch branches in a checkout you did not create.
 - Full rules: `CONTRIBUTING.md`.
 - Issue types, parents and board states: `docs/workflow.md`.
