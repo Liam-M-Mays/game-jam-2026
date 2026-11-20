@@ -1,6 +1,7 @@
 extends GameTest
 ## #149: a site asks for its next stage, then for whole later stages up to its max_hauls, so a hut is
 ## swarmed, a statue builds in the background, and a free builder takes the oldest site's haul first.
+## Builders with nothing to do work past the cap.
 
 const STATUE_SCENE := preload("res://assets/Scenes/Buildings/statue.tscn")
 const HUT_SCENE := preload("res://assets/Scenes/Buildings/small_hut.tscn")
@@ -100,3 +101,45 @@ func test_a_free_builder_takes_the_oldest_sites_haul_first() -> void:
 	JobSystem.match_jobs()
 	check(_meeple.job is HaulJob and (_meeple.job as HaulJob).site == older,
 		"a builder on the newer hut's wood took the older hut's haul")
+
+
+func test_a_newer_sites_haul_does_not_jump_an_older_sites_waiting_haul() -> void:
+	await _set_up(0, 0)
+	var spot_b := _grid._cell_or_null(Vector2i(10, 10)).position
+	for i in range(4):
+		_grid.add_drop(ResourceDrop.scene_of("wood"), Vector2.ZERO)
+		_grid.add_drop(ResourceDrop.scene_of("wood"), spot_b)
+	var older := _start(HUT_SCENE, Vector2i(3, 3))
+	JobSystem.match_jobs()
+	_look = MEEPLE_SCENE.instantiate()
+	# Free, but not just freed: only a new job reaches it.
+	_meeple = Meeple.new(_grid, _look, spot_b)
+	JobSystem.workers.append(_meeple)
+	_start(HUT_SCENE, Vector2i(10, 10))
+	JobSystem.match_jobs()
+	check(_meeple.job is HaulJob and (_meeple.job as HaulJob).site == older,
+		"the newer hut's new haul gave the builder the older hut's waiting haul")
+
+
+func test_idle_builders_work_past_the_cap_until_a_new_site_needs_them() -> void:
+	await _set_up(10, 20)
+	var statue := _start(STATUE_SCENE, Vector2i(3, 3))
+	_look = MEEPLE_SCENE.instantiate()
+	var meeples : Array[Meeple] = []
+	for i in range(statue.max_hauls + 2):
+		meeples.append(Meeple.new(_grid, _look, Vector2.ZERO))
+		JobSystem.add_worker(meeples[-1])
+	JobSystem.match_jobs()
+	check_eq(JobSystem.job_count(), statue.max_hauls, "the cap holds while every haul has a builder")
+	JobSystem.match_jobs()
+	check(JobSystem.job_count() > statue.max_hauls, "the 2 idle builders made the statue ask for another stage")
+	JobSystem.match_jobs()
+	var on_extra := meeples.filter(func(m : Meeple) -> bool: return m.job is HaulJob and (m.job as HaulJob).extra)
+	check_eq(on_extra.size(), 2, "the 2 idle builders took the statue's extra hauls")
+	var hut := _start(HUT_SCENE, Vector2i(10, 10))
+	JobSystem.match_jobs()
+	var on_hut := meeples.filter(func(m : Meeple) -> bool: return m.job is HaulJob and (m.job as HaulJob).site == hut)
+	check_eq(on_hut.size(), 2, "the 2 builders on the statue's extra hauls left them for the new hut")
+	JobSystem.reset()
+	for meeple in meeples:
+		meeple.free_item()

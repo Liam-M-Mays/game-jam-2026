@@ -12,6 +12,9 @@ var carrier : Meeple
 ## Where the meeple was last sent for the drop, in the grid's space. It is sent again only when the
 ## drop or its pile moves.
 var _aimed := Vector2.INF
+## Asked for past the site's max_hauls, for builders who had nothing to do. Every other waiting haul comes first,
+## and a newly placed site cancels it while no builder has taken it.
+var extra := false
 
 func _init(target_site : Building, target_kind : String) -> void:
 	site = target_site
@@ -43,6 +46,10 @@ func start(worker : Meeple) -> void:
 		_partner = JobSystem.take_partner(self)
 	elif _carrying:
 		worker.move_to(site.global_position, site.cells)
+
+## True while its meeple counts as free and any other job may take it: an extra haul not picked up yet.
+func gives_way() -> bool:
+	return extra and not _carrying
 
 ## True when `other` can be carried in the same trip: same site, same kind, from the same pile.
 func pairs_with(other : HaulJob) -> bool:

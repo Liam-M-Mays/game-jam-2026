@@ -240,7 +240,7 @@ sequenceDiagram
 
 ## Meeple job lifecycle
 
-From `meeple_movement.gd` and `job_system.gd`. A meeple is either a builder or a worker of one building. Once a frame, `JobSystem.match_jobs` gives each new job to the nearest free builder. Then each builder that became free takes a waiting job: the nearest haul of the oldest site (`Building.build_order`) that has one waiting, unless a job that is not a haul, such as a marked tree, is nearer. A construction site asks for its next stage in full, and for whole later stages while they fit under `Building.max_hauls` drops on the way and the stock can pay for them after every other site's next stage. There is no job limit. A worker asks its building for work with `find_work` at most every half second, and never takes the player's jobs. A builder with no job looks as often for a loose drop to carry to a pile (`Storage.find_trip`): the drop nearest to it, to the nearest pile of its kind with room. The piles have no worker slots. A builder on such a store trip still counts as free, so a player's job takes it and it puts the drop down. A new haul for a site takes over a store trip instead (`JobSystem.nearest_store_trip`, `StoreJob.hand_over`) when that trip's drop is nearer to the site than any loose drop or pile drop: the same meeple carries it straight to the site. A click on a finished building opens the `WorkerPanel`. Its arrows set the workers of the building's `worker_building()`: a farm or silo gives its barn, and a building with no slots, like a hut, hides them. The add arrow opens a slot, which the nearest free builder takes. The remove arrow drops a slot nobody took yet, or sends a worker back to being a builder. A finished building fills all its slots by itself, so the nearest free builders become its workers (`Building.STARTS_FULL`). A dead worker's slot opens again. While the panel is open, the building's workers are outlined like a selected building: only those meeples get two extra canvas items with the outline shader (`Meeple.set_highlighted`), and the panel follows `Building.workers_changed`.
+From `meeple_movement.gd` and `job_system.gd`. A meeple is either a builder or a worker of one building. Once a frame, `JobSystem.match_jobs` gives each new job to the nearest free builder. A new haul gives that builder the oldest site's waiting haul instead, so it never jumps an older site. Then each builder that became free takes a waiting job: the nearest haul of the oldest site (`Building.build_order`, taken when the player places the building) that has one waiting, unless a job that is not a haul, such as a marked tree, is nearer. A construction site asks for its next stage in full, leaving the stock that older sites miss for theirs, and for whole later stages while they fit under `Building.max_hauls` drops on the way and the stock can pay for them after every other site's next stage. The cap holds only while other work waits: when no job is waiting and builders stand idle, `JobSystem` asks the sites, oldest first, for that many more drops (`Building.ask_past_cap`). Those hauls are marked `HaulJob.extra`. They come after every other haul, a newly placed site gives back every one whose drop nobody picked up yet (`JobSystem.drop_extra_hauls`), and a builder walking to one still counts as free, so any other job takes it and the haul goes back to its site. There is no job limit. A worker asks its building for work with `find_work` at most every half second, and never takes the player's jobs. A builder with no job looks as often for a loose drop to carry to a pile (`Storage.find_trip`): the drop nearest to it, to the nearest pile of its kind with room. The piles have no worker slots. A builder on such a store trip still counts as free, so a player's job takes it and it puts the drop down. A new haul for a site takes over a store trip instead (`JobSystem.nearest_store_trip`, `StoreJob.hand_over`) when that trip's drop is nearer to the site than any loose drop or pile drop: the same meeple carries it straight to the site. A click on a finished building opens the `WorkerPanel`. Its arrows set the workers of the building's `worker_building()`: a farm or silo gives its barn, and a building with no slots, like a hut, hides them. The add arrow opens a slot, which the nearest free builder takes. The remove arrow drops a slot nobody took yet, or sends a worker back to being a builder. A finished building fills all its slots by itself, so the nearest free builders become its workers (`Building.STARTS_FULL`). A dead worker's slot opens again. While the panel is open, the building's workers are outlined like a selected building: only those meeples get two extra canvas items with the outline shader (`Meeple.set_highlighted`), and the panel follows `Building.workers_changed`.
 
 The panel's Remove button asks first, then calls `Building.remove_building()`. What the building cost pops out as drops, the way a tree's drops do (a site pops out only what was delivered). Its workers go back to being builders, its hauls are recalled, and it leaves every group at once. A pile also drops what it held, and a haul that claimed a drop in it takes one of the dropped drops instead (`JobSystem.hauls_from`, `HaulJob.take_spilled`). A barn removes its farms and silos first. A removed hut leaves its meeples, so the village can be over its room. The Town Hall answers false to `can_remove()`, and its button is dimmed.
 
@@ -473,6 +473,8 @@ classDiagram
         +costs: Dictionary (computed)
         +put_down(grid, cells)
         +start_construction()
+        +ask_past_cap(extra): int
+        +give_back(haul)
         +deliver(kind)
         +complete()
         +toggle_paused()
@@ -637,6 +639,7 @@ classDiagram
         +cancel(job)
         +open_slot(building) / close_slot(building)
         +take_partner(job): HaulJob
+        +give_back(haul) / drop_extra_hauls()
         +recall_hauls(site)
         +hauls_from(pile): Array[HaulJob]
         +store_trip_started(trip) / store_trip_ended(trip)
@@ -713,6 +716,8 @@ classDiagram
         +site: Building
         +kind: String
         +carrier: Meeple
+        +extra: bool
+        +gives_way(): bool
     }
     class ChopJob {
         +target: Harvestable
