@@ -32,6 +32,11 @@ const STARTS_FULL := true
 @export_multiline var description := ""
 ## How many meeples work here once it is finished. Set in each building's scene.
 @export var worker_slots := 0
+## How many drops may be on their way here at once: hauls waiting for a builder, walked to or carried.
+## A meeple carrying two counts two. The next stage is always asked for in full; after it, the site asks
+## for whole later stages while they fit under this. A big building builds slowly in the background. 0 asks one stage at a time.
+## It holds only while other work waits: builders with nothing to do work past it, oldest site first (see ask_past_cap).
+@export_range(0, 50) var max_hauls := 6
 
 var costs : Dictionary[String, int]:
 	get:
@@ -51,8 +56,9 @@ var _blueprint : Sprite2D = null
 ## Checks the land while the building waits for trees, rocks or bushes on its cells to be cleared.
 ## Null when it is not waiting.
 var _land_timer : Timer = null
-## When the player placed it, on JobSystem's clock. Its deliveries count their age from here.
-var ordered_at := 0.0
+## Its place in the build order, from JobSystem.next_build_order, taken when the player places it.
+## Lower is older: its hauls are taken first, and it gets stock first.
+var build_order := 0
 
 func _ready() -> void:
 	super()
@@ -208,6 +214,8 @@ func clears_land() -> bool:
 ## those cells are marked to be cleared first. Until they are gone, the building waits as a ghost:
 ## it keeps its cells and nothing is spent on it.
 func put_down(at_grid : Grid, at_cells : Array[Cell]) -> void:
+	if build_order == 0:
+		build_order = JobSystem.next_build_order()
 	if at_cells.all(func(c : Cell) -> bool: return c.occupant == null):
 		at_grid.place(self, at_cells)
 		start_construction()
@@ -282,7 +290,9 @@ func _unmark_land(at_cells : Array[Cell]) -> void:
 				node.cancel_job()
 
 func start_construction() -> void:
-	ordered_at = JobSystem.now()
+	if build_order == 0:
+		build_order = JobSystem.next_build_order()
+	JobSystem.drop_extra_hauls()
 	_built = EMPTY_STAGE
 	_constructing = true
 	_banked.clear()
@@ -474,24 +484,66 @@ func _finish_construction() -> void:
 	Inventory.changed.disconnect(_request_hauls)
 	complete()
 
-func _request_hauls() -> void:
+## `extra` builders have nothing to do: asks for whole later stages until it asked for at least `extra` drops,
+## past max_hauls. JobSystem calls this, oldest site first, only when no job is waiting. Returns how many drops it asked for.
+func ask_past_cap(extra : int) -> int:
+	return _request_hauls(extra)
+
+## Asks for drops for its next stage, leaving stock that older sites miss for theirs. Then asks for whole later
+## stages while they fit under max_hauls (or, with `extra`, until `extra` more drops are asked for) and the stock
+## can pay for all of each after every other site's next stage. Returns how many drops it asked for.
+func _request_hauls(extra := 0) -> int:
 	if not _constructing or _paused or _requesting:
-		return
+		return 0
 	_requesting = true
-	var next := _frame_cost(_built + 1)
-	for kind in next:
-		var want : int = next[kind] - _banked.get(kind, 0) - _incoming.get(kind, 0)
-		for i in range(mini(want, Inventory.available(kind))):
-			Inventory.reserve(kind, 1)
-			_incoming[kind] = _incoming.get(kind, 0) + 1
-			JobSystem.add(HaulJob.new(self, kind))
+	var held := _others_missing()
+	var older := _others_missing(true)
+	var out := 0
+	for kind in _incoming:
+		out += _incoming[kind]
+	var start_out := out
+	var ahead : Dictionary[String, int] = {}
+	for stage in range(_built + 1, last_stage() + 1):
+		var cost := _frame_cost(stage)
+		var short : Dictionary[String, int] = {}
+		var count := 0
+		for kind in cost:
+			ahead[kind] = ahead.get(kind, 0) + cost[kind]
+			var want : int = ahead[kind] - _banked.get(kind, 0) - _incoming.get(kind, 0)
+			if want > 0:
+				short[kind] = want
+				count += want
+		var next := stage == _built + 1
+		var full := out - start_out >= extra if extra > 0 else out + count > max_hauls
+		if not next and (full or not _has_resources(short, held)):
+			break
+		var covered := true
+		for kind in short:
+			var left : int = Inventory.available(kind) - (older.get(kind, 0) if next else 0)
+			var posted := clampi(left, 0, short[kind])
+			for i in range(posted):
+				Inventory.reserve(kind, 1)
+				_incoming[kind] = _incoming.get(kind, 0) + 1
+				var haul := HaulJob.new(self, kind)
+				haul.extra = extra > 0 and not next
+				JobSystem.add(haul)
+			out += posted
+			covered = covered and posted == short[kind]
+		if not covered:
+			break
 	_refresh_missing()
 	_requesting = false
+	return out - start_out
 
 func _drop_queued_hauls() -> void:
 	for job in JobSystem.take_pending_hauls(self):
-		_incoming[job.kind] -= 1
-		job.release_drop()
+		give_back(job)
+
+## `haul` will not come: it was dropped from the queue, or its builder left it before picking the drop up.
+func give_back(haul : HaulJob) -> void:
+	_incoming[haul.kind] -= 1
+	haul.release_drop()
+	_refresh_missing()
 
 func _refresh_missing() -> void:
 	if not _constructing or _paused:
@@ -525,11 +577,21 @@ func _covers(have : Dictionary, need : Dictionary[String, int]) -> bool:
 			return false
 	return true
 
-func _has_resources(need : Dictionary[String, int]) -> bool:
+func _has_resources(need : Dictionary[String, int], held : Dictionary[String, int] = {}) -> bool:
 	for kind in need:
-		if Inventory.available(kind) < need[kind]:
+		if Inventory.available(kind) - held.get(kind, 0) < need[kind]:
 			return false
 	return true
+
+## What the other sites still miss for their next stage, or only the older sites with `older_only`.
+## A site asks ahead only with stock left over after all of them, and for its next stage after the older ones.
+func _others_missing(older_only := false) -> Dictionary[String, int]:
+	var held : Dictionary[String, int] = {}
+	for node in get_tree().get_nodes_in_group(CONSTRUCTION_GROUP):
+		if node != self and node is Building and not (older_only and (node as Building).build_order > build_order):
+			for kind in (node as Building)._missing:
+				held[kind] = held.get(kind, 0) + (node as Building)._missing[kind]
+	return held
 
 func _missing_text(need : Dictionary[String, int]) -> String:
 	var parts := []

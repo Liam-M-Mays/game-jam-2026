@@ -55,7 +55,7 @@ flowchart LR
     end
 
     subgraph globals ["Global singletons (autoloads)"]
-        jobSystem["JobSystem: waiting jobs, workers, nearest-first matching"]
+        jobSystem["JobSystem: waiting jobs, workers, nearest first, oldest site's hauls first"]
         inventory["Inventory: stock, drops, pile counts, reservations"]
         population["Population: growth, starvation"]
         gameState["GameState: hunger, toasts, speed"]
@@ -230,7 +230,7 @@ sequenceDiagram
     Building->>Inventory: reserve(wood)
     Building->>Inventory: claim_closest(wood), in HaulJob.new
     Building->>JobSystem: add(HaulJob)
-    JobSystem->>Meeple: take_job(HaulJob), nearest free meeple, next frame
+    JobSystem->>Meeple: take_job(HaulJob), nearest free meeple next frame, or now for a store trip it took over
     Meeple->>Building: deliver(wood)
     Building-->>BuildSystem: completed
     BuildSystem-->>HUD: building_completed
@@ -240,13 +240,13 @@ sequenceDiagram
 
 ## Meeple job lifecycle
 
-From `meeple_movement.gd` and `job_system.gd`. A meeple is either a builder or a worker of one building. Once a frame, `JobSystem.match_jobs` gives each new job to the nearest free builder, and each builder that became free the nearest waiting job. There is no job limit. A worker asks its building for work with `find_work` at most every half second, and never takes the player's jobs. A builder with no job looks as often for a loose drop to carry to a pile (`Storage.find_trip`): the drop nearest to it, to the nearest pile of its kind with room. The piles have no worker slots. A builder on such a store trip still counts as free, so a player's job takes it and it puts the drop down. A click on a finished building opens the `WorkerPanel`. Its arrows set the workers of the building's `worker_building()`: a farm or silo gives its barn, and a building with no slots, like a hut, hides them. The add arrow opens a slot, which the nearest free builder takes. The remove arrow drops a slot nobody took yet, or sends a worker back to being a builder. A finished building fills all its slots by itself, so the nearest free builders become its workers (`Building.STARTS_FULL`). A dead worker's slot opens again. While the panel is open, the building's workers are outlined like a selected building: only those meeples get two extra canvas items with the outline shader (`Meeple.set_highlighted`), and the panel follows `Building.workers_changed`.
+From `meeple_movement.gd` and `job_system.gd`. A meeple is either a builder or a worker of one building. Once a frame, `JobSystem.match_jobs` gives each new job to the nearest free builder. A new haul gives that builder the oldest site's waiting haul instead, so it never jumps an older site. Then each builder that became free takes a waiting job: the nearest haul of the oldest site (`Building.build_order`, taken when the player places the building) that has one waiting, unless a job that is not a haul, such as a marked tree, is nearer. A construction site asks for its next stage in full, leaving the stock that older sites miss for theirs, and for whole later stages while they fit under `Building.max_hauls` drops on the way and the stock can pay for them after every other site's next stage. The cap holds only while other work waits: when no job is waiting and builders stand idle, `JobSystem` asks the sites, oldest first, for that many more drops (`Building.ask_past_cap`). Those hauls are marked `HaulJob.extra`. They come after every other haul, a newly placed site gives back every one whose drop nobody picked up yet (`JobSystem.drop_extra_hauls`), and a builder walking to one still counts as free, so any other job takes it and the haul goes back to its site. There is no job limit. A worker asks its building for work with `find_work` at most every half second, and never takes the player's jobs. A builder with no job looks as often for a loose drop to carry to a pile (`Storage.find_trip`): the drop nearest to it, to the nearest pile of its kind with room. The piles have no worker slots. A builder on such a store trip still counts as free, so a player's job takes it and it puts the drop down. A new haul for a site takes over a store trip instead (`JobSystem.nearest_store_trip`, `StoreJob.hand_over`) when that trip's drop is nearer to the site than any loose drop or pile drop: the same meeple carries it straight to the site. A click on a finished building opens the `WorkerPanel`. Its arrows set the workers of the building's `worker_building()`: a farm or silo gives its barn, and a building with no slots, like a hut, hides them. The add arrow opens a slot, which the nearest free builder takes. The remove arrow drops a slot nobody took yet, or sends a worker back to being a builder. A finished building fills all its slots by itself, so the nearest free builders become its workers (`Building.STARTS_FULL`). A dead worker's slot opens again. While the panel is open, the building's workers are outlined like a selected building: only those meeples get two extra canvas items with the outline shader (`Meeple.set_highlighted`), and the panel follows `Building.workers_changed`.
 
 The panel's Remove button asks first, then calls `Building.remove_building()`. What the building cost pops out as drops, the way a tree's drops do (a site pops out only what was delivered). Its workers go back to being builders, its hauls are recalled, and it leaves every group at once. A pile also drops what it held, and a haul that claimed a drop in it takes one of the dropped drops instead (`JobSystem.hauls_from`, `HaulJob.take_spilled`). A barn removes its farms and silos first. A removed hut leaves its meeples, so the village can be over its room. The Town Hall answers false to `can_remove()`, and its button is dimmed.
 
 The panel's Move button calls `BuildSystem.start_move(building)`. The building lifts off its cells (`Building.lift`, `Grid.lift`), and its old cells stay kept for it. The player places it with the same rules as a new building, for free. A click lands it on the new cells (`Building.land`), and Escape or a right click lands it back on the old ones. Its workers stay, and a meeple on its way to it turns towards the new spot. A barn lifts and lands its farms and silos with it. A farm or silo answers false to `can_move()`, so it only moves with its barn.
 
-The HUD's wood, stone and food counters show `Inventory.available(kind)`, the same number placing and the Build menu check (`Building.can_afford`). It leaves out drops a site has claimed. It keeps drops a builder is carrying to a pile, because a site can claim them from that pile (`Storage.unclaimed`); a haul that claimed one waits at the pile for it, and takes it from the ground if the store trip is dropped (`Storage.trip_dropped`).
+The HUD's wood, stone and food counters show `Inventory.available(kind)`, the same number placing and the Build menu check (`Building.can_afford`). It leaves out drops a site has claimed. It keeps drops a builder is carrying to a pile, because a site's haul can take that store trip over. A pile whose free drops are all still on their way (`Storage.spare` is 0) is a haul's last choice; a haul that claimed one waits at the pile for it, and takes it from the ground if the store trip is dropped (`Storage.trip_dropped`).
 
 The HUD's jobs plate shows how many of the player's jobs wait for a meeple (`JobSystem.waiting_player_jobs`). Its Clear all button, or the C key, cancels them (`JobSystem.clear_waiting_player_jobs`). A meeple already on its way to a job keeps it. Under it, a second plate shows how many meeples are workers in a building's slot (`JobSystem.count_in_slots`) and how many are builders. It refreshes on `JobSystem.changed`, at most every 150 ms. When the last builder goes into a slot, the builders number turns red and one warning toast says so.
 
@@ -256,19 +256,21 @@ stateDiagram-v2
     Wandering: Builder, wandering near buildings
     QueuedJob: Queued job - harvest, haul
     WorkerWandering: Worker, wandering
-    Work: Work for its building - chop, farm, store
+    StoreTrip: Builder, carrying a loose drop to a pile
+    Work: Work for its building - chop, farm
     Dead: Dead - topples and fades out
 
     [*] --> Wandering: spawned by a hut
-    Wandering --> QueuedJob: nearest to a new job, or takes the nearest waiting job
+    Wandering --> QueuedJob: nearest to a new job, or takes a waiting job (oldest site's haul first)
     QueuedJob --> Wandering: job done or cancelled
     Wandering --> WorkerWandering: nearest builder to an open slot
     WorkerWandering --> Work: its building has work
     Work --> WorkerWandering: task done
-    Wandering --> Dead: starved
-    QueuedJob --> Dead: starved, job requeued
-    WorkerWandering --> Dead: starved, slot opens
-    Work --> Dead: starved, slot opens
+    Wandering --> StoreTrip: no job, a loose drop and a pile with room
+    StoreTrip --> Wandering: drop stored, or put down
+    StoreTrip --> QueuedJob: a new job takes it, or a site's haul takes over its drop
+    QueuedJob --> Dead: no food, died after an action, job requeued
+    Work --> Dead: no food, died after an action, slot opens
     Dead --> [*]
 ```
 
@@ -464,11 +466,15 @@ classDiagram
         +required_town_hall_level: int
         +description: String
         +worker_slots: int
+        +max_hauls: int
+        +build_order: int
         +workers: Array[Meeple]
         +wanted_workers: int
         +costs: Dictionary (computed)
         +put_down(grid, cells)
         +start_construction()
+        +ask_past_cap(extra): int
+        +give_back(haul)
         +deliver(kind)
         +complete()
         +toggle_paused()
@@ -521,9 +527,12 @@ classDiagram
         +has_room(): bool
         +store(drop)
         +claim() / unclaim()
+        +spare(): int
+        +unclaimed(): int
         +take(): ResourceDrop
-        +find_trip(builder): StoreJob
+        +find_trip(builder)$: StoreJob
         +make_store_job(drop): StoreJob
+        +trip_ended() / trip_dropped(drop)
         +remove_building()
     }
     class Lumberjack {
@@ -630,8 +639,11 @@ classDiagram
         +cancel(job)
         +open_slot(building) / close_slot(building)
         +take_partner(job): HaulJob
+        +give_back(haul) / drop_extra_hauls()
         +recall_hauls(site)
         +hauls_from(pile): Array[HaulJob]
+        +store_trip_started(trip) / store_trip_ended(trip)
+        +nearest_store_trip(kind, pos): StoreJob
         +job_count(): int
         +waiting_player_jobs(): int
         +clear_waiting_player_jobs()
@@ -687,7 +699,7 @@ classDiagram
         +available(kind): int
         +add(kind, n) / spend(kind, n)
         +reserve(kind, n)
-        +claim_closest(kind, pos): ResourceDrop or Storage
+        +claim_closest(kind, pos, nearer_than): ResourceDrop or Storage or null
         +has_loose(): bool
         +nearest_loose(kind, pos): ResourceDrop
         +drop_moved(drop, from, to)
@@ -703,6 +715,9 @@ classDiagram
     class HaulJob {
         +site: Building
         +kind: String
+        +carrier: Meeple
+        +extra: bool
+        +gives_way(): bool
     }
     class ChopJob {
         +target: Harvestable
@@ -712,6 +727,8 @@ classDiagram
     }
     class StoreJob {
         +site: Storage
+        +meeple: Meeple
+        +hand_over(): ResourceDrop
     }
     Job <|-- HarvestJob
     Job <|-- HaulJob

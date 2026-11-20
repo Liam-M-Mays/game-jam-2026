@@ -23,6 +23,10 @@ func _icon_frame() -> int:
 func held() -> int:
 	return _stock
 
+## Drops here now that no haul has claimed. Below 0 when hauls claimed drops still on their way here.
+func spare() -> int:
+	return _stock - _claimed
+
 ## Drops here or on their way here that no haul has claimed yet.
 func unclaimed() -> int:
 	return _stock + _en_route - _claimed
