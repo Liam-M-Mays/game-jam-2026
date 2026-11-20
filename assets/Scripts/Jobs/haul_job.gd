@@ -9,6 +9,9 @@ var _carrying := false
 var _partner : HaulJob
 ## The meeple whose store trip this haul took over, until it starts. JobSystem gives it the haul.
 var carrier : Meeple
+## The old building of a moved one, which this haul takes its drop from. Null for other hauls, and
+## once the drop is picked up.
+var _from : Building
 ## Where the meeple was last sent for the drop, in the grid's space. It is sent again only when the
 ## drop or its pile moves.
 var _aimed := Vector2.INF
@@ -16,9 +19,13 @@ var _aimed := Vector2.INF
 ## and a newly placed site cancels it while no builder has taken it.
 var extra := false
 
-func _init(target_site : Building, target_kind : String) -> void:
+func _init(target_site : Building, target_kind : String, from : Building = null) -> void:
 	site = target_site
 	kind = target_kind
+	if from != null:
+		_from = from
+		from.promise(kind)
+		return
 	var at := site.global_position
 	var trip := JobSystem.nearest_store_trip(kind, at)
 	var beat := INF if trip == null else at.distance_squared_to(trip.spot())
@@ -32,17 +39,15 @@ func _init(target_site : Building, target_kind : String) -> void:
 	_drop = source as ResourceDrop
 
 func place() -> Vector2:
+	if _from != null:
+		return _from.global_position
 	if _pile != null:
 		return _pile.global_position
 	return _drop.global_position
 
-## Only once it carries the drop: before that it walks to the drop or the pile.
-func goes_to(building : Building) -> bool:
-	return _carrying and site == building
-
 func start(worker : Meeple) -> void:
 	carrier = null
-	if _pile != null:
+	if _pile != null or _from != null:
 		_partner = JobSystem.take_partner(self)
 	elif _carrying:
 		worker.move_to(site.global_position, site.cells)
@@ -51,9 +56,9 @@ func start(worker : Meeple) -> void:
 func gives_way() -> bool:
 	return extra and not _carrying
 
-## True when `other` can be carried in the same trip: same site, same kind, from the same pile.
+## True when `other` can be carried in the same trip: same site, same kind, from the same pile or old building.
 func pairs_with(other : HaulJob) -> bool:
-	return other.site == site and other.kind == kind and other._pile == _pile
+	return other.site == site and other.kind == kind and other._pile == _pile and other._from == _from
 
 ## True when this haul claimed a drop in `pile` and has not picked it up yet.
 func takes_from(pile : Storage) -> bool:
@@ -67,21 +72,25 @@ func take_spilled(drop : ResourceDrop) -> void:
 
 ## Lets go of the drop this haul claimed. The building calls this when it drops a waiting haul.
 func release_drop() -> void:
-	if _pile != null:
+	if _from != null:
+		_from.promise(kind, -1)
+	elif _pile != null:
 		_pile.unclaim()
 	else:
 		Inventory.set_claimed(_drop, false)
+	_from = null
 	_pile = null
 	_drop = null
 
 func update(worker : Meeple, _delta : float) -> bool:
 	if not _carrying:
-		var spot := _pile.position if _pile != null else _drop.position
+		var stand : Building = _from if _from != null else _pile
+		var spot := stand.position if stand != null else _drop.position
 		if spot != _aimed:
 			_aimed = spot
 			var stop : Array[Cell] = []
-			if _pile != null:
-				stop = _pile.cells
+			if stand != null:
+				stop = stand.cells
 			worker.move_to(place(), stop)
 		if not worker.has_arrived() or _waits_for_pile():
 			return false
@@ -126,7 +135,10 @@ func _waits_for_pile() -> bool:
 
 func _pick_up() -> void:
 	_carrying = true
-	if _pile != null:
+	if _from != null:
+		_drop = _from.take_down(kind)
+		_from = null
+	elif _pile != null:
 		_drop = _pile.take()
 		_pile = null
 	_drop.hide()

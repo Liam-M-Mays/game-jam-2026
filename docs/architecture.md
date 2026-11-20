@@ -244,7 +244,7 @@ From `meeple_movement.gd` and `job_system.gd`. A meeple is either a builder or a
 
 The panel's Remove button asks first, then calls `Building.remove_building()`. What the building cost pops out as drops, the way a tree's drops do (a site pops out only what was delivered). Its workers go back to being builders, its hauls are recalled, and it leaves every group at once. A pile also drops what it held, and a haul that claimed a drop in it takes one of the dropped drops instead (`JobSystem.hauls_from`, `HaulJob.take_spilled`). A barn removes its farms and silos first. A removed hut leaves its meeples, so the village can be over its room. The Town Hall answers false to `can_remove()`, and its button is dimmed.
 
-The panel's Move button calls `BuildSystem.start_move(building)`. The building lifts off its cells (`Building.lift`, `Grid.lift`), and its old cells stay kept for it. The player places it with the same rules as a new building, for free. A click lands it on the new cells (`Building.land`), and Escape or a right click lands it back on the old ones. Its workers stay, and a meeple on its way to it turns towards the new spot. A barn lifts and lands its farms and silos with it. A farm or silo answers false to `can_move()`, so it only moves with its barn.
+The panel's Move button calls `BuildSystem.start_move(building)`. The player places a copy with the same rules as a new building, for free; the old building stays where it is, so the copy cannot overlap it. A click calls `Building.rebuild_at(grid, cells)`: the old building shuts down like a removed one (workers back to builders, out of every group, a pile drops what it held) and puts a new site on the new cells. That site's hauls take their drops from the old building, not the stock (`HaulJob.new(site, kind, from)`, `Building.take_down`), all at once, so many builders carry them over. The old building shows the highest stage what is left in it still pays for, so it comes down from the top as the copy goes up, and it goes once it is empty. A moved hut brings no new meeples, and a moved Town Hall keeps its level (`carry_over`). A barn comes down with its farms and silos, and each goes up again in the same place in the new plot area. A farm or silo answers false to `can_move()`, so it only moves with its barn.
 
 The HUD's wood, stone and food counters show `Inventory.available(kind)`, the same number placing and the Build menu check (`Building.can_afford`). It leaves out drops a site has claimed. It keeps drops a builder is carrying to a pile, because a site's haul can take that store trip over. A pile whose free drops are all still on their way (`Storage.spare` is 0) is a haul's last choice; a haul that claimed one waits at the pile for it, and takes it from the ground if the store trip is dropped (`Storage.trip_dropped`).
 
@@ -487,7 +487,9 @@ classDiagram
         +can_remove(): bool
         +remove_building()
         +can_move(): bool
-        +lift() / land(cells)
+        +rebuild_at(grid, cells): Building
+        +carry_over(old)
+        +take_down(kind): ResourceDrop
         +icon(): Texture2D
         +can_place_at() / placement_area()
         +area_at(grid, anchor): Array[Cell]

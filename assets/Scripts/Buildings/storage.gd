@@ -67,9 +67,9 @@ func take() -> ResourceDrop:
 	drop.hide()
 	return drop
 
-## A removed pile drops what it held. A haul that claimed a drop here takes one of the spilled drops instead.
-## Store trips on their way here put their drops down first.
-func remove_building() -> void:
+## A pile removed or taken down drops what it held. A haul that claimed a drop here takes one of the
+## spilled drops instead. Store trips on their way here put their drops down first.
+func _shut_down() -> void:
 	for meeple in JobSystem.workers:
 		if meeple.job is StoreJob and meeple.job.site == self:
 			meeple.job.abort(meeple)
@@ -78,6 +78,7 @@ func remove_building() -> void:
 	Inventory.pile_changed(kind, -_stock, -_claimed)
 	_stock = 0
 	_claimed = 0
+	_refresh()
 	super()
 	var spilled := _pop_out(spill)
 	for i in range(mini(hauls.size(), spilled.size())):

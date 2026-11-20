@@ -17,5 +17,10 @@ func complete() -> void:
 	for i in range(mini(meeples_when_finished, meeple_capacity)):
 		spawn_meeple()
 
+## A moved hut brings no new meeples: the ones it housed are still alive.
+func carry_over(old : Building) -> void:
+	super(old)
+	meeples_when_finished = 0
+
 func spawn_meeple() -> void:
 	grid.spawn_meeple(position + DOOR_OFFSET)

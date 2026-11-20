@@ -59,6 +59,11 @@ var _land_timer : Timer = null
 ## Its place in the build order, from JobSystem.next_build_order, taken when the player places it.
 ## Lower is older: its hauls are taken first, and it gets stock first.
 var build_order := 0
+## A moved building's new site: the old building it takes its drops from, until that one is gone.
+var _from : Building = null
+## A building coming down for a move: what is still in it, and how much of that hauls have claimed.
+var _left : Dictionary[String, int] = {}
+var _promised : Dictionary[String, int] = {}
 
 func _ready() -> void:
 	super()
@@ -178,7 +183,7 @@ func _cropped_icon(source : Texture2D, region : Rect2) -> Texture2D:
 	atlas.region = region
 	return atlas
 
-## Land a barn keeps for its farms and silos takes nothing else. A building being moved may go back onto its own cells.
+## Land a barn keeps for its farms and silos takes nothing else. A barn being moved may reuse its own old plot area.
 func can_place_at(_grid : Grid, at_cells : Array[Cell]) -> bool:
 	return at_cells.all(func(c : Cell): return c.kept_for == null or c.kept_for == self)
 
@@ -383,45 +388,91 @@ func remove_building() -> void:
 		_drop_queued_hauls()
 		Inventory.changed.disconnect(_request_hauls)
 		_constructing = false
+	_shut_down()
+	spawn_effect(BUILD_EFFECT, 1)
+	grid.remove(self)
+	_pop_out(refund)
+
+## Stops it working: open slots close, its workers go back to being builders, and it leaves every
+## group, so nothing finds it as a barn, a pile or a silo while it is removed or taken down.
+func _shut_down() -> void:
 	while JobSystem.close_slot(self):
 		pass
 	for worker in workers:
 		worker.leave_workplace()
 	workers.clear()
 	wanted_workers = 0
-	# Out of every group now, so nothing finds it as a barn, a pile or a silo before it is freed.
 	for group in get_groups():
 		if not String(group).begins_with("_"):
 			remove_from_group(group)
 	Inventory.mark_changed()
-	spawn_effect(BUILD_EFFECT, 1)
-	grid.remove(self)
-	_pop_out(refund)
 
 ## False dims the panel's Move button. A farm or a silo answers false: it moves with its barn.
 func can_move() -> bool:
 	return true
 
-## Takes the building off its cells while the player picks a new spot. Its old cells stay kept for it,
-## so no tree grows there and Escape can always put it back.
-func lift() -> void:
-	grid.lift(self)
-	for cell in cells:
-		if cell.kept_for == null:
-			cell.kept_for = self
-	modulate.a = PREVIEW_OPACITY
+## The panel's Move, once the player picks the spot: a copy of it goes up on `at_cells`, and this one
+## comes down stage by stage as builders carry what it cost over to the copy. Returns the new site.
+func rebuild_at(at_grid : Grid, at_cells : Array[Cell]) -> Building:
+	var site := _take_down_for_copy()
+	site.put_down(at_grid, at_cells)
+	return site
 
-## Puts a lifted building down on `at_cells`, new ones or its old ones. Its workers stay, and a meeple
-## walking to it with a drop or to work turns towards the new spot.
-func land(at_cells : Array[Cell]) -> void:
-	for cell in cells:
-		if cell.kept_for == self:
-			cell.kept_for = null
-	grid.place(self, at_cells)
-	modulate.a = 1.0
-	for meeple in JobSystem.workers:
-		if meeple.job != null and meeple.job.goes_to(self):
-			meeple.move_to(global_position, cells)
+## Starts taking this building down and makes the copy that takes its drops, not yet put down.
+func _take_down_for_copy() -> Building:
+	var site : Building = load(scene_file_path).instantiate()
+	site._from = self
+	site.carry_over(self)
+	_left = costs
+	show_blueprint = false
+	_shut_down()
+	_show_left()
+	return site
+
+## A moved building's new site takes over what must not be lost or gained by the move. Nothing here.
+func carry_over(_old : Building) -> void:
+	pass
+
+## How much `kind` the new site can still claim from this building as it comes down.
+func spare(kind : String) -> int:
+	return _left.get(kind, 0) - _promised.get(kind, 0)
+
+## A haul for the new site claims `amount` of `kind` here, or gives it back with a negative amount.
+func promise(kind : String, amount := 1) -> void:
+	_promised[kind] = _promised.get(kind, 0) + amount
+
+## A haul takes the `kind` it claimed here, as a hidden drop to carry, the way it takes one from a pile.
+func take_down(kind : String) -> ResourceDrop:
+	_left[kind] -= 1
+	promise(kind, -1)
+	var drop := grid.add_drop(ResourceDrop.scene_of(kind), grid.to_local(global_position))
+	Inventory.set_claimed(drop, true)
+	drop.hide()
+	_show_left()
+	return drop
+
+## Shows the highest stage what is left still pays for, so it comes down from the top. Once it is
+## empty it goes.
+func _show_left() -> void:
+	var left := 0
+	for kind in _left:
+		left += _left[kind]
+	if left <= 0:
+		spawn_effect(BUILD_EFFECT, 1)
+		grid.remove(self)
+		return
+	var stage := EMPTY_STAGE
+	var paid := 0
+	while stage < last_stage():
+		for count in _frame_cost(stage + 1).values():
+			paid += count
+		if paid > left:
+			break
+		stage += 1
+	if stage != _built:
+		_built = stage
+		_set_stage(stage)
+		flash()
 
 ## Pops `amounts` out of the middle of the building in all directions, the way a tree's drops come out.
 func _pop_out(amounts : Dictionary[String, int]) -> Array[ResourceDrop]:
@@ -495,6 +546,8 @@ func ask_past_cap(extra : int) -> int:
 func _request_hauls(extra := 0) -> int:
 	if not _constructing or _paused or _requesting:
 		return 0
+	if is_instance_valid(_from):
+		return _request_from(_from, extra)
 	_requesting = true
 	var held := _others_missing()
 	var older := _others_missing(true)
@@ -533,6 +586,25 @@ func _request_hauls(extra := 0) -> int:
 			break
 	_refresh_missing()
 	_requesting = false
+	return out - start_out
+
+## A moved building's site asks for what is still in its old building, up to max_hauls drops on the way, or
+## with `extra` for that many idle builders past it. Nothing comes out of the stock. Returns how many it asked for.
+func _request_from(old : Building, extra : int) -> int:
+	var out := 0
+	for kind in _incoming:
+		out += _incoming[kind]
+	var start_out := out
+	for kind in old._left:
+		for i in range(old.spare(kind)):
+			if (out - start_out >= extra) if extra > 0 else (out >= maxi(max_hauls, 1)):
+				break
+			_incoming[kind] = _incoming.get(kind, 0) + 1
+			var haul := HaulJob.new(self, kind, old)
+			haul.extra = extra > 0
+			JobSystem.add(haul)
+			out += 1
+	_refresh_missing()
 	return out - start_out
 
 func _drop_queued_hauls() -> void:

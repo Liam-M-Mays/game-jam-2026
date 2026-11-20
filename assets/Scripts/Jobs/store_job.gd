@@ -14,10 +14,6 @@ func _init(target_drop : ResourceDrop, target_site : Storage) -> void:
 	site = target_site
 	Inventory.set_claimed(_drop, true)
 
-## Only once it carries the drop: before that it walks to the drop.
-func goes_to(building : Building) -> bool:
-	return _carrying and site == building
-
 func start(by : Meeple) -> void:
 	meeple = by
 	JobSystem.store_trip_started(self)
@@ -45,7 +41,7 @@ func hand_over() -> ResourceDrop:
 	return drop
 
 func update(worker : Meeple, _delta : float) -> bool:
-	if not is_instance_valid(site) or site.is_queued_for_deletion():
+	if not is_instance_valid(site) or not site.is_in_group(Storage.GROUP):
 		abort(worker)
 		return true
 	if not _carrying:

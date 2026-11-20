@@ -118,6 +118,6 @@ func test_a_haul_takes_over_a_store_trip_nearer_than_the_loose_wood() -> void:
 	check(first.takes_from(_pile), "the first haul takes the pile's own wood, nearest to the site")
 	var second := _haul()
 	check(_builder.job == second, "the builder carrying wood towards the pile takes the second haul")
-	check(second.goes_to(_site), "it carries the wood straight to the site")
+	check(second._carrying and second.site == _site, "it carries the wood straight to the site")
 	check_eq(_pile.unclaimed(), 0, "the pile owes nothing it will not get")
 	check_eq(_shown_wood(), 3, "the HUD still shows the three loose wood nobody claimed")
