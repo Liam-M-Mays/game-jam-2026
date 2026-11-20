@@ -32,7 +32,7 @@ var _preview : Building = null
 var _lit : Array[Cell] = []
 var _right_press_at := Vector2.ZERO
 var _tooltip := ConstructionTooltip.new()
-## The building the player is moving. It is lifted off its cells until it lands or goes back.
+## The building the player is moving. It stands where it is until a click picks the new spot.
 var _moving : Building = null
 
 func _ready() -> void:
@@ -45,7 +45,6 @@ func start_build(scene : PackedScene) -> void:
 		placement_failed.emit(PlacementError.OUT_OF_AREA, preview.placement_hint())
 		preview.free()
 		return
-	_put_back()
 	_clear_preview()
 	_scene = scene
 	_preview = preview
@@ -56,7 +55,6 @@ func start_build(scene : PackedScene) -> void:
 func end_build() -> void:
 	if not is_building():
 		return
-	_put_back()
 	_clear_preview()
 	_scene = null
 	build_ended.emit()
@@ -64,20 +62,15 @@ func end_build() -> void:
 func is_building() -> bool:
 	return _preview != null
 
-## The panel's Move button. Picks `building` up into the same placing as a new one, with the same rules but free.
-## A click puts it down, and Escape or a right click puts it back where it was.
+## The panel's Move button. Starts the same placing as a new building, with the same rules but free.
+## A click puts a site there that builders build from the old building as they take it down.
+## Escape or a right click cancels.
 func start_move(building : Building) -> void:
 	start_build(load(building.scene_file_path))
 	if is_building():
 		_moving = building
-		building.lift()
 
-func _put_back() -> void:
-	if _moving != null:
-		_moving.land(_moving.cells)
-		_moving = null
-
-## The placing rules come from the building being moved, so it may overlap its old spot, or else from the preview.
+## The placing rules come from the building being moved, so a barn may reuse its old plot area, or else from the preview.
 func _rules() -> Building:
 	return _moving if _moving != null else _preview
 
@@ -191,8 +184,9 @@ func _try_place() -> void:
 		placement_failed.emit(error, hint)
 		return
 	if _moving != null:
-		_moving.land(cells)
-		_moving = null
+		var moved := _moving.rebuild_at(grid, cells)
+		moved.completed.connect(func(): building_completed.emit(moved))
+		VillageAudio.play(&"hammer", moved.global_position)
 		end_build()
 		return
 	var site : Building = _scene.instantiate()
@@ -208,6 +202,7 @@ func _try_place() -> void:
 func _clear_preview() -> void:
 	_show_lights({})
 	_tooltip.note = ""
+	_moving = null
 	if _preview != null:
 		_preview.queue_free()
 		_preview = null

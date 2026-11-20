@@ -1,9 +1,11 @@
 extends GameTest
-## Moving a building, from part 15b of #6. A moved barn takes its farms and its kept cells along as
-## one shape, and refuses a spot where any of that shape does not fit.
+## Moving a building, from #144: the old building comes down as builders carry what it cost to a
+## new site, so the move spends no stock. A moved barn takes its farms and its kept cells along as
+## one shape.
 
 const BARN_SCENE := preload("res://assets/Scenes/Buildings/barn.tscn")
 const FARM_SCENE := preload("res://assets/Scenes/Buildings/farm.tscn")
+const HUT_SCENE := preload("res://assets/Scenes/Buildings/small_hut.tscn")
 
 ## A small square of cells with no trees, rocks or start building.
 class SmallGrid extends Grid:
@@ -39,9 +41,11 @@ func _set_up() -> void:
 	_barn = BARN_SCENE.instantiate()
 	_grid.place(_barn, [_grid.at(5, 5), _grid.at(6, 5)])
 	_barn.start_construction()
+	_barn._finish_construction()
 	_farm = FARM_SCENE.instantiate()
 	_grid.place(_farm, [_grid.at(5, 3)])
 	_farm.start_construction()
+	_farm._finish_construction()
 
 
 func after_each() -> void:
@@ -50,27 +54,29 @@ func after_each() -> void:
 	Inventory.reset()
 
 
-func test_a_moved_barn_takes_its_farm_and_kept_cells_along() -> void:
+func test_a_moved_building_is_built_from_its_old_self() -> void:
+	await _set_up()
+	var old : Building = HUT_SCENE.instantiate()
+	_grid.place(old, _grid.free_cells_at(_grid.at(10, 2).position, old.footprint, old.footprint_depth))
+	var wood := Inventory.available("wood")
+	var site := old.rebuild_at(_grid, _grid.free_cells_at(_grid.at(10, 10).position, old.footprint, old.footprint_depth))
+	var hauls := JobSystem._pending.filter(func(j : Job) -> bool: return j is HaulJob and j.site == site)
+	check_eq(hauls.size(), old.total_cost(), "every drop in the old building is asked for at once")
+	for haul : HaulJob in hauls:
+		check(not old.is_queued_for_deletion(), "the old building stands until its last drop is taken")
+		haul._pick_up()
+		haul._deliver()
+	check(old.is_queued_for_deletion(), "the old building goes once it is empty")
+	check(site.is_in_group(Building.COMPLETED_GROUP), "the new building is finished")
+	check_eq(Inventory.available("wood"), wood, "the move spends no stock")
+
+
+func test_a_moved_barn_rebuilds_its_farm_in_the_same_place() -> void:
 	await _set_up()
 	var old_area := _barn.area_at(_grid, _barn.cells[0])
-	_barn.lift()
-	var spot : Array[Cell] = [_grid.at(6, 6), _grid.at(7, 6)]
-	check(_barn.can_place_at(_grid, spot), "the barn may overlap its own old plot area")
-	_barn.land(spot)
-	check(_farm.cells[0] == _grid.at(6, 4), "the farm keeps its place in the plot area")
-	check(_grid.at(6, 4).occupant == _farm, "the farm sits on its new cell")
-	check(_grid.at(5, 3).occupant == null, "the farm's old cell is empty")
-	var new_area := _barn.area_at(_grid, _barn.cells[0])
-	check(new_area.all(func(c : Cell): return c.kept_for == _barn), "the new plot area is kept for the barn")
-	var left := old_area.filter(func(c : Cell): return not new_area.has(c) and not _barn.cells.has(c))
-	check(left.all(func(c : Cell): return c.kept_for == null), "the old plot area is free again")
-
-
-func test_a_barn_does_not_move_where_its_plot_area_is_blocked() -> void:
-	await _set_up()
-	_grid.at(9, 9).occupant = RefCounted.new()
-	_barn.lift()
-	var spot : Array[Cell] = [_grid.at(8, 8), _grid.at(9, 8)]
-	check(not _barn.can_place_at(_grid, spot), "a rock in the plot area blocks the move")
-	_barn.land(_barn.cells)
-	check(_grid.at(5, 3).occupant == _farm, "put back, the farm is where it was")
+	var site : Barn = _barn.rebuild_at(_grid, [_grid.at(9, 9), _grid.at(10, 9)])
+	check_eq(site.plots.size(), 1, "the new barn has a farm")
+	check(site.plots[0] is Farm and site.plots[0].cells[0] == _grid.at(9, 7), "the farm keeps its place in the plot area")
+	var new_area := site.area_at(_grid, site.cells[0])
+	check(new_area.all(func(c : Cell): return c.kept_for == site), "the new plot area is kept for the new barn")
+	check(old_area.all(func(c : Cell): return c.kept_for == null), "the old plot area is free again")

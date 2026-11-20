@@ -23,6 +23,16 @@ static func current_level() -> int:
 func can_remove() -> bool:
 	return false
 
+## A moved Town Hall keeps its level, and shows it once it is rebuilt.
+func carry_over(old : Building) -> void:
+	super(old)
+	_level = (old as TownHall).level()
+
+func complete() -> void:
+	super()
+	if _level > 1:
+		_show_frame(last_stage() + _level - 1)
+
 func level() -> int:
 	return _level
 
