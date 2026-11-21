@@ -1,6 +1,6 @@
 extends GameTest
 ## The wood the HUD shows is what placing checks, from #127: drops a site claimed are not in it, and a
-## drop a builder carries to a pile is, because a site can claim it from that pile.
+## drop a builder carries to a pile is, because a site's haul can take that trip over.
 
 const MEEPLE_SCENE := preload("res://assets/Scenes/Meeple/meeple.tscn")
 const PILE_SCENE := preload("res://assets/Scenes/Buildings/wood_pile.tscn")
@@ -13,11 +13,6 @@ class EmptyGrid extends Grid:
 
 	func _exit_tree() -> void:
 		_clear_drops()
-
-## A job that never ends.
-class StayJob extends Job:
-	func update(_worker : Meeple, _delta : float) -> bool:
-		return false
 
 var _world : Node2D
 var _grid : Grid
@@ -104,7 +99,7 @@ func test_the_shown_wood_is_what_placing_checks() -> void:
 	_haul()
 	_haul()
 	check_eq(Inventory.count("wood"), 5, "five wood exist")
-	check_eq(_shown_wood(), 3, "the HUD leaves out the two the site claimed and keeps the one on its way to the pile")
+	check_eq(_shown_wood(), 3, "the HUD leaves out the two the site claimed")
 	check(_can_place(3), "a building that costs what the HUD shows can be placed")
 	check(not _can_place(4), "one more than the HUD shows cannot")
 	for i in 3:
@@ -113,12 +108,16 @@ func test_the_shown_wood_is_what_placing_checks() -> void:
 	check(_can_place(0) and not _can_place(1), "placing agrees at zero")
 
 
-func test_a_haul_waiting_on_a_dropped_trip_takes_the_drop() -> void:
+func test_a_haul_takes_over_a_store_trip_nearer_than_the_loose_wood() -> void:
 	await _set_up()
+	for i in range(400):
+		_builder.tick(0.05)
+		if (_builder.job as StoreJob).carrying() and _builder.global_position.x < 400.0:
+			break
 	var first := _haul()
+	check(first.takes_from(_pile), "the first haul takes the pile's own wood, nearest to the site")
 	var second := _haul()
-	check(first.takes_from(_pile) and second.takes_from(_pile), "both hauls claimed from the pile: its one wood and the one on its way")
-	_builder.take_job(StayJob.new())
-	check_eq(_pile.unclaimed(), 0, "the pile owes no more than it will get")
-	check(first.takes_from(_pile) != second.takes_from(_pile), "one haul now takes the dropped wood from the ground")
+	check(_builder.job == second, "the builder carrying wood towards the pile takes the second haul")
+	check(second._carrying and second.site == _site, "it carries the wood straight to the site")
+	check_eq(_pile.unclaimed(), 0, "the pile owes nothing it will not get")
 	check_eq(_shown_wood(), 3, "the HUD still shows the three loose wood nobody claimed")

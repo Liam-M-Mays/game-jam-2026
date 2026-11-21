@@ -241,7 +241,7 @@ func _on_build_pressed() -> void:
 func _on_building_completed(building: Building) -> void:
 	if building is TownHall:
 		_watch_town_hall(building)
-	if building is Hut:
+	if building is Hut and building.meeples_when_finished > 0:
 		GameState.toast("%s finished! A new meeple arrived" % building.display_name())
 	else:
 		GameState.toast("%s finished!" % building.display_name())

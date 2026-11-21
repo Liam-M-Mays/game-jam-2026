@@ -129,17 +129,28 @@ func abandon_job() -> void:
 	JobSystem.worker_freed(self)
 
 ## True when a player's job may take this meeple: it is an alive builder with no job, or one carrying
-## a loose drop to a pile, which the player's job comes before.
+## a loose drop to a pile, or one walking to an extra haul (see HaulJob.gives_way). The player's job comes first.
 func is_free() -> bool:
-	return _dead_time < 0.0 and workplace == null and (job == null or job is StoreJob)
+	return _dead_time < 0.0 and workplace == null and (job == null or job is StoreJob or (job is HaulJob and (job as HaulJob).gives_way()))
 
-## Starts `new_job`. JobSystem calls this when it matches the two. A builder on a store trip drops it.
+## Starts `new_job`. JobSystem calls this when it matches the two. A builder on a store trip or an extra haul drops it.
 func take_job(new_job : Job) -> void:
 	if job != null:
 		job.abort(self)
+		if job is HaulJob and (job as HaulJob).gives_way():
+			JobSystem.give_back(job as HaulJob)
 	job = new_job
 	_wandering = false
 	job.start(self)
+
+## Lets go of an extra haul whose drop it has not picked up, so a newly placed site gets the builder and the stock.
+func drop_extra_haul() -> void:
+	var haul := job as HaulJob
+	haul.abort(self)
+	job = null
+	JobSystem.give_back(haul)
+	stop()
+	JobSystem.worker_freed(self)
 
 ## Sends a worker back to being a builder. Its building's remove arrow calls this.
 func leave_workplace() -> void:

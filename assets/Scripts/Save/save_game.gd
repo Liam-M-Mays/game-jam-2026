@@ -4,7 +4,8 @@ extends Node
 ## What is saved: the world's seed (the same seed makes the same cells and ground), every tree, rock
 ## and bush with its wear and the player's marks, every building with its stage, workers, pile stock,
 ## farm growth and Town Hall level, every meeple with its colour and workplace, the drops on the
-## ground, the food stock, the game speed, the camera and the one-time tips already shown.
+## ground, the food stock, the game speed, the camera and the one-time tips already shown. A building
+## being moved keeps both halves: the old one coming down with what is left in it, and the new site.
 ## What starts again: jobs in progress. Meeples pick their work back up from where they stand.
 ##
 ## When: going back to the main menu, quitting, and on the Auto-save timer from Settings.
@@ -176,7 +177,7 @@ func _gather(grid: Grid) -> Dictionary:
 			entry["clearing"] = item.node.is_clearing()
 		data["standing"].append(entry)
 	for building: Building in buildings:
-		data["buildings"].append(_save_building(grid, building))
+		data["buildings"].append(_save_building(grid, building, index_of))
 	for meeple in JobSystem.workers:
 		data["meeples"].append({
 			"at": meeple.position,
@@ -212,15 +213,20 @@ func gather(grid: Grid) -> Dictionary:
 	return _gather(grid)
 
 
-## The buildings that are on the grid for real: finished, being built, or waiting for their land.
-## Barns come first and farms and silos last, so a farm can join its barn when loading.
+## The buildings that are on the grid for real: finished, being built, waiting for their land, or coming down
+## for a move. Those coming down come first, so a moved site can find its old building when loading. Then barns,
+## and farms and silos last, so a farm can join its barn.
 func _saved_buildings(grid: Grid) -> Array[Building]:
+	var coming: Array[Building] = []
 	var barns: Array[Building] = []
 	var others: Array[Building] = []
 	var plots: Array[Building] = []
 	for child in grid.get_children():
 		var building := child as Building
 		if building == null or building.is_queued_for_deletion() or building.cells.is_empty():
+			continue
+		if building.is_coming_down():
+			coming.append(building)
 			continue
 		if not (building.is_in_group(Building.COMPLETED_GROUP) or building.is_under_construction() or building.is_waiting_for_land()):
 			continue
@@ -230,15 +236,20 @@ func _saved_buildings(grid: Grid) -> Array[Building]:
 			plots.append(building)
 		else:
 			others.append(building)
-	return barns + others + plots
+	return coming + barns + others + plots
 
 
-func _save_building(grid: Grid, building: Building) -> Dictionary:
+func _save_building(grid: Grid, building: Building, index_of: Dictionary) -> Dictionary:
 	var cells := []
 	for cell in building.cells:
 		cells.append(grid.coords_of(cell))
-	var entry := {"scene": building.scene_file_path, "cells": cells}
-	if building.is_waiting_for_land():
+	var entry := {"scene": building.scene_file_path, "cells": cells, "order": building.build_order}
+	if index_of.has(building.moved_from()):
+		entry["from"] = index_of[building.moved_from()]
+	if building.is_coming_down():
+		entry["state"] = "coming_down"
+		entry["left"] = building.left_state()
+	elif building.is_waiting_for_land():
 		entry["state"] = "waiting"
 	elif building.is_under_construction():
 		entry["state"] = "building"
@@ -265,7 +276,7 @@ func restore_world(grid: Grid) -> void:
 		_restore_standing(grid, entry)
 	var buildings: Array = []
 	for entry in data.get("buildings", []):
-		buildings.append(_restore_building(grid, entry))
+		buildings.append(_restore_building(grid, entry, buildings))
 	for entry in data.get("meeples", []):
 		var meeple := grid.spawn_meeple(entry.get("at", Vector2.ZERO))
 		meeple.restore_body_color(entry.get("color", Color.WHITE))
@@ -278,6 +289,11 @@ func restore_world(grid: Grid) -> void:
 		if ResourceDrop.SCENES.has(kind):
 			grid.add_drop(ResourceDrop.scene_of(kind), entry.get("at", Vector2.ZERO))
 	_restoring = false
+	# The sites ask for stock now that everything is back, oldest first, so a newer one does not go first.
+	var sites := grid.get_tree().get_nodes_in_group(Building.CONSTRUCTION_GROUP)
+	sites.sort_custom(func(a: Building, b: Building) -> bool: return a.build_order < b.build_order)
+	for site: Building in sites:
+		site.request_hauls()
 	Inventory.mark_changed()
 	if data.has("camera"):
 		_restore_camera.call_deferred(data["camera"])
@@ -298,7 +314,8 @@ func _restore_standing(grid: Grid, entry: Dictionary) -> void:
 		grid.wake(item).restore_mark(entry.get("clearing", true))
 
 
-func _restore_building(grid: Grid, entry: Dictionary) -> Building:
+## `restored` holds the buildings put back so far, in save order, so a moved site finds its old building.
+func _restore_building(grid: Grid, entry: Dictionary, restored: Array) -> Building:
 	var path: String = entry.get("scene", "")
 	if not ResourceLoader.exists(path):
 		return null
@@ -311,7 +328,16 @@ func _restore_building(grid: Grid, entry: Dictionary) -> Building:
 	if cells.is_empty():
 		return null
 	var building: Building = load(path).instantiate()
+	building.build_order = entry.get("order", 0)
+	var from: int = entry.get("from", -1)
+	if from >= 0 and from < restored.size() and restored[from] != null and restored[from].is_coming_down():
+		building.restore_from(restored[from])
 	match entry.get("state", "done"):
+		"coming_down":
+			grid.place(building, cells)
+			if building is TownHall:
+				(building as TownHall).restore_level(entry.get("level", 1))
+			building.restore_coming_down(entry.get("left", {}))
 		"waiting":
 			building.put_down(grid, cells)
 		"building":
@@ -337,6 +363,7 @@ func _restore_building(grid: Grid, entry: Dictionary) -> Building:
 				(building as Storage).restore_stock(entry.get("stock", 0))
 			if building is Farm:
 				(building as Farm).restore_growth(entry.get("growth", {}))
+	JobSystem.note_build_order(building.build_order)
 	return building
 
 

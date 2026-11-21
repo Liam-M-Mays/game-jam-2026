@@ -141,26 +141,36 @@ func available(kind : String) -> int:
 func reserve(kind : String, amount : int) -> void:
 	_reserved[kind] = _reserved.get(kind, 0) + amount
 
-## Claims the closest drop of `kind` for a haul that reserved one.
-## Returns the loose drop, or the pile when the closest is in a pile.
-func claim_closest(kind : String, world_pos : Vector2) -> Object:
+## Claims the closest drop of `kind` for a haul that reserved one: a loose drop, or a drop in a pile.
+## Returns the loose drop, or the pile when the closest is in a pile. A pile whose free drops are all
+## still on their way there counts only when nothing else is left. Returns null when nothing is nearer
+## than `nearer_than`, a distance squared: the haul then takes over a store trip.
+func claim_closest(kind : String, world_pos : Vector2, nearer_than := INF) -> Object:
 	var closest : Object = null
-	var nearest := INF
+	var nearest := nearer_than
 	var drop := nearest_loose(kind, world_pos)
-	if drop != null:
+	if drop != null and world_pos.distance_squared_to(drop.global_position) < nearest:
 		closest = drop
 		nearest = world_pos.distance_squared_to(drop.global_position)
+	var waiting : Storage = null
+	var waiting_dist := INF
 	for pile : Storage in get_tree().get_nodes_in_group(Storage.GROUP):
 		if pile.kind != kind or pile.unclaimed() <= 0:
 			continue
 		var distance := world_pos.distance_squared_to(pile.global_position)
-		if distance < nearest:
+		if pile.spare() <= 0:
+			if distance < waiting_dist:
+				waiting_dist = distance
+				waiting = pile
+		elif distance < nearest:
 			nearest = distance
 			closest = pile
+	if closest == null and nearer_than == INF:
+		closest = waiting
 	_reserved[kind] -= 1
 	if closest is Storage:
 		(closest as Storage).claim()
-	else:
+	elif closest != null:
 		_claim(closest as ResourceDrop, true)
 	return closest
 
