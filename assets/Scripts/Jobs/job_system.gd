@@ -57,6 +57,10 @@ func next_build_order() -> int:
 	_last_build_order += 1
 	return _last_build_order
 
+## A building put back from a save keeps its place in the build order. Later sites come after it.
+func note_build_order(order : int) -> void:
+	_last_build_order = maxi(_last_build_order, order)
+
 func job_count() -> int:
 	return _pending.size() + _active.size()
 

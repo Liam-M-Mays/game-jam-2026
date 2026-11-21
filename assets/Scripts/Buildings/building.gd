@@ -311,7 +311,8 @@ func start_construction() -> void:
 ## Puts a building that was under construction in a save back to the stage it had, with the drops
 ## it had been given towards the next stage. Its hauls start again from here.
 func restore_construction(built : int, banked : Dictionary, paused : bool) -> void:
-	ordered_at = JobSystem.now()
+	if build_order == 0:
+		build_order = JobSystem.next_build_order()
 	_constructing = true
 	_built = clampi(built, EMPTY_STAGE, last_stage() - 1)
 	_banked.clear()
@@ -329,8 +330,33 @@ func restore_construction(built : int, banked : Dictionary, paused : bool) -> vo
 		_request_hauls()
 
 ## What a save keeps of a building under construction: the stage built and the drops given towards the next.
+## Its place in the build order is saved for every building that is not finished yet.
 func construction_state() -> Dictionary:
 	return {"built": _built, "banked": _banked.duplicate(), "paused": _paused}
+
+## A moved building's site: the old building it takes its drops from. Null for any other building.
+func moved_from() -> Building:
+	return _from if is_instance_valid(_from) else null
+
+## True while it comes down for a move. It goes once it is empty.
+func is_coming_down() -> bool:
+	return not _left.is_empty()
+
+## What a save keeps of a building coming down for a move: what is still in it.
+func left_state() -> Dictionary:
+	return _left.duplicate()
+
+## Puts back a building that was coming down for a move in a save, with `left` still in it.
+func restore_coming_down(left : Dictionary) -> void:
+	for kind in left:
+		_left[kind] = left[kind]
+	show_blueprint = false
+	_show_left()
+
+## Puts back, from a save, that this site is a moved building built from `old` as it comes down.
+func restore_from(old : Building) -> void:
+	_from = old
+	carry_over(old)
 
 func deliver(kind : String) -> void:
 	_incoming[kind] = _incoming.get(kind, 0) - 1

@@ -1,8 +1,8 @@
 extends GameTest
 ## Saving and loading. A village is saved, its level is closed and opened again from the save,
 ## and the loaded village must hold the same things: trees and rocks with their wear and marks,
-## finished and half-built buildings, workers, pile stock, farm growth, Town Hall level, meeples,
-## drops and food.
+## finished and half-built buildings, a building halfway through a move, workers, pile stock, farm growth,
+## Town Hall level, meeples, drops and food.
 
 const LEVEL := preload("res://assets/Scenes/Levels/game.tscn")
 const SMALL_HUT := preload("res://assets/Scenes/Buildings/small_hut.tscn")
@@ -102,6 +102,8 @@ func _build_village(grid : Grid) -> void:
 	grid.add_drop(ResourceDrop.scene_of("stone"), grid.cell_at_coords(Vector2i(10, 10)).position if grid.cell_at_coords(Vector2i(10, 10)) else Vector2.ZERO)
 	var meeple := grid.spawn_meeple(TownHall.find_town_hall().position)
 	meeple.restore_body_color(Color(0.2, 0.4, 0.6))
+	var moved := _place_done(grid, LUMBERJACK)
+	moved.rebuild_at(grid, _free_spot(grid, moved.footprint, moved.footprint_depth))
 
 
 ## Puts the parts of a save in a fixed order, and leaves out what moves on its own every frame.
@@ -110,13 +112,15 @@ func _comparable(data : Dictionary) -> Dictionary:
 	standing.sort_custom(func(a, b) -> bool: return str(a["at"]) < str(b["at"]))
 	var meeples : Array = data["meeples"].map(func(m) -> Array: return [m["color"], m["workplace"]])
 	meeples.sort_custom(func(a, b) -> bool: return str(a) < str(b))
+	var buildings : Array = data["buildings"].duplicate(true)
+	buildings.sort_custom(func(a, b) -> bool: return str(a["cells"]) < str(b["cells"]))
 	var drops : Array = data["drops"].map(func(d) -> String: return d["kind"])
 	drops.sort()
 	return {
 		"seed": data["seed"],
 		"stored": data["stored"],
 		"standing": standing,
-		"buildings": data["buildings"],
+		"buildings": buildings,
 		"meeples": meeples,
 		"drops": drops,
 	}
@@ -149,6 +153,8 @@ func test_a_loaded_village_matches_the_saved_one() -> void:
 	check_eq(after["meeples"], before["meeples"], "same meeples, colours and workplaces")
 	check_eq(after["drops"], before["drops"], "same drops on the ground")
 	check_eq(TownHall.current_level(), 2, "the Town Hall keeps its level")
+	var sites := grid.get_children().filter(func(n : Node) -> bool: return n is Building and (n as Building).moved_from() != null)
+	check_eq(sites.size(), 1, "the moved lumberjack's site still takes its drops from the old one")
 
 
 func test_game_over_deletes_the_save() -> void:
