@@ -464,10 +464,11 @@ func remove_building() -> void:
 		return
 	var refund := _spent()
 	if _constructing:
+		# Not building any more first, so the hauls given back below do not make it ask again.
+		_constructing = false
 		JobSystem.recall_hauls(self)
 		_drop_queued_hauls()
 		Inventory.changed.disconnect(_request_hauls)
-		_constructing = false
 	# A moved site removed before its old building is empty: what is left in the old one pops out too.
 	var old := moved_from()
 	if old != null:
@@ -749,7 +750,11 @@ func _drop_queued_hauls(keep_taken := false) -> void:
 func give_back(haul : HaulJob) -> void:
 	_incoming[haul.kind] -= 1
 	haul.release_drop()
-	_refresh_missing()
+	# It asks again at once, so what the haul would have brought is not shown as missing.
+	if _constructing and not _paused and not _requesting:
+		_request_hauls()
+	else:
+		_refresh_missing()
 
 func _refresh_missing() -> void:
 	if not _constructing or _paused:

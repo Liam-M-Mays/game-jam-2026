@@ -72,13 +72,17 @@ func _text() -> String:
 	if not note.is_empty():
 		return note
 	var old := _under_mouse(get_tree(), Building.COMING_DOWN_GROUP)
-	if old != null:
-		return describe_coming_down(old)
 	var site := site_under_mouse(get_tree())
 	var pile := pile_under_mouse(get_tree())
-	if pile != null and (site == null or _in_front(pile, site)):
-		return describe_pile(pile)
-	return describe(site) if site != null else ""
+	var front : Building = null
+	for building : Building in [old, site, pile]:
+		if building != null and (front == null or _in_front(building, front)):
+			front = building
+	if front == null:
+		return ""
+	if front == old:
+		return describe_coming_down(old)
+	return describe_pile(pile) if front == pile else describe(site)
 
 static func site_under_mouse(tree : SceneTree) -> Building:
 	return _under_mouse(tree, Building.CONSTRUCTION_GROUP)
@@ -92,7 +96,8 @@ static func pile_under_mouse(tree : SceneTree) -> Storage:
 static func _under_mouse(tree : SceneTree, group : StringName) -> Building:
 	var best : Building = null
 	for site : Building in tree.get_nodes_in_group(group):
-		if not site.is_visible_in_tree() or not site.is_pixel_opaque(site.get_local_mouse_position()):
+		# A building coming down that is down to nothing is drawn see-through, so it does not count.
+		if not site.is_visible_in_tree() or site.self_modulate.a <= 0.0 or not site.is_pixel_opaque(site.get_local_mouse_position()):
 			continue
 		if best == null or _in_front(site, best):
 			best = site

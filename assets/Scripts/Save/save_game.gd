@@ -182,8 +182,10 @@ func _gather(grid: Grid) -> Dictionary:
 	# A drop in a meeple's hands is saved with its job, not on the ground where it was picked up.
 	var carried := {}
 	for meeple in JobSystem.workers:
-		for drop in meeple.carried_drops():
-			carried[drop] = true
+		# Only when the job is saved: otherwise the drop stays in the save as a drop on the ground.
+		if not meeple.carried_drops().is_empty() and not _save_job(meeple, index_of, {}).is_empty():
+			for drop in meeple.carried_drops():
+				carried[drop] = true
 	var drop_index := {}
 	for drop in Inventory.all_drops():
 		if drop.is_in_world() and not carried.has(drop):
@@ -415,8 +417,9 @@ func _restore_job(grid: Grid, meeple: Meeple, job: Dictionary, buildings: Array,
 		else:
 			var site: Building = _at(buildings, job.get("site", -1))
 			var old: Building = _at(buildings, job.get("from", -1))
-			if site != null and site.is_under_construction() and not site.is_paused():
-				done = HaulJob.resume_saved(meeple, site, kind, job.get("count", 1), carrying, job.get("extra", false),
+			# A paused site still gets what is already carried to it.
+			if site != null and site.is_under_construction() and (carrying or not site.is_paused()):
+				done = HaulJob.resume_saved(meeple, site, kind, job.get("count", 1), carrying, job.get("taken", carrying), job.get("extra", false),
 						old if old != null and old.is_coming_down() else null, _at(buildings, job.get("pile", -1)) as Storage, drop)
 	if not done and carrying:
 		for i in range(job.get("count", 1)):

@@ -78,7 +78,7 @@ func picked_up() -> bool:
 func saved(index_of : Dictionary, drop_index : Dictionary) -> Dictionary:
 	if not index_of.has(site):
 		return {}
-	var entry := {"type": "haul", "site": index_of[site], "kind": kind, "carrying": _carrying, "extra": extra, "count": 2 if _partner != null else 1}
+	var entry := {"type": "haul", "site": index_of[site], "kind": kind, "carrying": _carrying, "taken": _taken, "extra": extra, "count": 2 if _partner != null else 1}
 	if _carrying:
 		return entry
 	if _from != null and index_of.has(_from):
@@ -94,11 +94,13 @@ func saved(index_of : Dictionary, drop_index : Dictionary) -> Dictionary:
 
 ## Puts back a haul from a save on `worker`: carrying `count` drops of `kind` to `site`, or walking to take them
 ## from `old` (a building coming down for a move), `pile`, or the loose `drop`. False when that source is gone.
-static func resume_saved(worker : Meeple, site : Building, kind : String, count : int, carrying : bool, extra_haul : bool, old : Building, pile : Storage, drop : ResourceDrop) -> bool:
+## `taken` says the drop was already out, like a carried drop put down when its carrier died.
+static func resume_saved(worker : Meeple, site : Building, kind : String, count : int, carrying : bool, taken : bool, extra_haul : bool, old : Building, pile : Storage, drop : ResourceDrop) -> bool:
 	var jobs : Array[HaulJob] = []
 	for i in range(count):
 		var job := HaulJob.new(site, kind, null, false)
 		job.extra = extra_haul
+		job._taken = taken
 		if carrying:
 			job._drop = worker.grid.add_drop(ResourceDrop.scene_of(kind), worker.position)
 			Inventory.set_claimed(job._drop, true)
