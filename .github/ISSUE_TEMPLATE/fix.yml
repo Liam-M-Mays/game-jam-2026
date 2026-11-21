@@ -28,7 +28,6 @@ body:
       multiple: true
       options:
         - Godot editor
-        - Web build
         - Windows build
         - macOS build
   - type: input

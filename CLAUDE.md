@@ -12,23 +12,23 @@ Mighty Meeple is a Godot 4.7.2 game (GDScript, GL Compatibility renderer). Three
 - `jam-v1`, `rework` and `core-rewrite` are archives. Do not build on them and do not merge from them.
 - A pull request names its issue: "Closes #N" when it finishes it, "Part of #N" when it does one piece.
 - Do not merge pull requests and do not approve them. Liam reviews every one.
-- One pull request does one part. Aim for under 300 lines of game code. Over 500, split it.
+- One pull request does one thing. Keep it as simple as the change allows. There is no line limit.
 - Another agent or person may be using the same checkout. Use your own worktree or clone for branch work, and never stash, reset or switch branches in a checkout you did not create.
 - Full rules: `CONTRIBUTING.md`.
 - Issue types, parents and board states: `docs/workflow.md`.
 - A `feature` is a suggestion until the team agrees on it. Do not assume what it means, do not create tasks for it, and do not move it to Backlog. A `fix` goes straight to Backlog.
 
-## How to build a part
+## How to build a change
 
-- Change the jam code where it is. No parallel game, no new top-level folder, no `sim/` and `view/` split.
-- Anything a person would tweak stays a node in a scene: the camera, the ground, the HUD, buildings. Only things there are thousands of become data: meeples, cells, trees, rocks, bushes, stored drops.
+- Change the code where it is. No parallel game, no new top-level folder, no `sim/` and `view/` split.
+- Anything a person would tweak stays a node in a scene: the camera, the ground, the HUD, buildings. Only things there are thousands of become data: meeples, cells, trees, rocks, bushes, and drops, both loose and stored.
 - Godot's y-sort stays. A meeple as data is drawn as one canvas item under `Grid`, so it sorts with the building nodes.
 - Keep the look. A meeple, tree or building looks and moves as it does now, unless its issue says otherwise.
-- Do not add tools, plugins, overlays or stress scenes that the part does not need.
+- Do not add tools, plugins, overlays or stress scenes that the change does not need.
 
 ## Tests
 
-- Write a test only for a rule that can break without anyone seeing it, for example "a job goes to the nearest idle meeple". Most parts need 0 to 3.
+- Write a test only for a rule that can break without anyone seeing it, for example "a job goes to the nearest idle meeple". Most changes need 0 to 3.
 - No tests for timings, pictures or pixel counts.
 - The main proof is playing the game. The pull request says how to see the change in a few steps, with a picture or a short clip for anything visual.
 
@@ -45,6 +45,7 @@ Mighty Meeple is a Godot 4.7.2 game (GDScript, GL Compatibility renderer). Three
 ## Project facts
 
 - Main scene: `Main_Menu.tscn`. Game scenes: `assets/Scenes/Levels/game.tscn` (on the giant) and `assets/Scenes/Levels/ground.tscn` (the round ground world). The main menu opens either one. Play every change in both.
+- `assets/Scenes/game.tscn`, `assets/Scenes/main.tscn` and `assets/Scenes/Levels/main.tscn` are old jam scenes. The game never opens them, and the first two do not load. Do not edit them by mistake.
 - Autoloads: `Settings`, `SceneFader`, `InputMode`, `JobSystem`, `Inventory`, `GameState`, `Population`, `VillageAudio`, `Music`. Settings are saved to `user://settings.cfg`.
 - Running Godot with `--script` does not load the autoloads, so most scripts fail to compile that way. Use a scene, like `.github/ci/load_check.tscn` does.
 - The first import of a fresh clone prints script errors. Import twice.

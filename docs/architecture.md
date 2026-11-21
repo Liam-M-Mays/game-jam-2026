@@ -1,6 +1,6 @@
 # Architecture (as built)
 
-**What this is:** diagrams of the code as it stands, not a plan. They are kept up to date on `rework`. They were first drawn from `master` at commit `3c9e6c8` on Nov 9, 2026.
+**What this is:** diagrams of the code as it stands, not a plan. They are kept up to date on `master`. They were first drawn from `master` at commit `3c9e6c8` on Nov 9, 2026.
 
 **Keep it true:** when a pull request changes the structure, update the matching diagram in the same pull request. The diagrams are plain text, so the change shows up in the diff.
 
@@ -140,7 +140,7 @@ flowchart TD
     game["Game: root of Levels/game.tscn"]
     walk["Node2D2: giant drift (walk.gd)"]
     step["Node2D: giant step bob (Giant_step.gd)"]
-    head["Head, EyeBlack, eyes (Blink.gd)"]
+    head["Head, EyeBlack (Giant_step.gd), Left Eye, Right Eye (Blink.gd)"]
     arms["Arm Foreground, Arm Background (Giant_arm_step.gd)"]
     torso["Torso sprite"]
     yard["Yard: procedural ground (yard_ground.gd)"]
@@ -157,7 +157,7 @@ flowchart TD
     tooltip["ConstructionTooltip, created in code"]
     parallax["5 parallax background layers"]
     hud["HUD: instance of hud.tscn"]
-    hudKids["Counters, jobs plate with Clear all, workers and builders plate, hunger bar, worker panel, build menu, pause menu, death screen, toast feed"]
+    hudKids["Counters, jobs plate with Clear all, workers and builders plate, hunger bar, build button, worker panel, build menu, pause menu, speed button, toast feed, death screen, settings menu"]
     giantAudio["GiantAudio (giant_audio.gd)"]
 
     game --> walk
@@ -275,17 +275,21 @@ stateDiagram-v2
 
 ## Building construction lifecycle
 
-These states have no names in code. They are implied by four flags and two groups in `building.gd`.
+These states have no names in code. They come from four flags, the land timer and two groups in `building.gd`.
 
 ```mermaid
 stateDiagram-v2
     direction LR
     Preview: Preview ghost following the mouse
+    WaitingForLand: Ghost on its cells, trees, rocks and bushes marked to be cleared
     Completed: Completed - in group completed_buildings
 
     [*] --> Preview: BuildSystem.start_build
     Preview --> [*]: Esc or end_build
     Preview --> UnderConstruction: click on free cells and can afford
+    Preview --> WaitingForLand: a barn, farm or silo clicked over trees, rocks or bushes, and can afford
+    WaitingForLand --> UnderConstruction: land cleared
+    WaitingForLand --> [*]: a clearing job cancelled, or removed
 
     state UnderConstruction {
         [*] --> Hauling
@@ -322,15 +326,21 @@ stateDiagram-v2
     Paused --> SettingsScreen: Settings button
     SettingsScreen --> MainMenu: Back from the main menu
     SettingsScreen --> Paused: Back from the pause menu
+    SettingsScreen --> MainMenu: Return to main menu, in a game
     Playing --> GameOver: all meeples died
     GameOver --> Playing: Retry reloads the scene
+    Ground --> GameOver: all meeples died
+    GameOver --> Ground: Retry reloads the scene
     GameOver --> MainMenu: Menu button
     MainMenu --> [*]: Quit
+    Paused --> [*]: Quit
+    GameOver --> [*]: Quit
+    SettingsScreen --> [*]: Quit game
 ```
 
 ## Class diagrams
 
-Three diagrams cover 58 of the 62 game scripts. The four left out are tiny: `walk.gd`, `Blink.gd`, `menu_meeple.gd` and `resource_ui.gd`. The test runner (`assets/Scripts/Dev/test_runner/`) and the tests are left out too.
+Three diagrams cover 64 of the 70 game scripts. The six left out are tiny: `walk.gd`, `Blink.gd`, `menu_meeple.gd`, `resource_ui.gd`, `mouse.gd` (the cell cursor) and `village_rules.gd` (the numbers resource). The test runner (`assets/Scripts/Dev/test_runner/`) and the tests are left out too.
 
 How to read them:
 
@@ -390,7 +400,7 @@ classDiagram
     class Cell {
         +position: Vector2
         +occupant: GridObject or Standing
-        +kept_for: Barn or null
+        +kept_for: Building or null
         +highlight(alpha, color)
     }
     class CellLayer {
@@ -783,6 +793,44 @@ classDiagram
         +reset(keys)
         +multiplier(key) float
     }
+    class SceneFader {
+        <<autoload>>
+        +FADE_SECONDS = 0.35
+        +change_scene(target)
+        +is_busy(): bool
+    }
+    class InputMode {
+        <<autoload>>
+        +signal changed(using_mouse)
+        +DEFAULT_FOCUS: group name
+        +using_mouse: bool
+        +focus_default()
+    }
+    class SettingsMenu {
+        +signal closed
+        +TABS: display, audio, controls, gameplay, other
+        +in_game: bool
+        +open() / close()
+        +open_credits()
+        +default_focus_target(): Control
+    }
+    class SettingsButton {
+        +menu: SettingsMenu
+        +gray: bool
+    }
+    class UiArt {
+        +BUTTONS, FRAMES
+        +apply(button, name) static
+        +button(name) static
+        +frame(name, margins, padding) static
+    }
+    class PixelStyle {
+        +PX = 4
+        +colors: PANEL, BUTTON, TEXT and more
+        +box(fill, rings) static
+        +stylebox(texture, rings) static
+        +style_button(button) static
+    }
     class MainMenu {
         <<unnamed>>
         +start_button, ground_button, credits_button, quit_button
@@ -893,5 +941,18 @@ classDiagram
     HUD ..> GameState : toasts, hunger
     HUD ..> BuildMenu : opens
     GiantAudio ..> GiantPart : listens to feet
+    SettingsButton ..> SettingsMenu : opens
+    SettingsButton ..> UiArt : button art
+    SettingsMenu ..> Settings : reads and saves
+    SettingsMenu ..> UiArt : button art
+    SettingsMenu ..> PixelStyle : drawn pieces
+    SettingsMenu ..> SceneFader : return to main menu
+    SettingsMenu ..> InputMode : default focus
+    MainMenu ..> SettingsMenu : credits
+    MainMenu ..> SceneFader : change_scene
+    PauseMenu ..> SceneFader : change_scene
+    HUD ..> SceneFader : is_busy
+    MainMenu ..> InputMode : default focus
+    PauseMenu ..> InputMode : default focus
 ```
 

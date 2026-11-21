@@ -10,7 +10,7 @@
 
 ## Inventory
 
-<!-- Paste what `python3 .github/ci/pr_inventory.py` prints. -->
+<!-- Replace this section, heading included, with what `python3 .github/ci/pr_inventory.py` prints. It prints its own "## Inventory" line. -->
 
 ## Before asking for review
 

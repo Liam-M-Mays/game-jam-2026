@@ -23,9 +23,11 @@ The first time you open a fresh clone, Godot prints script errors while it build
 | --- | --- |
 | `assets/` | Everything the game uses: scenes, scripts, shaders, art, audio, fonts |
 | `ART/` | Art source files. Today it also holds in-game art, see [docs/art-folders.md](docs/art-folders.md) |
-| `Main_Menu.tscn`, `HUD.gd` and the other root scripts | Menus and HUD |
-| `docs/` | Architecture diagrams, and how the checks work |
+| `Main_Menu.tscn`, `HUD.gd` and the other root scripts | Menus, HUD and the `GameState` autoload (`Game_State.gd`) |
+| `docs/` | Architecture diagrams, how the checks work, how work moves, the art folders, and the finished rework plan (kept as a record) |
 | `.github/` | CI, issue forms, pull request template, code owners |
+| `.claude/` | Skills for AI agents: running the checks and opening a pull request |
+| `Claude Picked Sound Effects/` | Source sound pack, see [CREDITS.md](CREDITS.md) |
 
 ## More
 

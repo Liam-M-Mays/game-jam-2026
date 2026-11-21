@@ -40,7 +40,7 @@ RULE_HELP = {
     "import-error": "Godot reported an error while importing the project.",
     "load-error": "Godot reported an error while loading this file.",
     "boot-error": "A script error happened while this scene was running.",
-    "test-failed": "A test failed. Run it yourself with: bash .github/ci/run_tests.sh",
+    "test-failed": "A test failed. Run it yourself with: GODOT=\"/path/to/Godot\" bash .github/ci/run_tests.sh",
 }
 
 

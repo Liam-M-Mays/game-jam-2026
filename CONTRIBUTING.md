@@ -2,7 +2,7 @@
 
 **The short version:** make a branch, push it, open a pull request, get one approval, merge.
 
-This applies to everyone: the three of us, and any AI agent working for one of us.
+This applies to the three of us, and to any AI agent working for one of us. An agent has three more rules, from `CLAUDE.md`: it works in its own worktree, names its local branch `wt/<short-name>`, and never approves or merges.
 
 ## Branches
 
@@ -31,8 +31,10 @@ This applies to everyone: the three of us, and any AI agent working for one of u
    git push -u origin fix/farm-build-mode
    ```
 
-4. Open a pull request on GitHub and fill in the template. Add `Closes #12` to link an issue.
+4. Open a pull request on GitHub and fill in the template. Name the issue: `Closes #12` when it finishes it, `Part of #12` when it does one piece.
 5. When a teammate has approved and the checks are green, press **Merge**, then delete the branch.
+
+   AI agents stop at step 4. They do not approve or merge. Liam reviews their pull requests.
 
 ## What GitHub enforces
 
@@ -75,7 +77,7 @@ Godot rewrites parts of a `.tscn` file every time it saves, so scenes are where 
 - Every issue has one type: `feature`, `task`, `art`, `fix`, `chore` or `feedback`. The issue forms set it for you.
 - A `feature` is a parent. The `task` and `art` issues it needs hang under it as sub-issues.
 - Issues move through five states on the [project board](https://github.com/users/Liam-M-Mays/projects/5): **Proposed**, **Backlog**, **In progress**, **Testing**, **Finished**.
-- New ideas and player feedback start in Proposed. They move to Backlog when the team agrees to do them. A `fix` starts in Backlog.
+- New ideas start in Proposed. A `feedback` issue stays off the board, and the features sorted out of it start in Proposed. They move to Backlog when the team agrees to do them. A `fix` starts in Backlog.
 - Put yourself as the assignee when you start. Move the card when the state changes.
 - The full rules, with diagrams: [docs/workflow.md](docs/workflow.md).
 
@@ -96,11 +98,11 @@ The first one takes a second. The second one takes a few minutes and needs Godot
 Your commits are safe. Move them to a branch and open a pull request:
 
 ```bash
-git switch -c my-work
-git push -u origin my-work
+git switch -c fix/my-work
+git push -u origin fix/my-work
 ```
 
-Then put your local master back in line with GitHub. This only touches your local `master`; your commits stay on `my-work`.
+Then put your local master back in line with GitHub. This only touches your local `master`; your commits stay on `fix/my-work`.
 
 ```bash
 git switch master
