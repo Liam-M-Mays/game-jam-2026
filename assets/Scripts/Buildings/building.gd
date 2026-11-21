@@ -596,7 +596,8 @@ func ask_past_cap(extra : int) -> int:
 ## stages while they fit under max_hauls (or, with `extra`, until `extra` more drops are asked for) and the stock
 ## can pay for all of each after every other site's next stage. Returns how many drops it asked for.
 func _request_hauls(extra := 0) -> int:
-	if not _constructing or _paused or _requesting:
+	# Out of the tree: its level is closing, for the main menu, and nothing should be asked for.
+	if not _constructing or _paused or _requesting or not is_inside_tree():
 		return 0
 	if is_instance_valid(_from):
 		return _request_from(_from, extra)
