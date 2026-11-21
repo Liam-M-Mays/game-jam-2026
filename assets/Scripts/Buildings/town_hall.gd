@@ -28,6 +28,10 @@ func carry_over(old : Building) -> void:
 	super(old)
 	_level = (old as TownHall).level()
 
+func restore_moved(entry : Dictionary) -> void:
+	super(entry)
+	_level = clampi(entry.get("level", 1), 1, max_level())
+
 func complete() -> void:
 	super()
 	if _level > 1:

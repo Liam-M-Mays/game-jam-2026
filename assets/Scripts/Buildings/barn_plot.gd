@@ -73,6 +73,9 @@ func note() -> String:
 func can_move() -> bool:
 	return false
 
+func move_hint() -> String:
+	return "A %s moves with its barn" % display_name()
+
 func worker_building() -> Building:
 	return barn.worker_building() if barn != null else null
 

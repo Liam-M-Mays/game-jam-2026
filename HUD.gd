@@ -253,7 +253,7 @@ func _on_placement_failed(reason: BuildSystem.PlacementError, hint: String) -> v
 			var building_name := BuildMenu.display_name(_building_scene) if _building_scene else "that"
 			GameState.warn("You need more materials to build %s" % building_name)
 		BuildSystem.PlacementError.BLOCKED:
-			GameState.warn("Can't build there")
+			GameState.warn(hint if not hint.is_empty() else "Can't build there")
 		BuildSystem.PlacementError.OUT_OF_AREA:
 			GameState.warn(hint)
 

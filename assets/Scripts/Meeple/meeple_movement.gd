@@ -178,6 +178,10 @@ func die() -> void:
 	_lying = (1.0 if randf() < 0.5 else -1.0) * PI * 0.5
 	_dead_time = 0.0
 
+## The drops in its hands, so a save keeps them with its job and not on the ground.
+func carried_drops() -> Array[ResourceDrop]:
+	return job.carried() if job != null else []
+
 func carry(kind := "", amount := 1) -> void:
 	if amount >= 2 and DOUBLE_CARRY_FRAMES.has(kind):
 		_frame = DOUBLE_CARRY_FRAMES[kind]

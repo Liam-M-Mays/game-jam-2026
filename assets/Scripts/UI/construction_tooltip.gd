@@ -42,7 +42,11 @@ func _process(_delta : float) -> void:
 	_panel.position = pos.clamp(Vector2.ZERO, (screen - _panel.size).max(Vector2.ZERO))
 
 static func describe(site : Building) -> String:
-	var lines := ["[b]%s[/b]" % site.display_name(), "Built %d / %d" % [site.built_stage() + 1, site.last_stage() + 1], "Next stage needs:"]
+	var title := ("[b]Moving %s[/b]" if site.was_moved() else "[b]%s[/b]") % site.display_name()
+	var lines := [title, "Built %d / %d" % [site.built_stage() + 1, site.last_stage() + 1]]
+	if site.moved_from() != null:
+		lines.append("Builders bring its parts from the old one")
+	lines.append("Next stage needs:")
 	var stuck := site.missing()
 	var needs := site.next_stage_needs()
 	for kind in needs:
@@ -54,6 +58,10 @@ static func describe(site : Building) -> String:
 		lines.append("[color=#%s]Paused - right-click to resume[/color]" % PAUSED_COLOR)
 	return "\n".join(lines)
 
+## A building coming down for a move, shown while the mouse is over it.
+static func describe_coming_down(old : Building) -> String:
+	return "[b]Moving %s[/b]\nTaking it down: %d parts left to carry" % [old.display_name(), old.left_total()]
+
 ## How full a finished pile is, shown while the mouse is over it.
 static func describe_pile(pile : Storage) -> String:
 	return "[b]%s[/b]\nHolds %d / %d %s" % [pile.display_name(), pile.held(), pile.capacity(), pile.kind]
@@ -63,6 +71,9 @@ func _text() -> String:
 		return ""
 	if not note.is_empty():
 		return note
+	var old := _under_mouse(get_tree(), Building.COMING_DOWN_GROUP)
+	if old != null:
+		return describe_coming_down(old)
 	var site := site_under_mouse(get_tree())
 	var pile := pile_under_mouse(get_tree())
 	if pile != null and (site == null or _in_front(pile, site)):

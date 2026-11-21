@@ -10,6 +10,14 @@ func place() -> Vector2:
 func start(_worker : Meeple) -> void:
 	pass
 
+## The drops the meeple on this job holds right now.
+func carried() -> Array[ResourceDrop]:
+	return []
+
+## Starts a job put back from a save. Most jobs just start again.
+func resume(worker : Meeple) -> void:
+	start(worker)
+
 func update(_worker : Meeple, _delta : float) -> bool:
 	return true
 

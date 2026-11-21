@@ -9,6 +9,8 @@ signal placement_failed(reason : PlacementError, hint : String)
 
 enum PlacementError { NONE, BLOCKED, CANT_AFFORD, OUT_OF_AREA }
 
+## The preview's colour and the outline on the building being moved, so a move does not look like a new build.
+const MOVE_TINT := Color(1.0, 0.8, 0.3)
 const GROUP := &"build_system"
 
 ## Land a barn keeps for farms and silos: the barn being placed, or the land farms and silos can go on.
@@ -69,6 +71,8 @@ func start_move(building : Building) -> void:
 	start_build(load(building.scene_file_path))
 	if is_building():
 		_moving = building
+		_preview.material.set_shader_parameter("tint", MOVE_TINT)
+		building.set_selected(true, MOVE_TINT)
 
 ## The placing rules come from the building being moved, so a barn may reuse its old plot area, or else from the preview.
 func _rules() -> Building:
@@ -102,7 +106,7 @@ func _process(_delta : float) -> void:
 		return
 	var mouse := get_global_mouse_position()
 	var anchor := grid.cell_at(mouse)
-	_tooltip.note = _rules().note()
+	_tooltip.note = _move_note() if _moving != null else _rules().note()
 	_preview.visible = anchor != null
 	if anchor == null:
 		_show_lights({})
@@ -166,6 +170,13 @@ func _show_lights(lights : Dictionary[Cell, Color]) -> void:
 		cell.highlight(lights[cell].a, lights[cell])
 	_lit.assign(lights.keys())
 
+## What the cursor says while moving: that it is a move, that it costs nothing, and how to cancel.
+func _move_note() -> String:
+	var lines := ["[b]Moving %s[/b]" % _moving.display_name(), "Built from the old one: no cost", "Click to place, right-click or Esc to cancel"]
+	if _moving is Barn:
+		lines.append("Its farms and silos move with it")
+	return "\n".join(lines)
+
 func _placement_error(cells : Array[Cell]) -> PlacementError:
 	if cells.is_empty():
 		return PlacementError.BLOCKED
@@ -181,6 +192,8 @@ func _try_place() -> void:
 	if error != PlacementError.NONE:
 		_preview.reject()
 		var hint := _rules().placement_hint() if error == PlacementError.OUT_OF_AREA else ""
+		if error == PlacementError.BLOCKED and _moving != null:
+			hint = "Can't move it there: the spot must be clear of trees, rocks and buildings"
 		placement_failed.emit(error, hint)
 		return
 	if _moving != null:
@@ -202,6 +215,8 @@ func _try_place() -> void:
 func _clear_preview() -> void:
 	_show_lights({})
 	_tooltip.note = ""
+	if is_instance_valid(_moving):
+		_moving.set_selected(false)
 	_moving = null
 	if _preview != null:
 		_preview.queue_free()

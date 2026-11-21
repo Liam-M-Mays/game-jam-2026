@@ -25,5 +25,9 @@ func carry_over(old : Building) -> void:
 	super(old)
 	meeples_when_finished = 0
 
+func restore_moved(entry : Dictionary) -> void:
+	super(entry)
+	meeples_when_finished = 0
+
 func spawn_meeple() -> void:
 	grid.spawn_meeple(position + DOOR_OFFSET)

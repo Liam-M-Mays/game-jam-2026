@@ -12,6 +12,9 @@ const BLUEPRINT_SHADER := preload("res://assets/Shaders/blueprint.gdshader")
 const PREVIEW_OPACITY := 0.5
 const COMPLETED_GROUP := &"completed_buildings"
 const CONSTRUCTION_GROUP := &"construction_sites"
+## A building coming down for a move. The underscore keeps it through _shut_down, and nothing that looks
+## for working buildings looks here.
+const COMING_DOWN_GROUP := &"_coming_down"
 const POP_RISE := 0.05
 const POP_FALL := 0.13
 const PAUSED_OUTLINE := Color(1.0, 0.85, 0.1)
@@ -64,6 +67,9 @@ var _from : Building = null
 ## A building coming down for a move: what is still in it, and how much of that hauls have claimed.
 var _left : Dictionary[String, int] = {}
 var _promised : Dictionary[String, int] = {}
+## True for a moved building's site, even after its old building is gone: it brings no new meeples and keeps
+## what carry_over took, also through a save.
+var _moved := false
 
 func _ready() -> void:
 	super()
@@ -154,8 +160,9 @@ func toggle_paused() -> void:
 	_paused = not _paused
 	set_selected(_paused, PAUSED_OUTLINE)
 	if _paused:
-		JobSystem.recall_hauls(self)
-		_drop_queued_hauls()
+		# Drops already picked up still come here, so none of them ends up loose and carried to a pile.
+		JobSystem.recall_hauls(self, true)
+		_drop_queued_hauls(true)
 		_set_missing({})
 	else:
 		_request_hauls()
@@ -301,7 +308,7 @@ func start_construction() -> void:
 	_built = EMPTY_STAGE
 	_constructing = true
 	_banked.clear()
-	_incoming.clear()
+	# _incoming is kept: a moved farm or silo's copy starts with the hauls handed over from its old one.
 	area.input_pickable = true
 	add_to_group(CONSTRUCTION_GROUP)
 	Inventory.changed.connect(_request_hauls)
@@ -336,7 +343,26 @@ func construction_state() -> Dictionary:
 
 ## A moved building's site: the old building it takes its drops from. Null for any other building.
 func moved_from() -> Building:
-	return _from if is_instance_valid(_from) else null
+	return _from if is_instance_valid(_from) and not _from.is_queued_for_deletion() else null
+
+## True for a moved building's site, even once its old building is gone.
+func was_moved() -> bool:
+	return _moved
+
+## How much is still in a building coming down for a move.
+func left_total() -> int:
+	var total := 0
+	for kind in _left:
+		total += _left[kind]
+	return total
+
+## A haul put back from a save is on its way here with `count` drops of `kind`.
+func add_incoming(kind : String, count : int) -> void:
+	_incoming[kind] = _incoming.get(kind, 0) + count
+
+## A moved site put back from a save after its old building was gone: it keeps what carry_over gave it.
+func restore_moved(_entry : Dictionary) -> void:
+	_moved = true
 
 ## True while it comes down for a move. It goes once it is empty.
 func is_coming_down() -> bool:
@@ -350,12 +376,14 @@ func left_state() -> Dictionary:
 func restore_coming_down(left : Dictionary) -> void:
 	for kind in left:
 		_left[kind] = left[kind]
+	add_to_group(COMING_DOWN_GROUP)
 	show_blueprint = false
 	_show_left()
 
 ## Puts back, from a save, that this site is a moved building built from `old` as it comes down.
 func restore_from(old : Building) -> void:
 	_from = old
+	_moved = true
 	carry_over(old)
 
 func deliver(kind : String) -> void:
@@ -440,6 +468,12 @@ func remove_building() -> void:
 		_drop_queued_hauls()
 		Inventory.changed.disconnect(_request_hauls)
 		_constructing = false
+	# A moved site removed before its old building is empty: what is left in the old one pops out too.
+	var old := moved_from()
+	if old != null:
+		old._pop_out(old._left)
+		old._left.clear()
+		old._show_left()
 	_shut_down()
 	spawn_effect(BUILD_EFFECT, 1)
 	grid.remove(self)
@@ -463,6 +497,10 @@ func _shut_down() -> void:
 func can_move() -> bool:
 	return true
 
+## Why the Move button is dimmed, shown on it.
+func move_hint() -> String:
+	return ""
+
 ## The panel's Move, once the player picks the spot: a copy of it goes up on `at_cells`, and this one
 ## comes down stage by stage as builders carry what it cost over to the copy. Returns the new site.
 func rebuild_at(at_grid : Grid, at_cells : Array[Cell]) -> Building:
@@ -470,19 +508,20 @@ func rebuild_at(at_grid : Grid, at_cells : Array[Cell]) -> Building:
 	site.put_down(at_grid, at_cells)
 	return site
 
-## Starts taking this building down and makes the copy that takes its drops, not yet put down. A farm or silo
-## still being built stops: its hauls are called back, and only what it was given carries over. The copy asks the
-## stock for the rest once this one is empty.
+## Starts taking this building down and makes the copy that takes its drops, not yet put down. The copy keeps
+## this building's place in the build order. A farm or silo still being built stops: only what it was given is
+## in it, its hauls are handed to the copy (Barn.rebuild_at), and the copy asks the stock for the rest.
 func _take_down_for_copy() -> Building:
 	var site : Building = load(scene_file_path).instantiate()
 	site._from = self
+	site._moved = true
+	site.build_order = build_order
 	site.carry_over(self)
 	_left = _spent() if _constructing else costs
 	if _constructing:
-		JobSystem.recall_hauls(self)
-		_drop_queued_hauls()
 		Inventory.changed.disconnect(_request_hauls)
 		_constructing = false
+	add_to_group(COMING_DOWN_GROUP)
 	show_blueprint = false
 	_shut_down()
 	_show_left()
@@ -611,8 +650,9 @@ func _request_hauls(extra := 0) -> int:
 	# oldest site first (see request_hauls).
 	if not _constructing or _paused or _requesting or not is_inside_tree() or SaveGame.is_restoring():
 		return 0
-	if is_instance_valid(_from):
-		return _request_from(_from, extra)
+	var old := moved_from()
+	if old != null:
+		return _request_from(old, extra)
 	_requesting = true
 	var held := _others_missing()
 	var older := _others_missing(true)
@@ -653,27 +693,56 @@ func _request_hauls(extra := 0) -> int:
 	_requesting = false
 	return out - start_out
 
-## A moved building's site asks for what is still in its old building, up to max_hauls drops on the way, or
-## with `extra` for that many idle builders past it. Nothing comes out of the stock. Returns how many it asked for.
+## A moved building's site asks its old building stage by stage, like _request_hauls asks the stock: the next
+## stage in full, then whole later stages up to max_hauls drops on the way, or with `extra` for idle builders.
+## Only what the old building lacks for the next stage comes from the stock. Returns how many it asked for.
 func _request_from(old : Building, extra : int) -> int:
+	_requesting = true
+	var older := _others_missing(true)
 	var out := 0
 	for kind in _incoming:
 		out += _incoming[kind]
 	var start_out := out
-	for kind in old._left:
-		for i in range(old.left_to_claim(kind)):
-			if (out - start_out >= extra) if extra > 0 else (out >= maxi(max_hauls, 1)):
-				break
-			_incoming[kind] = _incoming.get(kind, 0) + 1
-			var haul := HaulJob.new(self, kind, old)
-			haul.extra = extra > 0
-			JobSystem.add(haul)
-			out += 1
+	var ahead : Dictionary[String, int] = {}
+	for stage in range(_built + 1, last_stage() + 1):
+		var next := stage == _built + 1
+		var cost := _frame_cost(stage)
+		var short : Dictionary[String, int] = {}
+		var count := 0
+		for kind in cost:
+			ahead[kind] = ahead.get(kind, 0) + cost[kind]
+			var want : int = ahead[kind] - _banked.get(kind, 0) - _incoming.get(kind, 0)
+			if want > 0:
+				short[kind] = want
+				count += want
+		var full := out - start_out >= extra if extra > 0 else out + count > maxi(max_hauls, 1)
+		if not next and full:
+			break
+		var covered := true
+		for kind in short:
+			for i in range(short[kind]):
+				var haul : HaulJob = null
+				if old.left_to_claim(kind) > 0:
+					haul = HaulJob.new(self, kind, old)
+				elif next and Inventory.available(kind) - older.get(kind, 0) > 0:
+					Inventory.reserve(kind, 1)
+					haul = HaulJob.new(self, kind)
+				else:
+					covered = false
+					break
+				_incoming[kind] = _incoming.get(kind, 0) + 1
+				haul.extra = extra > 0 and not next
+				JobSystem.add(haul)
+				out += 1
+		if not covered:
+			break
 	_refresh_missing()
+	_requesting = false
 	return out - start_out
 
-func _drop_queued_hauls() -> void:
-	for job in JobSystem.take_pending_hauls(self):
+## Gives back its waiting hauls. With `keep_taken`, a haul whose drop is already out keeps coming.
+func _drop_queued_hauls(keep_taken := false) -> void:
+	for job in JobSystem.take_pending_hauls(self, keep_taken):
 		give_back(job)
 
 ## `haul` will not come: it was dropped from the queue, or its builder left it before picking the drop up.

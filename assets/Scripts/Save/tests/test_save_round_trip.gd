@@ -166,3 +166,32 @@ func test_game_over_deletes_the_save() -> void:
 	Population.all_meeples_died.emit()
 	check(not SaveGame.has_save(), "game over deleted it")
 	check(not SaveGame.save_now(), "nothing saves after game over")
+
+
+func test_a_builder_carrying_for_a_move_keeps_its_job() -> void:
+	await tree.process_frame
+	var grid := _open_level()
+	var old := _place_done(grid, LUMBERJACK)
+	var site := old.rebuild_at(grid, _free_spot(grid, old.footprint, old.footprint_depth))
+	var meeple := grid.spawn_meeple(old.position)
+	JobSystem.match_jobs()
+	var haul := meeple.job as HaulJob
+	check(haul != null and haul.site == site, "a builder took a haul for the moved site")
+	haul._pick_up()
+	if haul._partner != null:
+		haul._partner._pick_up()
+	var carried := haul.carried().size()
+	SaveGame.world_opened(grid)
+	SaveGame.save_now()
+	var data := SaveGame.read_save()
+	check_eq(data["drops"].size(), 0, "the carried drops are saved with the job, not on the ground")
+	_close_level()
+
+	SaveGame.set_pending(data)
+	grid = _open_level()
+	var carriers := JobSystem.workers.filter(func(m : Meeple) -> bool: return m.job is HaulJob and not m.carried_drops().is_empty())
+	check_eq(carriers.size(), 1, "the builder still carries after loading")
+	if carriers.size() == 1:
+		var loaded := carriers[0].job as HaulJob
+		check(loaded.site.moved_from() != null, "it still carries to the moved site, which still takes from its old one")
+		check_eq(loaded.carried().size(), carried, "with as many drops as before")

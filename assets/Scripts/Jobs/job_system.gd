@@ -283,10 +283,29 @@ func take_partner(job : HaulJob) -> HaulJob:
 			return other
 	return null
 
-func recall_hauls(site : Building) -> void:
+## Calls back the builders on `site`'s hauls. With `keep_taken`, one already carrying its drop goes on.
+func recall_hauls(site : Building, keep_taken := false) -> void:
 	for worker in workers:
-		if worker.job is HaulJob and worker.job.site == site:
+		if worker.job is HaulJob and worker.job.site == site and not (keep_taken and (worker.job as HaulJob).picked_up()):
 			worker.abandon_job()
+
+## Every haul for `from_site`, waiting or under way, brings its drop to `to_site` instead. A moved farm or silo
+## still being built hands its hauls to its copy this way.
+func retarget_hauls(from_site : Building, to_site : Building) -> void:
+	for job in _pending + _active:
+		if job is HaulJob and (job as HaulJob).site == from_site:
+			(job as HaulJob).site = to_site
+			to_site.add_incoming((job as HaulJob).kind, 1)
+
+## Puts back a job from a save on `worker`, as it was. `others` are hauls carried in the same trip.
+func resume(job : Job, worker : Meeple, others : Array = []) -> void:
+	if not job is StoreJob:
+		_active.append(job)
+	for other : Job in others:
+		_active.append(other)
+	worker.job = job
+	job.resume(worker)
+	_changed = true
 
 ## The hauls, waiting or under way, that claimed a drop in `pile` and have not picked it up yet.
 func hauls_from(pile : Storage) -> Array[HaulJob]:
@@ -296,10 +315,11 @@ func hauls_from(pile : Storage) -> Array[HaulJob]:
 			found.append(job)
 	return found
 
-func take_pending_hauls(site : Building) -> Array[HaulJob]:
+## Takes `site`'s waiting hauls out of the queue. With `keep_taken`, one whose drop is already out stays.
+func take_pending_hauls(site : Building, keep_taken := false) -> Array[HaulJob]:
 	var taken : Array[HaulJob] = []
 	for job in _pending.duplicate():
-		if job is HaulJob and job.site == site:
+		if job is HaulJob and job.site == site and not (keep_taken and (job as HaulJob).picked_up()):
 			_pending.erase(job)
 			taken.append(job)
 	if not taken.is_empty():
@@ -319,7 +339,7 @@ func drop_extra_hauls() -> void:
 		if worker.job is HaulJob and (worker.job as HaulJob).gives_way():
 			worker.drop_extra_haul()
 	for job in _pending.duplicate():
-		if job is HaulJob and (job as HaulJob).extra:
+		if job is HaulJob and (job as HaulJob).extra and not (job as HaulJob).picked_up():
 			_pending.erase(job)
 			(job as HaulJob).site.give_back(job)
 	_changed = true

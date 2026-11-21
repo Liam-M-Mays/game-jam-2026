@@ -40,6 +40,45 @@ func hand_over() -> ResourceDrop:
 	site.trip_ended()
 	return drop
 
+func carried() -> Array[ResourceDrop]:
+	var drops : Array[ResourceDrop] = []
+	if _carrying and _drop != null:
+		drops.append(_drop)
+	return drops
+
+## What a save keeps of this trip, with buildings and loose drops as indexes. Empty when it cannot be put back.
+func saved(index_of : Dictionary, drop_index : Dictionary) -> Dictionary:
+	if _drop == null or not index_of.has(site):
+		return {}
+	if not _carrying and not drop_index.has(_drop):
+		return {}
+	return {"type": "store", "pile": index_of[site], "kind": _drop.kind, "carrying": _carrying, "drop": drop_index.get(_drop, -1)}
+
+## Puts back a store trip from a save on `worker`: carrying a drop of `kind` to `pile`, or walking to the loose
+## `drop`. False when the pile is gone or full, or the drop is.
+static func resume_saved(worker : Meeple, pile : Storage, kind : String, carrying : bool, drop : ResourceDrop) -> bool:
+	if pile == null or not pile.is_in_group(Storage.GROUP) or not pile.has_room():
+		return false
+	if carrying:
+		drop = worker.grid.add_drop(ResourceDrop.scene_of(kind), worker.position)
+	elif drop == null:
+		return false
+	var trip := pile.make_store_job(drop)
+	trip._carrying = carrying
+	JobSystem.resume(trip, worker)
+	return true
+
+## Starts a trip put back from a save, as it was: carrying to its pile, or walking to its drop.
+func resume(by : Meeple) -> void:
+	meeple = by
+	JobSystem.store_trip_started(self)
+	if _carrying:
+		_drop.hide()
+		by.carry(_drop.kind)
+		by.move_to(site.global_position, site.cells)
+	else:
+		_aim(by)
+
 func update(worker : Meeple, _delta : float) -> bool:
 	if not is_instance_valid(site) or not site.is_in_group(Storage.GROUP):
 		abort(worker)

@@ -6,7 +6,8 @@ extends Node
 ## farm growth and Town Hall level, every meeple with its colour and workplace, the drops on the
 ## ground, the food stock, the game speed, the camera and the one-time tips already shown. A building
 ## being moved keeps both halves: the old one coming down with what is left in it, and the new site.
-## What starts again: jobs in progress. Meeples pick their work back up from where they stand.
+## Builders keep their hauls and store trips, with what they carry. Other jobs start again: a marked tree or a
+## worker's task goes back to the nearest meeple, which is nearly always the one that was on it.
 ##
 ## When: going back to the main menu, quitting, and on the Auto-save timer from Settings.
 ## Game over deletes the save, and Start asks before replacing it.
@@ -178,16 +179,38 @@ func _gather(grid: Grid) -> Dictionary:
 		data["standing"].append(entry)
 	for building: Building in buildings:
 		data["buildings"].append(_save_building(grid, building, index_of))
+	# A drop in a meeple's hands is saved with its job, not on the ground where it was picked up.
+	var carried := {}
 	for meeple in JobSystem.workers:
-		data["meeples"].append({
+		for drop in meeple.carried_drops():
+			carried[drop] = true
+	var drop_index := {}
+	for drop in Inventory.all_drops():
+		if drop.is_in_world() and not carried.has(drop):
+			drop_index[drop] = data["drops"].size()
+			data["drops"].append({"kind": drop.kind, "at": drop.position})
+	for meeple in JobSystem.workers:
+		var entry := {
 			"at": meeple.position,
 			"color": meeple.body_color(),
 			"workplace": index_of.get(meeple.workplace, -1),
-		})
-	for drop in Inventory.all_drops():
-		if drop.is_in_world():
-			data["drops"].append({"kind": drop.kind, "at": drop.position})
+		}
+		var job := _save_job(meeple, index_of, drop_index)
+		if not job.is_empty():
+			entry["job"] = job
+		data["meeples"].append(entry)
 	return data
+
+
+## What a save keeps of a builder's job: a haul or a store trip. Empty for anything else.
+func _save_job(meeple: Meeple, index_of: Dictionary, drop_index: Dictionary) -> Dictionary:
+	if meeple.workplace != null:
+		return {}
+	if meeple.job is HaulJob:
+		return (meeple.job as HaulJob).saved(index_of, drop_index)
+	if meeple.job is StoreJob:
+		return (meeple.job as StoreJob).saved(index_of, drop_index)
+	return {}
 
 
 ## The scene file of the level the grid is in: the open scene, or the scene the grid was saved in.
@@ -246,6 +269,8 @@ func _save_building(grid: Grid, building: Building, index_of: Dictionary) -> Dic
 	var entry := {"scene": building.scene_file_path, "cells": cells, "order": building.build_order}
 	if index_of.has(building.moved_from()):
 		entry["from"] = index_of[building.moved_from()]
+	if building.was_moved():
+		entry["moved"] = true
 	if building.is_coming_down():
 		entry["state"] = "coming_down"
 		entry["left"] = building.left_state()
@@ -277,6 +302,7 @@ func restore_world(grid: Grid) -> void:
 	var buildings: Array = []
 	for entry in data.get("buildings", []):
 		buildings.append(_restore_building(grid, entry, buildings))
+	var meeples: Array = []
 	for entry in data.get("meeples", []):
 		var meeple := grid.spawn_meeple(entry.get("at", Vector2.ZERO))
 		meeple.restore_body_color(entry.get("color", Color.WHITE))
@@ -284,10 +310,17 @@ func restore_world(grid: Grid) -> void:
 		var workplace: Building = buildings[index] if index >= 0 and index < buildings.size() else null
 		if workplace != null and JobSystem.close_slot(workplace):
 			workplace.add_worker(meeple)
+		meeples.append(meeple)
+	var drops: Array = []
 	for entry in data.get("drops", []):
 		var kind: String = entry.get("kind", "")
-		if ResourceDrop.SCENES.has(kind):
-			grid.add_drop(ResourceDrop.scene_of(kind), entry.get("at", Vector2.ZERO))
+		drops.append(grid.add_drop(ResourceDrop.scene_of(kind), entry.get("at", Vector2.ZERO)) if ResourceDrop.SCENES.has(kind) else null)
+	# Store trips first, so a pile counts the drops on their way to it before hauls claim from it.
+	for type in ["store", "haul"]:
+		for i in meeples.size():
+			var job: Dictionary = data["meeples"][i].get("job", {})
+			if job.get("type", "") == type:
+				_restore_job(grid, meeples[i], job, buildings, drops)
 	_restoring = false
 	# The sites ask for stock now that everything is back, oldest first, so a newer one does not go first.
 	var sites := grid.get_tree().get_nodes_in_group(Building.CONSTRUCTION_GROUP)
@@ -332,6 +365,8 @@ func _restore_building(grid: Grid, entry: Dictionary, restored: Array) -> Buildi
 	var from: int = entry.get("from", -1)
 	if from >= 0 and from < restored.size() and restored[from] != null and restored[from].is_coming_down():
 		building.restore_from(restored[from])
+	elif entry.get("moved", false):
+		building.restore_moved(entry)
 	match entry.get("state", "done"):
 		"coming_down":
 			grid.place(building, cells)
@@ -365,6 +400,32 @@ func _restore_building(grid: Grid, entry: Dictionary, restored: Array) -> Buildi
 				(building as Farm).restore_growth(entry.get("growth", {}))
 	JobSystem.note_build_order(building.build_order)
 	return building
+
+
+## Puts a builder's saved haul or store trip back on it. When that cannot be done, a drop it carried is put
+## down where it stands, so nothing is lost.
+func _restore_job(grid: Grid, meeple: Meeple, job: Dictionary, buildings: Array, drops: Array) -> void:
+	var kind: String = job.get("kind", "")
+	var carrying: bool = job.get("carrying", false)
+	var done := false
+	if ResourceDrop.SCENES.has(kind):
+		var drop: ResourceDrop = _at(drops, job.get("drop", -1))
+		if job["type"] == "store":
+			done = StoreJob.resume_saved(meeple, _at(buildings, job.get("pile", -1)) as Storage, kind, carrying, drop)
+		else:
+			var site: Building = _at(buildings, job.get("site", -1))
+			var old: Building = _at(buildings, job.get("from", -1))
+			if site != null and site.is_under_construction() and not site.is_paused():
+				done = HaulJob.resume_saved(meeple, site, kind, job.get("count", 1), carrying, job.get("extra", false),
+						old if old != null and old.is_coming_down() else null, _at(buildings, job.get("pile", -1)) as Storage, drop)
+	if not done and carrying:
+		for i in range(job.get("count", 1)):
+			grid.add_drop(ResourceDrop.scene_of(kind), meeple.position)
+
+
+## The item at `index` in `list`, or null.
+func _at(list: Array, index: int) -> Variant:
+	return list[index] if index >= 0 and index < list.size() else null
 
 
 ## Runs a frame after loading, once the level's own scripts placed the camera, so the saved view wins.
