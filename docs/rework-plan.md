@@ -1,10 +1,12 @@
 # The rework plan
 
-**Done.** The rework was merged into `master` on 2026-11-17, with parts 1 to 16 and the playtest parts 18 to 26. The jam build is kept on the branch `jam-v1`. This page stays as the record of how it was done.
+**Done.** The rework was merged into `master` on 2026-11-17 by #148, with parts 1 to 16 and the playtest parts 18 to 26. The jam build is kept on the branch `jam-v1`. This page stays as the record of how it was done.
+
+**Still open:** part 17 (#77). Build and start the Windows and macOS exports once each. Check the giant's back: 205 resources in the jam zones, and the eyes drop inside the head.
 
 **The short version:** we keep the jam game and fix it in place. We do not rewrite it. Meeples, cells, trees and drops stop being one node each, so the game can hold thousands of meeples. Then the village moves to a generated ground world, and the open fixes and playtest points go in. Every pull request is small enough to review in about 20 minutes.
 
-Issue #57 tracks the parts. This page says how we work.
+Issue #57 tracked the parts. This page says how we worked. Today's rules are in `CLAUDE.md` and `CONTRIBUTING.md`.
 
 ## Why the plan changed (2026-11-11)
 
@@ -25,11 +27,15 @@ Liam's list from 2026-11-10, kept as it was:
 - All assets and the giant scene stay in the project.
 - The village also runs on the giant's back, as it does today. **Required before the switch** (#77).
 
+Note (2026-11-18): the switch came first. The giant check is still open in #77.
+
 The bar: **5,000 meeples at 60 frames a second** on Liam's Mac, on the ground world (#61).
 
 On 2026-11-13 Liam accepted the measured result instead. With #116, 5,000 working meeples take 17 to 22 ms a frame in an exported build, about 50 to 58 frames a second. 1,000 take about 6 ms. The tables are in #14.
 
-Not part of this: giants walking by, second villages, a world map, animals, roads, new ores, an ending after the statue, baby meeples, seasons, rivers, enemies, a settings menu, lighting, saving.
+Not part of this: giants walking by, second villages, a world map, animals, roads, new ores, an ending after the statue, baby meeples, seasons, rivers, enemies, lighting, saving.
+
+A settings menu was on that list at first. It was added late, in #145.
 
 ## Liam's earlier answers still count
 
@@ -81,8 +87,9 @@ Each line is one pull request into `rework`. "After" names the parts that must b
 | 15a | Remove a building | #6 | 4a, 6 | about 150 |
 | 15b | Move a building | #6 | 15a | about 100 |
 | 16 | Small decided changes, a few per pull request | #89 | 1 | small each |
-| 17 | Finish: Liam plays both scenes, exports, one pull request into `master`. On hold until playtesting (Liam, 2026-11-13) | #77 | all | none |
+| 17 | Finish: Liam plays both scenes, exports, one pull request into `master`. Merged by #148 on 2026-11-17. The exports and the giant check are still open | #77 | all | none |
 
+- Parts 18 to 26 are the playtest fixes from 2026-11-13 (#125 to #141). Their table is in #57.
 - The sizes are rough guesses of game code. Tests and scenes are not counted.
 - Parts 9, 10, 11 and 16 can go any time. The others wait for the parts in "After" because they edit the same files.
 - The fastest path to something Liam can test: 2, then 6, 7a, 7b, 8a and 8b. The ground world can be played before roles are done.
@@ -102,7 +109,7 @@ Each line is one pull request into `rework`. "After" names the parts that must b
 ## Measuring 60 frames a second (parts 2, 5b and 8b)
 
 - Liam's Mac (Apple M3), a 1920x1080 window, vsync off, game speed x1, not in Low Power Mode.
-- Spawn the meeples with the dev key. Wait 1.5 seconds, then measure for 4 seconds.
+- Spawn the meeples with the dev key: press M to add 500 at the Town Hall. It works only in a debug build. Wait 1.5 seconds, then measure for 4 seconds.
 - Pin the window on top and check that every frame was really drawn (`Engine.get_frames_drawn()`). A covered window on macOS reports fake fast frames.
 - "Holds 60" means the average frame takes 16.6 ms or less. Write down the 95th-percentile frame and the worst frame too.
 - Part 2 gives a first reading at 1,000 and 5,000 wandering meeples. Part 5b measures the jam scene with real work. Part 8b measures the ground world with all meeples in view. Paste each table into #14.
@@ -115,7 +122,7 @@ These go against an earlier answer of Liam's. Liam agreed to all of them on 2026
 
 - **Godot's y-sort, not our own draw order.** Liam asked for our own order on 2026-11-10. The y-sort is far less code. With trees drawn by row it holds 60 at 1,000 meeples, but not at 5,000. Liam accepted that on 2026-11-13, so the fallback above was not taken.
 - **Meeples walk straight, as in the jam game.** Path-finding (#16) and its red flash for a target that cannot be reached wait until after the rework.
-- **Tools come after the rework:** the effects toolkit (#62), the building editor (#33), the debug overlay (#31) and the preset village (#32).
+- **Tools come after the rework:** the building editor (#33). The effects toolkit (#62), the debug overlay (#31) and the preset village (#32) were closed as not planned.
 - **No `gdlint` check.** #59 made it a third check. The jam code is not lint-clean, and the rework edits it in place.
 - **The doc rule applies to new and changed code.** A `##` comment on every new class and public function. `docs/architecture.md` is the page per system, kept up to date.
 - **The jam code stays.** #36 said the old jam code goes at the end. Now the jam code is the game. Its other answers (the app name, the template settings) moved to #89.
@@ -123,7 +130,8 @@ These go against an earlier answer of Liam's. Liam agreed to all of them on 2026
 
 ## Branches
 
-- `master`: frozen until part 17. Only art into `ART/` lands there. Part 17 is on hold until playtesting (Liam, 2026-11-13).
-- `rework`: this work. It starts at `master` as it was on 2026-11-11. Pull requests only, base `rework`.
-- `core-rewrite`: the first attempt, kept as an archive. No new work goes there.
-- Part 17 lands as one pull request from `rework` into `master`, after playtesting.
+- `master`: the reworked game since 2026-11-17 (#148). New work goes here through pull requests.
+- `rework`: where this work was done, from 2026-11-11 to 2026-11-17. Now an archive.
+- `core-rewrite`: the first attempt, kept as an archive.
+- `jam-v1`: the jam build as it was, kept as an archive.
+- Do not build on the archives.

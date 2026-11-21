@@ -261,7 +261,7 @@ func _show_tab(index: int) -> void:
 			_action("Reset all settings", "RESET", _reset_all, true)
 			if in_game:
 				_action("Return to main menu", "MENU", _go_to_main_menu)
-			_action("Quit game", "QUIT", get_tree().quit, true)
+			_action("Quit game", "QUIT", SaveGame.save_and_quit, true)
 	_scroll.scroll_vertical = 0
 
 
@@ -289,6 +289,7 @@ func _reset_all() -> void:
 
 
 func _go_to_main_menu() -> void:
+	SaveGame.save_now()
 	SceneFader.change_scene(MAIN_MENU_SCENE)
 
 

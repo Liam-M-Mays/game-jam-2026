@@ -36,6 +36,10 @@ func start_construction() -> void:
 		_join_barn(cells)
 	super()
 
+## Joins the barn whose plot area holds `at_cells`, when loading a save.
+func join_barn_at(at_cells : Array[Cell]) -> void:
+	_join_barn(at_cells)
+
 func _join_barn(at_cells : Array[Cell]) -> void:
 	barn = _barn_for(at_cells)
 	if barn != null:

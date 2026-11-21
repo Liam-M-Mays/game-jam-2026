@@ -15,7 +15,7 @@ flowchart LR
 
 | State | Means | Moves on when |
 | --- | --- | --- |
-| **Proposed** | An idea, a request or player feedback. Nobody has agreed to do it yet | The team says yes, and the questions that block a start are answered |
+| **Proposed** | An idea, a request, or an issue sorted out of player feedback. Nobody has agreed to do it yet | The team says yes, and the questions that block a start are answered |
 | **Backlog** | Agreed and clear enough to start. Nobody is on it yet | Someone assigns themselves and makes a branch |
 | **In progress** | Someone is working on a branch | A pull request is opened |
 | **Testing** | A pull request is waiting for review and a play test | It is merged |
@@ -29,11 +29,11 @@ flowchart LR
 
 ## The types
 
-Every issue has exactly one type. The type is a label, and the issue form sets it.
+Every issue has exactly one type. The type is a label, and the issue form sets it. A blank issue gets no type, so add the label by hand.
 
 | Type | What it is | Parent or child |
 | --- | --- | --- |
-| `feature` | Something new the game should have or do, described the way a player sees it | Parent |
+| `feature` | Something new the game should have or do, described the way a player sees it | Parent, or child of a bigger feature |
 | `chore` | Tooling, cleanup, refactoring or docs. Players see no change | Parent, or stands alone |
 | `task` | One piece of code or scene work. Small enough for one pull request | Child |
 | `art` | A sprite, animation, UI piece or sound | Child, or stands alone |
@@ -51,6 +51,7 @@ flowchart TD
 
     feedback -. sorted into .-> feature
     feedback -. sorted into .-> fix
+    feature --> feature
     feature --> task
     feature --> art
     feature --> fix
@@ -61,6 +62,7 @@ flowchart TD
 
 - GitHub calls these **sub-issues**. Open the parent and press **Create sub-issue**, or choose **Add existing issue**.
 - An issue has one parent at most.
+- A big feature can hold smaller features. For example, #7 holds #13.
 - The parent says what and why. The children say how. A parent is finished when all its children are.
 - A pull request closes a child (`Closes #31`), not the parent.
 - **No tasks for a Proposed feature.** While a feature is only a suggestion it stays one issue. Split it into tasks and art when it moves to Backlog, once the team has agreed on what it means. That keeps the board from filling up with tasks for things we may never build.
@@ -73,7 +75,7 @@ flowchart TD
 ## Player feedback
 
 1. Paste the raw notes into a `feedback` issue. One issue per playtest round. Later notes go in a comment.
-2. Sort every point: link it to an issue that already covers it, or open a new one. New ones start in Proposed.
+2. Sort every point: link it to an issue that already covers it, or open a new one. A new feature starts in Proposed, and a new fix in Backlog.
 3. Write the result as a table at the top of the feedback issue, so no point gets lost.
 4. Close the feedback issue when the round is over and every point is sorted.
 
@@ -85,6 +87,7 @@ Feedback issues are a log, not work, so they stay off the board.
 - **Top level**: the same, without sub-issues. Use it to see features without their tasks.
 - **Fixes and chores**: only `fix`, `chore` and `task` cards.
 - **Table**: everything in rows. Group it by **Parent issue** to see each feature with its children.
+- **Rework**: the parts of the rework (#57). The rework is merged, so this view is history.
 
 ## Diagrams
 

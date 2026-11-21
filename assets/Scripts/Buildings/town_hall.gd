@@ -50,6 +50,11 @@ func meeples_for_next_level() -> int:
 func can_upgrade() -> bool:
 	return not is_max_level() and JobSystem.workers.size() >= meeples_for_next_level()
 
+## Sets the level from a save, without the upgrade jingle.
+func restore_level(saved_level : int) -> void:
+	_level = clampi(saved_level, 1, max_level())
+	_show_frame(last_stage() + _level - 1)
+
 func upgrade() -> bool:
 	if _level >= max_level():
 		return false

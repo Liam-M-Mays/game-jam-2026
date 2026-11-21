@@ -1,6 +1,6 @@
 # Architecture (as built)
 
-**What this is:** diagrams of the code as it stands, not a plan. They are kept up to date on `rework`. They were first drawn from `master` at commit `3c9e6c8` on Nov 9, 2026.
+**What this is:** diagrams of the code as it stands, not a plan. They are kept up to date on `master`. They were first drawn from `master` at commit `3c9e6c8` on Nov 9, 2026.
 
 **Keep it true:** when a pull request changes the structure, update the matching diagram in the same pull request. The diagrams are plain text, so the change shows up in the diff.
 
@@ -27,7 +27,7 @@ This file is the source of truth. Older copies of the diagrams exist as Figma bo
 | Layer | What is in it | Where |
 | --- | --- | --- |
 | World scene | The grid, everything on it, meeples, drops, `BuildSystem`. On the giant all of it hangs under the giant's torso node. On the ground it sits on a round world | `assets/Scenes/Levels/game.tscn`, `assets/Scenes/Levels/ground.tscn`, `assets/Scripts/` |
-| Global singletons | `JobSystem`, `Inventory`, `Population` hold the simulation. `GameState` holds hunger, toasts and speed. `Settings` holds the player's options, `SceneFader` fades between screens and `InputMode` lets the menus work with a controller. `Music` and `VillageAudio` are support. Their food and growth numbers are a `VillageRules` resource tuned in the editor | The `[autoload]` section of `project.godot`; `assets/Res/village_rules.tres` |
+| Global singletons | `JobSystem`, `Inventory`, `Population` hold the simulation. `GameState` holds hunger, toasts and speed. `Settings` holds the player's options, `SaveGame` saves and loads the village, `SceneFader` fades between screens and `InputMode` lets the menus work with a controller. `Music` and `VillageAudio` are support. Their food and growth numbers are a `VillageRules` resource tuned in the editor | The `[autoload]` section of `project.godot`; `assets/Res/village_rules.tres` |
 | UI scenes | Main menu and HUD | `Main_Menu.tscn`, `assets/hud.tscn`, scripts at the project root |
 
 The world registers with the singletons, and the singletons tell the UI what changed through signals. Four spots break that direction, and the system map shows them as thick arrows.
@@ -61,6 +61,7 @@ flowchart LR
         gameState["GameState: hunger, toasts, speed"]
         audio["Music and UI sounds"]
         settings["Settings: saved player options"]
+        saveGame["SaveGame: one saved village"]
     end
 
     subgraph uiOut ["UI: display side"]
@@ -139,7 +140,7 @@ flowchart TD
     game["Game: root of Levels/game.tscn"]
     walk["Node2D2: giant drift (walk.gd)"]
     step["Node2D: giant step bob (Giant_step.gd)"]
-    head["Head, EyeBlack, eyes (Blink.gd)"]
+    head["Head, EyeBlack (Giant_step.gd), Left Eye, Right Eye (Blink.gd)"]
     arms["Arm Foreground, Arm Background (Giant_arm_step.gd)"]
     torso["Torso sprite"]
     yard["Yard: procedural ground (yard_ground.gd)"]
@@ -156,7 +157,7 @@ flowchart TD
     tooltip["ConstructionTooltip, created in code"]
     parallax["5 parallax background layers"]
     hud["HUD: instance of hud.tscn"]
-    hudKids["Counters, jobs plate with Clear all, workers and builders plate, hunger bar, worker panel, build menu, pause menu, death screen, toast feed"]
+    hudKids["Counters, jobs plate with Clear all, workers and builders plate, hunger bar, build button, worker panel, build menu, pause menu, speed button, toast feed, death screen, settings menu"]
     giantAudio["GiantAudio (giant_audio.gd)"]
 
     game --> walk
@@ -276,17 +277,21 @@ stateDiagram-v2
 
 ## Building construction lifecycle
 
-These states have no names in code. They are implied by four flags and two groups in `building.gd`.
+These states have no names in code. They come from four flags, the land timer and two groups in `building.gd`.
 
 ```mermaid
 stateDiagram-v2
     direction LR
     Preview: Preview ghost following the mouse
+    WaitingForLand: Ghost on its cells, trees, rocks and bushes marked to be cleared
     Completed: Completed - in group completed_buildings
 
     [*] --> Preview: BuildSystem.start_build
     Preview --> [*]: Esc or end_build
     Preview --> UnderConstruction: click on free cells and can afford
+    Preview --> WaitingForLand: a barn, farm or silo clicked over trees, rocks or bushes, and can afford
+    WaitingForLand --> UnderConstruction: land cleared
+    WaitingForLand --> [*]: a clearing job cancelled, or removed
 
     state UnderConstruction {
         [*] --> Hauling
@@ -315,22 +320,29 @@ stateDiagram-v2
     [*] --> MainMenu
     MainMenu --> Playing: Start calls new_game
     MainMenu --> Ground: Ground world button calls new_game
+    MainMenu --> Playing: Continue loads the save
     Playing --> Paused: Esc
     Paused --> Playing: Resume
-    Paused --> MainMenu: Menu button
+    Paused --> MainMenu: Menu button saves first
     MainMenu --> SettingsScreen: Settings button
     Paused --> SettingsScreen: Settings button
     SettingsScreen --> MainMenu: Back from the main menu
     SettingsScreen --> Paused: Back from the pause menu
+    SettingsScreen --> MainMenu: Return to main menu, in a game
     Playing --> GameOver: all meeples died
     GameOver --> Playing: Retry reloads the scene
+    Ground --> GameOver: all meeples died
+    GameOver --> Ground: Retry reloads the scene
     GameOver --> MainMenu: Menu button
     MainMenu --> [*]: Quit
+    Paused --> [*]: Quit
+    GameOver --> [*]: Quit
+    SettingsScreen --> [*]: Quit game
 ```
 
 ## Class diagrams
 
-Three diagrams cover 58 of the 62 game scripts. The four left out are tiny: `walk.gd`, `Blink.gd`, `menu_meeple.gd` and `resource_ui.gd`. The test runner (`assets/Scripts/Dev/test_runner/`) and the tests are left out too.
+Three diagrams cover 64 of the 70 game scripts. The six left out are tiny: `walk.gd`, `Blink.gd`, `menu_meeple.gd`, `resource_ui.gd`, `mouse.gd` (the cell cursor) and `village_rules.gd` (the numbers resource). The test runner (`assets/Scripts/Dev/test_runner/`) and the tests are left out too.
 
 How to read them:
 
@@ -390,7 +402,7 @@ classDiagram
     class Cell {
         +position: Vector2
         +occupant: GridObject or Standing
-        +kept_for: Barn or null
+        +kept_for: Building or null
         +highlight(alpha, color)
     }
     class CellLayer {
@@ -781,6 +793,17 @@ classDiagram
         +VOICE_COUNT = 6
         +play(sound_name, at)
     }
+    class SaveGame {
+        <<autoload>>
+        +signal saved
+        +has_save(): bool
+        +continue_game(): bool
+        +save_now(): bool
+        +save_and_quit()
+        +delete_save()
+        +restore_world(grid)
+        +is_continued(): bool
+    }
     class Settings {
         <<autoload>>
         +changed(key) signal
@@ -788,6 +811,44 @@ classDiagram
         +set_value(key, value)
         +reset(keys)
         +multiplier(key) float
+    }
+    class SceneFader {
+        <<autoload>>
+        +FADE_SECONDS = 0.35
+        +change_scene(target)
+        +is_busy(): bool
+    }
+    class InputMode {
+        <<autoload>>
+        +signal changed(using_mouse)
+        +DEFAULT_FOCUS: group name
+        +using_mouse: bool
+        +focus_default()
+    }
+    class SettingsMenu {
+        +signal closed
+        +TABS: display, audio, controls, gameplay, other
+        +in_game: bool
+        +open() / close()
+        +open_credits()
+        +default_focus_target(): Control
+    }
+    class SettingsButton {
+        +menu: SettingsMenu
+        +gray: bool
+    }
+    class UiArt {
+        +BUTTONS, FRAMES
+        +apply(button, name) static
+        +button(name) static
+        +frame(name, margins, padding) static
+    }
+    class PixelStyle {
+        +PX = 4
+        +colors: PANEL, BUTTON, TEXT and more
+        +box(fill, rings) static
+        +stylebox(texture, rings) static
+        +style_button(button) static
     }
     class MainMenu {
         <<unnamed>>
@@ -899,5 +960,18 @@ classDiagram
     HUD ..> GameState : toasts, hunger
     HUD ..> BuildMenu : opens
     GiantAudio ..> GiantPart : listens to feet
+    SettingsButton ..> SettingsMenu : opens
+    SettingsButton ..> UiArt : button art
+    SettingsMenu ..> Settings : reads and saves
+    SettingsMenu ..> UiArt : button art
+    SettingsMenu ..> PixelStyle : drawn pieces
+    SettingsMenu ..> SceneFader : return to main menu
+    SettingsMenu ..> InputMode : default focus
+    MainMenu ..> SettingsMenu : credits
+    MainMenu ..> SceneFader : change_scene
+    PauseMenu ..> SceneFader : change_scene
+    HUD ..> SceneFader : is_busy
+    MainMenu ..> InputMode : default focus
+    PauseMenu ..> InputMode : default focus
 ```
 

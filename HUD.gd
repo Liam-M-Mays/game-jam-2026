@@ -99,7 +99,7 @@ func _ready() -> void:
 		clear_jobs_button.focus_mode = Control.FOCUS_NONE
 		clear_jobs_button.pressed.connect(JobSystem.clear_waiting_player_jobs)
 	_watch_existing_town_halls.call_deferred()
-	if Settings.get_value(&"tutorials"):
+	if Settings.get_value(&"tutorials") and not SaveGame.is_continued():
 		_wait(FIRST_TIP_DELAY).connect(_show_opening_tip.bind(0))
 	else:
 		_wait(randf_range(ROTATION_DELAY_MIN, ROTATION_DELAY_MAX)).connect(_show_next_in_rotation)

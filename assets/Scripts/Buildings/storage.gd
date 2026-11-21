@@ -84,6 +84,12 @@ func _shut_down() -> void:
 	for i in range(mini(hauls.size(), spilled.size())):
 		hauls[i].take_spilled(spilled[i])
 
+## Puts the drops a save kept in this pile back.
+func restore_stock(amount : int) -> void:
+	_stock = clampi(amount, 0, capacity())
+	Inventory.pile_changed(kind, _stock, 0)
+	_refresh()
+
 func has_room() -> bool:
 	return _stock + _en_route < capacity()
 

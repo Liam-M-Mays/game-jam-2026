@@ -30,6 +30,17 @@ func start_growing() -> void:
 	_growing = true
 	_set_growth(0)
 
+## What a save keeps of a farm: whether it grows, how far, and the time towards the next stage.
+func growth_state() -> Dictionary:
+	return {"growing": _growing, "growth": _growth, "timer": _grow_timer}
+
+func restore_growth(state : Dictionary) -> void:
+	if not state.get("growing", false):
+		return
+	_growing = true
+	_set_growth(state.get("growth", 0))
+	_grow_timer = state.get("timer", 0.0)
+
 func _process(delta : float) -> void:
 	if not _growing or is_ripe():
 		return

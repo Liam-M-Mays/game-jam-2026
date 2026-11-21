@@ -68,6 +68,14 @@ func _init(owner : Grid, look : MeepleLook, at : Vector2) -> void:
 	carry()
 	_show()
 
+func body_color() -> Color:
+	return _body_color
+
+## Gives the meeple back the colour it had in a save.
+func restore_body_color(color : Color) -> void:
+	_body_color = color
+	_redraw()
+
 ## Frees the canvas item. Grid calls this when it leaves the game.
 func free_item() -> void:
 	set_highlighted(false)
