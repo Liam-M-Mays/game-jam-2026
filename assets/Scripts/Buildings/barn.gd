@@ -140,32 +140,40 @@ func remove_building() -> void:
 		if is_instance_valid(plot):
 			plot.remove_building()
 	plots.clear()
+	super()
+
+## Its plot area is free again once it is removed or starts coming down.
+func _shut_down() -> void:
 	for cell in area_at(grid, cells[0]):
 		if cell.kept_for == self:
 			cell.kept_for = null
 	super()
 
-## A barn whose farm or silo still waits for its land stays put until that land is cleared.
+## A barn whose farm or silo still waits for its land, or is still being moved, stays put until that is done.
 func can_move() -> bool:
-	return super() and not plots.any(func(p : BarnPlot) -> bool: return p.is_waiting_for_land())
+	return super() and not plots.any(func(p : BarnPlot) -> bool: return p.is_waiting_for_land() or p.moved_from() != null)
 
-## A moved barn lifts its farms and silos too, so its whole plot area moves as one shape.
-func lift() -> void:
-	super()
-	for plot in plots:
-		plot.lift()
+func move_hint() -> String:
+	return "Wait until its farms and silos are placed and moved"
 
-## Each farm and silo keeps its place in the plot area, and the kept cells move with the barn.
-func land(at_cells : Array[Cell]) -> void:
+## A moved barn comes down with its farms and silos, and each goes up again in the same place in
+## the new plot area. The new barn keeps that area and takes them even past its slots.
+func rebuild_at(at_grid : Grid, at_cells : Array[Cell]) -> Building:
 	var old_area := area_at(grid, cells[0])
-	super(at_cells)
-	var new_area := area_at(grid, cells[0])
-	for cell in old_area:
-		cell.kept_for = null
-	for cell in new_area:
-		cell.kept_for = self
+	var site : Barn = super(at_grid, at_cells)
+	var new_area := site.area_at(at_grid, at_cells[0])
 	for plot in plots:
-		plot.land([new_area[old_area.find(plot.cells[0])]])
+		if is_instance_valid(plot):
+			var building := plot.is_under_construction()
+			var copy : BarnPlot = plot._take_down_for_copy()
+			copy.barn = site
+			site.add_plot(copy)
+			# A farm or silo still being built hands its hauls to the copy, so what they carry is not lost.
+			if building:
+				JobSystem.retarget_hauls(plot, copy)
+			copy.put_down(at_grid, [new_area[old_area.find(plot.cells[0])]])
+	plots.clear()
+	return site
 
 func add_plot(plot : BarnPlot) -> void:
 	plots.append(plot)

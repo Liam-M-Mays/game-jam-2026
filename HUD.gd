@@ -241,7 +241,7 @@ func _on_build_pressed() -> void:
 func _on_building_completed(building: Building) -> void:
 	if building is TownHall:
 		_watch_town_hall(building)
-	if building is Hut:
+	if building is Hut and building.meeples_when_finished > 0:
 		GameState.toast("%s finished! A new meeple arrived" % building.display_name())
 	else:
 		GameState.toast("%s finished!" % building.display_name())
@@ -253,7 +253,7 @@ func _on_placement_failed(reason: BuildSystem.PlacementError, hint: String) -> v
 			var building_name := BuildMenu.display_name(_building_scene) if _building_scene else "that"
 			GameState.warn("You need more materials to build %s" % building_name)
 		BuildSystem.PlacementError.BLOCKED:
-			GameState.warn("Can't build there")
+			GameState.warn(hint if not hint.is_empty() else "Can't build there")
 		BuildSystem.PlacementError.OUT_OF_AREA:
 			GameState.warn(hint)
 

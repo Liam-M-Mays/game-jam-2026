@@ -9,6 +9,8 @@ signal placement_failed(reason : PlacementError, hint : String)
 
 enum PlacementError { NONE, BLOCKED, CANT_AFFORD, OUT_OF_AREA }
 
+## The preview's colour and the outline on the building being moved, so a move does not look like a new build.
+const MOVE_TINT := Color(1.0, 0.8, 0.3)
 const GROUP := &"build_system"
 
 ## Land a barn keeps for farms and silos: the barn being placed, or the land farms and silos can go on.
@@ -32,7 +34,7 @@ var _preview : Building = null
 var _lit : Array[Cell] = []
 var _right_press_at := Vector2.ZERO
 var _tooltip := ConstructionTooltip.new()
-## The building the player is moving. It is lifted off its cells until it lands or goes back.
+## The building the player is moving. It stands where it is until a click picks the new spot.
 var _moving : Building = null
 
 func _ready() -> void:
@@ -45,7 +47,6 @@ func start_build(scene : PackedScene) -> void:
 		placement_failed.emit(PlacementError.OUT_OF_AREA, preview.placement_hint())
 		preview.free()
 		return
-	_put_back()
 	_clear_preview()
 	_scene = scene
 	_preview = preview
@@ -56,7 +57,6 @@ func start_build(scene : PackedScene) -> void:
 func end_build() -> void:
 	if not is_building():
 		return
-	_put_back()
 	_clear_preview()
 	_scene = null
 	build_ended.emit()
@@ -64,20 +64,17 @@ func end_build() -> void:
 func is_building() -> bool:
 	return _preview != null
 
-## The panel's Move button. Picks `building` up into the same placing as a new one, with the same rules but free.
-## A click puts it down, and Escape or a right click puts it back where it was.
+## The panel's Move button. Starts the same placing as a new building, with the same rules but free.
+## A click puts a site there that builders build from the old building as they take it down.
+## Escape or a right click cancels.
 func start_move(building : Building) -> void:
 	start_build(load(building.scene_file_path))
 	if is_building():
 		_moving = building
-		building.lift()
+		_preview.material.set_shader_parameter("tint", MOVE_TINT)
+		building.set_selected(true, MOVE_TINT)
 
-func _put_back() -> void:
-	if _moving != null:
-		_moving.land(_moving.cells)
-		_moving = null
-
-## The placing rules come from the building being moved, so it may overlap its old spot, or else from the preview.
+## The placing rules come from the building being moved, so a barn may reuse its old plot area, or else from the preview.
 func _rules() -> Building:
 	return _moving if _moving != null else _preview
 
@@ -109,7 +106,7 @@ func _process(_delta : float) -> void:
 		return
 	var mouse := get_global_mouse_position()
 	var anchor := grid.cell_at(mouse)
-	_tooltip.note = _rules().note()
+	_tooltip.note = _move_note() if _moving != null else _rules().note()
 	_preview.visible = anchor != null
 	if anchor == null:
 		_show_lights({})
@@ -173,6 +170,13 @@ func _show_lights(lights : Dictionary[Cell, Color]) -> void:
 		cell.highlight(lights[cell].a, lights[cell])
 	_lit.assign(lights.keys())
 
+## What the cursor says while moving: that it is a move, that it costs nothing, and how to cancel.
+func _move_note() -> String:
+	var lines := ["[b]Moving %s[/b]" % _moving.display_name(), "Built from the old one: no cost", "Click to place, right-click or Esc to cancel"]
+	if _moving is Barn:
+		lines.append("Its farms and silos move with it")
+	return "\n".join(lines)
+
 func _placement_error(cells : Array[Cell]) -> PlacementError:
 	if cells.is_empty():
 		return PlacementError.BLOCKED
@@ -188,11 +192,14 @@ func _try_place() -> void:
 	if error != PlacementError.NONE:
 		_preview.reject()
 		var hint := _rules().placement_hint() if error == PlacementError.OUT_OF_AREA else ""
+		if error == PlacementError.BLOCKED and _moving != null:
+			hint = "Can't move it there: the spot must be clear of trees, rocks and buildings"
 		placement_failed.emit(error, hint)
 		return
 	if _moving != null:
-		_moving.land(cells)
-		_moving = null
+		var moved := _moving.rebuild_at(grid, cells)
+		moved.completed.connect(func(): building_completed.emit(moved))
+		VillageAudio.play(&"hammer", moved.global_position)
 		end_build()
 		return
 	var site : Building = _scene.instantiate()
@@ -208,6 +215,9 @@ func _try_place() -> void:
 func _clear_preview() -> void:
 	_show_lights({})
 	_tooltip.note = ""
+	if is_instance_valid(_moving):
+		_moving.set_selected(false)
+	_moving = null
 	if _preview != null:
 		_preview.queue_free()
 		_preview = null

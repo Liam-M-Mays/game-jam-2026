@@ -25,9 +25,10 @@ func placement_hint() -> String:
 func clears_land() -> bool:
 	return true
 
-## Joins its barn when placed, so the slot is taken even while it waits for its land.
+## Joins its barn when placed, so the slot is taken even while it waits for its land. A moved one has its barn already.
 func put_down(at_grid : Grid, at_cells : Array[Cell]) -> void:
-	_join_barn(at_cells)
+	if barn == null:
+		_join_barn(at_cells)
 	super(at_grid, at_cells)
 
 func start_construction() -> void:
@@ -71,6 +72,9 @@ func note() -> String:
 
 func can_move() -> bool:
 	return false
+
+func move_hint() -> String:
+	return "A %s moves with its barn" % display_name()
 
 func worker_building() -> Building:
 	return barn.worker_building() if barn != null else null

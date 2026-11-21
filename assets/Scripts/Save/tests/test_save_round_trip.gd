@@ -1,8 +1,8 @@
 extends GameTest
 ## Saving and loading. A village is saved, its level is closed and opened again from the save,
 ## and the loaded village must hold the same things: trees and rocks with their wear and marks,
-## finished and half-built buildings, workers, pile stock, farm growth, Town Hall level, meeples,
-## drops and food.
+## finished and half-built buildings, a building halfway through a move, workers, pile stock, farm growth,
+## Town Hall level, meeples, drops and food.
 
 const LEVEL := preload("res://assets/Scenes/Levels/game.tscn")
 const SMALL_HUT := preload("res://assets/Scenes/Buildings/small_hut.tscn")
@@ -102,6 +102,8 @@ func _build_village(grid : Grid) -> void:
 	grid.add_drop(ResourceDrop.scene_of("stone"), grid.cell_at_coords(Vector2i(10, 10)).position if grid.cell_at_coords(Vector2i(10, 10)) else Vector2.ZERO)
 	var meeple := grid.spawn_meeple(TownHall.find_town_hall().position)
 	meeple.restore_body_color(Color(0.2, 0.4, 0.6))
+	var moved := _place_done(grid, LUMBERJACK)
+	moved.rebuild_at(grid, _free_spot(grid, moved.footprint, moved.footprint_depth))
 
 
 ## Puts the parts of a save in a fixed order, and leaves out what moves on its own every frame.
@@ -110,13 +112,15 @@ func _comparable(data : Dictionary) -> Dictionary:
 	standing.sort_custom(func(a, b) -> bool: return str(a["at"]) < str(b["at"]))
 	var meeples : Array = data["meeples"].map(func(m) -> Array: return [m["color"], m["workplace"]])
 	meeples.sort_custom(func(a, b) -> bool: return str(a) < str(b))
+	var buildings : Array = data["buildings"].duplicate(true)
+	buildings.sort_custom(func(a, b) -> bool: return str(a["cells"]) < str(b["cells"]))
 	var drops : Array = data["drops"].map(func(d) -> String: return d["kind"])
 	drops.sort()
 	return {
 		"seed": data["seed"],
 		"stored": data["stored"],
 		"standing": standing,
-		"buildings": data["buildings"],
+		"buildings": buildings,
 		"meeples": meeples,
 		"drops": drops,
 	}
@@ -149,6 +153,8 @@ func test_a_loaded_village_matches_the_saved_one() -> void:
 	check_eq(after["meeples"], before["meeples"], "same meeples, colours and workplaces")
 	check_eq(after["drops"], before["drops"], "same drops on the ground")
 	check_eq(TownHall.current_level(), 2, "the Town Hall keeps its level")
+	var sites := grid.get_children().filter(func(n : Node) -> bool: return n is Building and (n as Building).moved_from() != null)
+	check_eq(sites.size(), 1, "the moved lumberjack's site still takes its drops from the old one")
 
 
 func test_game_over_deletes_the_save() -> void:
@@ -160,3 +166,32 @@ func test_game_over_deletes_the_save() -> void:
 	Population.all_meeples_died.emit()
 	check(not SaveGame.has_save(), "game over deleted it")
 	check(not SaveGame.save_now(), "nothing saves after game over")
+
+
+func test_a_builder_carrying_for_a_move_keeps_its_job() -> void:
+	await tree.process_frame
+	var grid := _open_level()
+	var old := _place_done(grid, LUMBERJACK)
+	var site := old.rebuild_at(grid, _free_spot(grid, old.footprint, old.footprint_depth))
+	var meeple := grid.spawn_meeple(old.position)
+	JobSystem.match_jobs()
+	var haul := meeple.job as HaulJob
+	check(haul != null and haul.site == site, "a builder took a haul for the moved site")
+	haul._pick_up()
+	if haul._partner != null:
+		haul._partner._pick_up()
+	var carried := haul.carried().size()
+	SaveGame.world_opened(grid)
+	SaveGame.save_now()
+	var data := SaveGame.read_save()
+	check_eq(data["drops"].size(), 0, "the carried drops are saved with the job, not on the ground")
+	_close_level()
+
+	SaveGame.set_pending(data)
+	grid = _open_level()
+	var carriers := JobSystem.workers.filter(func(m : Meeple) -> bool: return m.job is HaulJob and not m.carried_drops().is_empty())
+	check_eq(carriers.size(), 1, "the builder still carries after loading")
+	if carriers.size() == 1:
+		var loaded := carriers[0].job as HaulJob
+		check(loaded.site.moved_from() != null, "it still carries to the moved site, which still takes from its old one")
+		check_eq(loaded.carried().size(), carried, "with as many drops as before")

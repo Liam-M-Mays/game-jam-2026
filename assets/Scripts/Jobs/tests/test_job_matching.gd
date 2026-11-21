@@ -1,6 +1,7 @@
 extends GameTest
 ## The two matching rules of JobSystem, decided by Liam in #7: a new job goes to the nearest
-## free meeple, and a meeple that becomes free takes the nearest waiting job.
+## free meeple, and a meeple that becomes free takes the nearest waiting job. #149 makes a freed meeple
+## take the oldest site's haul unless a job that is not a haul is nearer; these tests use jobs that are not hauls.
 
 const MEEPLE_SCENE := preload("res://assets/Scenes/Meeple/meeple.tscn")
 
@@ -54,9 +55,10 @@ func test_new_job_goes_to_the_nearest_free_meeple() -> void:
 	JobSystem.match_jobs()
 	var job := SpotJob.new(Vector2(90, 0))
 	JobSystem.add(job)
+	JobSystem.worker_freed(far)
 	JobSystem.match_jobs()
 	check(near.job == job, "the nearest free meeple took the job")
-	check(far.job == null, "the far meeple stayed free")
+	check(far.job == null, "the far meeple, freed in the same frame, stayed free")
 
 
 func test_freed_meeple_takes_the_nearest_waiting_job() -> void:
@@ -76,29 +78,3 @@ func test_freed_meeple_takes_the_nearest_waiting_job() -> void:
 	JobSystem.match_jobs()
 	check(meeple.job == near_tree, "the freed meeple took the near job, not the older far one")
 
-
-## #135: an older order counts as closer, so a slightly nearer newer job waits. At 0 the nearest wins.
-func test_older_job_beats_a_slightly_nearer_newer_one() -> void:
-	var bonus := JobSystem.age_bonus
-	for on : bool in [true, false]:
-		JobSystem.reset()
-		JobSystem.age_bonus = 0.5 if on else 0.0
-		var meeple := _meeple_at(Vector2(0, 0))
-		var first := SpotJob.new(Vector2(0, 0))
-		JobSystem.add(first)
-		JobSystem.match_jobs()
-		var older := SpotJob.new(Vector2(50, 0))
-		older.ordered_at = JobSystem.now() - 10.0
-		var newer := SpotJob.new(Vector2(40, 0))
-		JobSystem.add(newer)
-		JobSystem.add(older)
-		JobSystem.match_jobs()
-		first.done = true
-		meeple.tick(0.0)
-		JobSystem.match_jobs()
-		if on:
-			check(meeple.job == older, "with the bonus on, the older job won over the nearer newer one")
-		else:
-			check(meeple.job == newer, "with the bonus at 0, the nearest job won")
-		JobSystem.workers.clear()
-	JobSystem.age_bonus = bonus

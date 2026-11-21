@@ -2,20 +2,21 @@ extends RefCounted
 class_name Job
 
 var cancelled := false
-## When the player ordered the work, on JobSystem's clock. Older orders are picked first, see
-## JobSystem.age_bonus.
-var ordered_at := JobSystem.now()
 
 ## Where the job is done, in world space. Jobs and meeples are matched by the distance to it.
 func place() -> Vector2:
 	return Vector2.ZERO
 
-## True when the meeple doing this job walks to `building`. A moved building turns those meeples round.
-func goes_to(_building : Building) -> bool:
-	return false
-
 func start(_worker : Meeple) -> void:
 	pass
+
+## The drops the meeple on this job holds right now.
+func carried() -> Array[ResourceDrop]:
+	return []
+
+## Starts a job put back from a save. Most jobs just start again.
+func resume(worker : Meeple) -> void:
+	start(worker)
 
 func update(_worker : Meeple, _delta : float) -> bool:
 	return true

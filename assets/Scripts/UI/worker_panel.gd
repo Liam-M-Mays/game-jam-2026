@@ -49,7 +49,7 @@ func open(building : Building) -> void:
 	remove_building_button.disabled = not building.can_remove()
 	remove_building_button.tooltip_text = "" if building.can_remove() else "The %s cannot be removed" % building.display_name()
 	move_button.disabled = not building.can_move()
-	move_button.tooltip_text = "" if building.can_move() else "A %s moves with its barn" % building.display_name()
+	move_button.tooltip_text = "" if building.can_move() else building.move_hint()
 	_show_confirm(false)
 	if _workers_of != null:
 		_workers_of.workers_changed.connect(_outline_workers)
