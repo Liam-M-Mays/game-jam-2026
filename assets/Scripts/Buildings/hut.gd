@@ -14,6 +14,9 @@ func _exit_tree() -> void:
 func complete() -> void:
 	super()
 	Population.add_hut(self)
+	# A hut put back from a save gets its meeples from the save.
+	if SaveGame.is_restoring():
+		return
 	for i in range(mini(meeples_when_finished, meeple_capacity)):
 		spawn_meeple()
 

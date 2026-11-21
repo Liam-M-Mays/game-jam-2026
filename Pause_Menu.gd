@@ -15,7 +15,7 @@ func _ready() -> void:
 	hide()
 	resume_button.add_to_group(InputMode.DEFAULT_FOCUS)
 	resume_button.pressed.connect(_on_retry_pressed if restart_on_resume else close)
-	quit_button.pressed.connect(get_tree().quit)
+	quit_button.pressed.connect(SaveGame.save_and_quit)
 	if menu_button:
 		menu_button.pressed.connect(_on_menu_pressed)
 
@@ -46,4 +46,5 @@ func _on_retry_pressed() -> void:
 
 
 func _on_menu_pressed() -> void:
+	SaveGame.save_now()
 	SceneFader.change_scene(MAIN_MENU_SCENE)

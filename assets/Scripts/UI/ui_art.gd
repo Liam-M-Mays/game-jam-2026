@@ -27,6 +27,7 @@ const BUTTONS := {
 	"start_gray": [Rect2(2, 352, 45, 21), Rect2(49, 352, 45, 21), Rect2(96, 352, 45, 21)],
 	"quit_gray": [Rect2(2, 375, 40, 21), Rect2(44, 375, 40, 21), Rect2(86, 375, 40, 21)],
 	"credits_gray": [Rect2(2, 398, 60, 21), Rect2(64, 398, 60, 21), Rect2(126, 398, 60, 21)],
+	"continue_gray": [Rect2(2, 563, 70, 21), Rect2(74, 563, 70, 21), Rect2(146, 563, 70, 21)],
 	"settings_gray": [Rect2(2, 421, 69, 21), Rect2(73, 421, 69, 21), Rect2(144, 421, 69, 21)],
 }
 

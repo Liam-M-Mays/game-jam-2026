@@ -56,6 +56,14 @@ func reset() -> void:
 func count(kind : String) -> int:
 	return _drops_of(kind).size() + _piled.get(kind, 0) + _stored.get(kind, 0)
 
+## The stock that is a number, not drops: food, and any start stock. A save keeps it.
+func stored() -> Dictionary:
+	return _stored.duplicate()
+
+func restore_stored(stock : Dictionary) -> void:
+	_stored = stock.duplicate()
+	mark_changed()
+
 func food_cap() -> int:
 	var cap := rules.base_food_cap
 	for silo in get_tree().get_nodes_in_group(Silo.GROUP):

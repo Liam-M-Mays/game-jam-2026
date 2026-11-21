@@ -293,6 +293,30 @@ func start_construction() -> void:
 	_advance()
 	_request_hauls()
 
+## Puts a building that was under construction in a save back to the stage it had, with the drops
+## it had been given towards the next stage. Its hauls start again from here.
+func restore_construction(built : int, banked : Dictionary, paused : bool) -> void:
+	ordered_at = JobSystem.now()
+	_constructing = true
+	_built = clampi(built, EMPTY_STAGE, last_stage() - 1)
+	_banked.clear()
+	for kind in banked:
+		_banked[kind] = banked[kind]
+	_incoming.clear()
+	area.input_pickable = true
+	add_to_group(CONSTRUCTION_GROUP)
+	Inventory.changed.connect(_request_hauls)
+	_set_stage(_built)
+	if paused:
+		_paused = true
+		set_selected(true, PAUSED_OUTLINE)
+	else:
+		_request_hauls()
+
+## What a save keeps of a building under construction: the stage built and the drops given towards the next.
+func construction_state() -> Dictionary:
+	return {"built": _built, "banked": _banked.duplicate(), "paused": _paused}
+
 func deliver(kind : String) -> void:
 	_incoming[kind] = _incoming.get(kind, 0) - 1
 	_banked[kind] = _banked.get(kind, 0) + 1
@@ -305,7 +329,9 @@ func deliver(kind : String) -> void:
 func complete() -> void:
 	_set_stage(last_stage())
 	area.input_pickable = true
-	spawn_effect(BUILD_EFFECT, 1)
+	# A building put back from a save is not being built just now, so it does not puff.
+	if not SaveGame.is_restoring():
+		spawn_effect(BUILD_EFFECT, 1)
 	add_to_group(COMPLETED_GROUP)
 	for i in range(worker_slots if STARTS_FULL else 0):
 		add_worker_slot()
