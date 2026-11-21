@@ -19,6 +19,8 @@
 # Prevent committing sensitive credentials/signing keys
 export_credentials.cfg
 export.cfg
+# Exported builds (export_presets.cfg writes them here)
+builds/
 
 # Exclude binary export outputs (add specific extensions if needed)
 *.exe
