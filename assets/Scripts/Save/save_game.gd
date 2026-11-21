@@ -289,6 +289,11 @@ func restore_world(grid: Grid) -> void:
 		if ResourceDrop.SCENES.has(kind):
 			grid.add_drop(ResourceDrop.scene_of(kind), entry.get("at", Vector2.ZERO))
 	_restoring = false
+	# The sites ask for stock now that everything is back, oldest first, so a newer one does not go first.
+	var sites := grid.get_tree().get_nodes_in_group(Building.CONSTRUCTION_GROUP)
+	sites.sort_custom(func(a: Building, b: Building) -> bool: return a.build_order < b.build_order)
+	for site: Building in sites:
+		site.request_hauls()
 	Inventory.mark_changed()
 	if data.has("camera"):
 		_restore_camera.call_deferred(data["camera"])

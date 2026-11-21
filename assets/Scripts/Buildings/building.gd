@@ -470,12 +470,19 @@ func rebuild_at(at_grid : Grid, at_cells : Array[Cell]) -> Building:
 	site.put_down(at_grid, at_cells)
 	return site
 
-## Starts taking this building down and makes the copy that takes its drops, not yet put down.
+## Starts taking this building down and makes the copy that takes its drops, not yet put down. A farm or silo
+## still being built stops: its hauls are called back, and only what it was given carries over. The copy asks the
+## stock for the rest once this one is empty.
 func _take_down_for_copy() -> Building:
 	var site : Building = load(scene_file_path).instantiate()
 	site._from = self
 	site.carry_over(self)
-	_left = costs
+	_left = _spent() if _constructing else costs
+	if _constructing:
+		JobSystem.recall_hauls(self)
+		_drop_queued_hauls()
+		Inventory.changed.disconnect(_request_hauls)
+		_constructing = false
 	show_blueprint = false
 	_shut_down()
 	_show_left()
@@ -587,6 +594,10 @@ func _finish_construction() -> void:
 	Inventory.changed.disconnect(_request_hauls)
 	complete()
 
+## Asks for what it needs now. SaveGame calls this once a save is loaded, oldest site first.
+func request_hauls() -> void:
+	_request_hauls()
+
 ## `extra` builders have nothing to do: asks for whole later stages until it asked for at least `extra` drops,
 ## past max_hauls. JobSystem calls this, oldest site first, only when no job is waiting. Returns how many drops it asked for.
 func ask_past_cap(extra : int) -> int:
@@ -596,8 +607,9 @@ func ask_past_cap(extra : int) -> int:
 ## stages while they fit under max_hauls (or, with `extra`, until `extra` more drops are asked for) and the stock
 ## can pay for all of each after every other site's next stage. Returns how many drops it asked for.
 func _request_hauls(extra := 0) -> int:
-	# Out of the tree: its level is closing, for the main menu, and nothing should be asked for.
-	if not _constructing or _paused or _requesting or not is_inside_tree():
+	# Out of the tree, its level is closing for the main menu. While a save loads, SaveGame asks once at the end,
+	# oldest site first (see request_hauls).
+	if not _constructing or _paused or _requesting or not is_inside_tree() or SaveGame.is_restoring():
 		return 0
 	if is_instance_valid(_from):
 		return _request_from(_from, extra)

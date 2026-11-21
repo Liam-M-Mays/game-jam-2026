@@ -183,7 +183,8 @@ func _goes_before(a : HaulJob, b : HaulJob) -> bool:
 ## a builder became free or a site was placed, so counting the builders stays cheap.
 func _offer_idle_builders() -> void:
 	var now := Time.get_ticks_msec()
-	if not _offer_idle or now - _last_idle_offer < Inventory.CHANGED_EVERY_MS:
+	# While paused nothing new is asked for: JobSystem runs anyway, so it can hand out the jobs there are.
+	if not _offer_idle or now - _last_idle_offer < Inventory.CHANGED_EVERY_MS or get_tree().paused:
 		return
 	_offer_idle = false
 	_last_idle_offer = now
